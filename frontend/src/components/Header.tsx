@@ -1,10 +1,12 @@
 import { ThemeToggle } from './ThemeToggle'
+import { useSession } from '../features/session/useSession'
 
 type HeaderProps = {
   onMenuToggle: () => void
 }
 
 export function Header({ onMenuToggle }: HeaderProps) {
+  const { profile } = useSession()
   return (
     <header className="flex h-20 items-center justify-between border-b border-slate-200 bg-white/90 px-4 backdrop-blur sm:px-6 lg:px-8 dark:border-slate-800 dark:bg-slate-900/90">
       <div className="flex items-center gap-3">
@@ -21,7 +23,10 @@ export function Header({ onMenuToggle }: HeaderProps) {
           <p className="text-sm text-slate-500 dark:text-slate-400">Apontamento de horas por projeto</p>
         </div>
       </div>
-      <ThemeToggle />
+      <div className="flex items-center gap-3">
+        <span className="hidden text-right text-xs font-semibold text-slate-600 sm:block dark:text-slate-300">{profile?.name}</span>
+        <ThemeToggle />
+      </div>
     </header>
   )
 }

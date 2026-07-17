@@ -16,5 +16,6 @@ O Vite exibirá no terminal o endereço local da aplicação.
 ```bash
 npm run typecheck
 npm run lint
+npm test
 npm run build
 ```

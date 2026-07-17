@@ -5,13 +5,15 @@ import { HistoricoPage } from '../pages/HistoricoPage'
 import { LoginPage } from '../pages/LoginPage'
 import { NovoApontamentoPage } from '../pages/NovoApontamentoPage'
 import { PerfilPage } from '../pages/PerfilPage'
+import { ProtectedRoute } from '../features/session/ProtectedRoute'
+import { PublicOnlyRoute } from '../features/session/PublicOnlyRoute'
 
 export function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<Navigate to="/login" replace />} />
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/colaborador" element={<AppLayout />}>
+      <Route path="/login" element={<PublicOnlyRoute><LoginPage /></PublicOnlyRoute>} />
+      <Route path="/colaborador" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
         <Route index element={<ColaboradorPage />} />
         <Route path="apontamentos/novo" element={<NovoApontamentoPage />} />
         <Route path="historico" element={<HistoricoPage />} />
