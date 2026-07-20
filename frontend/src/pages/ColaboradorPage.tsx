@@ -44,10 +44,11 @@ export function ColaboradorPage() {
               <SummaryCard label="Projeção futura" value={formatSignedMinutes(dashboard.data.monthSummary.projectedBalanceMinutes)} helper="Separada do saldo real; considera datas futuras visíveis." />
             </div>
 
-            <section className="grid gap-4 sm:grid-cols-3" aria-label="Pendências e ações">
+            <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Pendências e ações">
               <article className="rounded-2xl border border-red-200 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950/30"><p className="text-sm font-bold text-red-900 dark:text-red-100">Dias pendentes</p><p className="mt-2 text-2xl font-extrabold">{dashboard.data.attention.pendingDays}</p></article>
               <article className="rounded-2xl border border-blue-200 bg-blue-50 p-4 dark:border-blue-900 dark:bg-blue-950/30"><p className="text-sm font-bold text-blue-900 dark:text-blue-100">Disponíveis para aprovação</p><p className="mt-2 text-2xl font-extrabold">{dashboard.data.attention.availableForApprovalDays}</p></article>
               <article className="rounded-2xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950/30"><p className="text-sm font-bold text-amber-900 dark:text-amber-100">Correções solicitadas</p><p className="mt-2 text-2xl font-extrabold">{dashboard.data.attention.correctionRequestedDays}</p></article>
+              <article className="rounded-2xl border border-violet-200 bg-violet-50 p-4 dark:border-violet-900 dark:bg-violet-950/30"><p className="text-sm font-bold text-violet-900 dark:text-violet-100">Folgas pendentes</p><p className="mt-2 text-2xl font-extrabold">{dashboard.data.pendingTimeOffRequests}</p></article>
             </section>
 
             {dashboard.data.approvals.some((approval) => approval.status === 'CORRECTION_REQUESTED') && (
@@ -68,7 +69,7 @@ export function ColaboradorPage() {
               onMonthChange={(nextMonth) => setSearchParams({ date: `${nextMonth}-01` })}
               onSelectDate={(date) => setSearchParams({ date })}
             />
-            <DayDetails summary={dashboard.data.selectedSummary} events={dashboard.data.selectedEvents} approval={dashboard.data.selectedApproval} />
+            <DayDetails summary={dashboard.data.selectedSummary} events={dashboard.data.selectedEvents} timeOffRequests={dashboard.data.selectedTimeOffRequests} approval={dashboard.data.selectedApproval} />
             <DailyEntryList entries={dashboard.data.selectedEntries} date={selectedDate} />
           </>
         )}

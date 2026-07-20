@@ -13,4 +13,5 @@ export interface TimeOffRequest {
   updatedAt: string
   decidedAt?: string
   cancellationReason?: string
+  cancelledAt?: string
 }
