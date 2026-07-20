@@ -16,6 +16,7 @@ export function AppRoutes() {
       <Route path="/colaborador" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
         <Route index element={<ColaboradorPage />} />
         <Route path="apontamentos/novo" element={<NovoApontamentoPage />} />
+        <Route path="apontamentos/:entryId/editar" element={<NovoApontamentoPage />} />
         <Route path="historico" element={<HistoricoPage />} />
         <Route path="perfil" element={<PerfilPage />} />
       </Route>

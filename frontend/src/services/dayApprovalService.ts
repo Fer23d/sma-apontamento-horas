@@ -1,7 +1,9 @@
-import { canMutateDay, deriveDayApprovalStatus } from '../features/approvals/domain'
+import { canMutateDay, completeCorrection, deriveDayApprovalStatus } from '../features/approvals/domain'
 import type { CompetencyState, DayApproval } from '../features/approvals/types'
+import type { AuditEvent } from '../features/audit/types'
 import { getCorporateToday, getMonthKey } from '../shared/utils/date'
 import { createBrowserStorage, type StorageLike } from './storage'
+import { auditService } from './auditService'
 
 const APPROVAL_STORAGE_KEY = 'sma:day-approvals:v1'
 const COMPETENCY_STORAGE_KEY = 'sma:competencies:v1'
@@ -9,10 +11,12 @@ const COMPETENCY_STORAGE_KEY = 'sma:competencies:v1'
 export class LocalDayApprovalService {
   private readonly storage: StorageLike
   private readonly today: () => string
+  private readonly audit?: { record(event: AuditEvent): Promise<void> }
 
-  constructor(storage: StorageLike, today: () => string = getCorporateToday) {
+  constructor(storage: StorageLike, today: () => string = getCorporateToday, audit?: { record(event: AuditEvent): Promise<void> }) {
     this.storage = storage
     this.today = today
+    this.audit = audit
   }
 
   private readRecord<T>(key: string): Record<string, T> {
@@ -75,10 +79,29 @@ export class LocalDayApprovalService {
     this.storage.setItem(APPROVAL_STORAGE_KEY, JSON.stringify(current))
   }
 
+  async completeCorrection(collaboratorId: string, date: string) {
+    const stored = this.readRecord<DayApproval>(APPROVAL_STORAGE_KEY)[this.approvalKey(collaboratorId, date)]
+    if (!stored) throw new Error('Não existe solicitação de correção para esta data.')
+    const completed = { ...completeCorrection(stored), correctionCompletedAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
+    await this.save(completed)
+    await this.audit?.record({
+      id: crypto.randomUUID(),
+      type: 'CORRECTION_COMPLETED',
+      occurredAt: completed.updatedAt,
+      actorId: collaboratorId,
+      actorRole: 'COLLABORATOR',
+      entityType: 'DayApproval',
+      entityId: completed.id,
+      previousValue: stored,
+      newValue: completed,
+    })
+    return completed
+  }
+
   async listByRange(collaboratorId: string, startDate: string, endDate: string) {
     return Object.values(this.readRecord<DayApproval>(APPROVAL_STORAGE_KEY))
       .filter((approval) => approval.collaboratorId === collaboratorId && approval.entryDate >= startDate && approval.entryDate <= endDate)
   }
 }
 
-export const dayApprovalService = new LocalDayApprovalService(createBrowserStorage())
+export const dayApprovalService = new LocalDayApprovalService(createBrowserStorage(), getCorporateToday, auditService)

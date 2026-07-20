@@ -8,6 +8,7 @@ import type {
   TimeEntryValidationErrors,
   WorkSchedule,
 } from '../../shared/types/domain'
+import { compareIsoDates } from '../../shared/utils/date'
 
 export const MAX_ENTRY_MINUTES = 24 * 60
 export const MAX_PROJECT_CODE_LENGTH = 80
@@ -99,9 +100,12 @@ export function validateTimeEntry(
   data: CreateTimeEntryData,
   clients: Client[],
   activities: Activity[],
+  context?: { today: string; canMutateDate: boolean },
 ): TimeEntryValidationErrors {
   const errors: TimeEntryValidationErrors = {}
   if (!isValidIsoDate(data.entryDate)) errors.entryDate = 'Informe uma data válida.'
+  else if (context && compareIsoDates(data.entryDate, context.today) > 0) errors.entryDate = 'Não é permitido apontar horas em uma data futura.'
+  else if (context && !context.canMutateDate) errors.entryDate = 'Esta data está aprovada ou fora de uma competência aberta.'
   if (!clients.some((client) => client.id === data.clientId && client.active)) errors.clientId = 'Selecione um cliente ativo.'
   const projectCode = data.projectCode.trim()
   if (!projectCode) errors.projectCode = 'Informe o número do projeto.'

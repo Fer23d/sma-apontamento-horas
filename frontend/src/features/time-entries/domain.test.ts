@@ -135,6 +135,41 @@ describe('validações e formatação', () => {
     expect(errors.projectCode).toBe('O número do projeto deve ter no máximo 80 caracteres.')
   })
 
+  it('bloqueia data futura no fuso corporativo', () => {
+    const errors = validateTimeEntry(
+      { ...validData, entryDate: '2026-07-21' },
+      demoClients,
+      demoActivities,
+      { today: '2026-07-20', canMutateDate: true },
+    )
+    expect(errors.entryDate).toBe('Não é permitido apontar horas em uma data futura.')
+  })
+
+  it('bloqueia competência fechada e permite período reaberto', () => {
+    const blocked = validateTimeEntry(validData, demoClients, demoActivities, { today: '2026-07-20', canMutateDate: false })
+    const reopened = validateTimeEntry(validData, demoClients, demoActivities, { today: '2026-07-20', canMutateDate: true })
+    expect(blocked.entryDate).toBe('Esta data está aprovada ou fora de uma competência aberta.')
+    expect(reopened.entryDate).toBeUndefined()
+  })
+
+  it('exige seleção explícita de disciplina e aceita não se aplica', () => {
+    const missing = validateTimeEntry({ ...validData, disciplineCode: '' as '—' }, demoClients, demoActivities)
+    const notApplicable = validateTimeEntry({ ...validData, disciplineCode: '—' }, demoClients, demoActivities)
+    expect(missing.disciplineCode).toBe('Selecione uma disciplina.')
+    expect(notApplicable.disciplineCode).toBeUndefined()
+  })
+
+  it('exige seleção explícita de tipo de documento e aceita não se aplica', () => {
+    const missing = validateTimeEntry({ ...validData, documentTypeCode: '' as '—' }, demoClients, demoActivities)
+    const notApplicable = validateTimeEntry({ ...validData, documentTypeCode: '—' }, demoClients, demoActivities)
+    expect(missing.documentTypeCode).toBe('Selecione um tipo de documento.')
+    expect(notApplicable.documentTypeCode).toBeUndefined()
+  })
+
+  it('exige detalhamento não vazio', () => {
+    expect(validateTimeEntry({ ...validData, details: '   ' }, demoClients, demoActivities).details).toBe('Descreva o trabalho realizado.')
+  })
+
   it('formata minutos positivos em HH:MM', () => expect(formatMinutes(125)).toBe('02:05'))
   it('formata saldo negativo', () => expect(formatSignedMinutes(-90)).toBe('-01:30'))
 })
