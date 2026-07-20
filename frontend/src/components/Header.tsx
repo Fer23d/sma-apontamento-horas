@@ -2,22 +2,26 @@ import { ThemeToggle } from './ThemeToggle'
 import { useSession } from '../features/session/useSession'
 
 type HeaderProps = {
+  isMenuOpen: boolean
   onMenuToggle: () => void
 }
 
-export function Header({ onMenuToggle }: HeaderProps) {
+export function Header({ isMenuOpen, onMenuToggle }: HeaderProps) {
   const { profile } = useSession()
   return (
-    <header className="flex h-20 items-center justify-between border-b border-slate-200 bg-white/90 px-4 backdrop-blur sm:px-6 lg:px-8 dark:border-slate-800 dark:bg-slate-900/90">
+    <header data-layout-region="global-header" className="sticky top-0 z-40 flex h-20 w-full items-center justify-between border-b border-slate-200 bg-white/95 px-4 backdrop-blur sm:px-6 lg:px-8 dark:border-slate-800 dark:bg-slate-900/95">
       <div className="flex items-center gap-3">
         <button
           type="button"
           onClick={onMenuToggle}
           className="rounded-lg border border-slate-200 p-2 text-sma-navy lg:hidden dark:border-slate-700 dark:text-slate-100"
-          aria-label="Abrir ou fechar navegação"
+          aria-label={isMenuOpen ? 'Fechar navegação lateral' : 'Abrir navegação lateral'}
+          aria-controls="collaborator-navigation"
+          aria-expanded={isMenuOpen}
         >
           <span aria-hidden="true">☰</span>
         </button>
+        <div className="hidden h-11 w-11 items-center justify-center rounded-xl bg-sma-green font-extrabold text-sma-navy sm:flex">SM&amp;A</div>
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-sma-green-dark dark:text-sma-green">Área do colaborador</p>
           <p className="text-sm text-slate-500 dark:text-slate-400">Apontamento de horas por projeto</p>

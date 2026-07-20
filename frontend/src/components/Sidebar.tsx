@@ -19,14 +19,12 @@ export function Sidebar({ isOpen, onNavigate }: SidebarProps) {
 
   return (
     <aside
-      className={`${isOpen ? 'translate-x-0' : '-translate-x-full'} fixed inset-y-0 left-0 z-30 flex w-72 flex-col bg-sma-navy text-white shadow-2xl transition-transform duration-200 lg:static lg:translate-x-0 lg:shadow-none`}
+      id="collaborator-navigation"
+      className={`${isOpen ? 'translate-x-0' : '-translate-x-full'} fixed bottom-0 left-0 top-20 z-30 flex w-72 flex-col bg-sma-navy text-white shadow-2xl transition-transform duration-200 lg:sticky lg:top-20 lg:h-[calc(100vh-5rem)] lg:translate-x-0 lg:self-start lg:shadow-none`}
     >
-      <div className="flex h-20 items-center border-b border-white/10 px-6">
-        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-sma-green font-extrabold text-sma-navy">SM&A</div>
-        <div className="ml-3">
-          <p className="font-bold">Apontamento</p>
-          <p className="text-xs text-slate-300">Gestão de horas</p>
-        </div>
+      <div className="flex items-center justify-between border-b border-white/10 px-4 py-3 lg:hidden">
+        <p className="font-bold">Navegação</p>
+        <button type="button" onClick={onNavigate} className="rounded-lg border border-white/20 px-3 py-2 text-sm font-bold" aria-label="Fechar navegação lateral">Fechar</button>
       </div>
 
       <nav className="flex-1 space-y-2 p-4" aria-label="Navegação do colaborador">
