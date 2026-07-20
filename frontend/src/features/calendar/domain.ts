@@ -1,4 +1,4 @@
-import { compareIsoDates, eachIsoDate } from '../../shared/utils/date'
+import { addDays, compareIsoDates, eachIsoDate } from '../../shared/utils/date'
 import type { TimeEntry } from '../time-entries/types'
 import type { TimeOffRequest } from '../time-off/types'
 import { getBaseExpectedMinutes } from '../workloads/domain'
@@ -119,4 +119,18 @@ const visualLabels: Record<CalendarVisualState, string> = {
 
 export function getCalendarVisualState(summary: DailySummary) {
   return { state: summary.visualState, label: visualLabels[summary.visualState] }
+}
+
+export function shiftMonth(monthKey: string, amount: number) {
+  const [year, month] = monthKey.split('-').map(Number)
+  const shifted = new Date(Date.UTC(year, month - 1 + amount, 1, 12))
+  return `${shifted.getUTCFullYear()}-${String(shifted.getUTCMonth() + 1).padStart(2, '0')}`
+}
+
+export function getMonthGridDates(monthKey: string) {
+  const firstDate = `${monthKey}-01`
+  const firstWeekday = new Date(`${firstDate}T12:00:00.000Z`).getUTCDay()
+  const mondayOffset = firstWeekday === 0 ? 6 : firstWeekday - 1
+  const gridStart = addDays(firstDate, -mondayOffset)
+  return Array.from({ length: 42 }, (_, index) => addDays(gridStart, index))
 }

@@ -1,5 +1,6 @@
 import type { AssignmentSnapshot, Squad, Supervisor } from '../features/squads/types'
 import type { WorkloadVersion } from '../features/workloads/types'
+import type { WorkLocation } from '../features/profile/types'
 import type { Activity, Client, CollaboratorProfile } from '../shared/types/domain'
 
 const weekdayMinutes = 480
@@ -55,8 +56,15 @@ export const demoWorkloadVersions: WorkloadVersion[] = [{
   id: 'workload-demo-001',
   collaboratorId: demoCollaborator.id,
   dailyMinutes: weekdayMinutes,
-  effectiveFrom: '2020-01-01',
+  effectiveFrom: '2026-07-01',
   status: 'APPROVED',
   createdAt: '2020-01-01T12:00:00.000Z',
   approvedAt: '2020-01-01T12:00:00.000Z',
 }]
+
+export const demoWorkLocation: WorkLocation = {
+  countryCode: 'BR',
+  stateCode: 'SP',
+  city: 'São Paulo',
+  timeZone: 'America/Sao_Paulo',
+}

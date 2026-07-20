@@ -18,6 +18,17 @@ export interface CalendarEvent {
   createdAt: string
 }
 
+export interface Holiday {
+  id: string
+  date: string
+  name: string
+  countryCode: string
+  stateCode?: string
+  city?: string
+  scope: 'NATIONAL' | 'STATE' | 'CITY'
+  source: 'DEMO' | 'OFFICIAL'
+}
+
 export type CalendarVisualState =
   | 'NO_SCHEDULE'
   | 'NO_ENTRY'

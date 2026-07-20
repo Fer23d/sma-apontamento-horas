@@ -3,7 +3,7 @@ import type { CalendarEvent } from './types'
 import type { TimeEntry } from '../time-entries/types'
 import type { TimeOffRequest } from '../time-off/types'
 import type { WorkloadVersion } from '../workloads/types'
-import { calculateDaySummary, calculatePeriodSummary, getCalendarVisualState } from './domain'
+import { calculateDaySummary, calculatePeriodSummary, getCalendarVisualState, getMonthGridDates, shiftMonth } from './domain'
 
 const collaboratorId = 'collaborator-1'
 const workloadVersions: WorkloadVersion[] = [{
@@ -147,5 +147,17 @@ describe('saldos por período e calendário', () => {
     })
     expect(getCalendarVisualState(summary)).toEqual({ state: 'EXCEEDED', label: 'Jornada excedida' })
     expect('approvalStatus' in getCalendarVisualState(summary)).toBe(false)
+  })
+
+  it('gera grade mensal completa de seis semanas iniciada na segunda-feira', () => {
+    const dates = getMonthGridDates('2026-07')
+    expect(dates).toHaveLength(42)
+    expect(dates[0]).toBe('2026-06-29')
+    expect(dates.at(-1)).toBe('2026-08-09')
+  })
+
+  it('navega entre meses atravessando o ano', () => {
+    expect(shiftMonth('2026-01', -1)).toBe('2025-12')
+    expect(shiftMonth('2026-12', 1)).toBe('2027-01')
   })
 })

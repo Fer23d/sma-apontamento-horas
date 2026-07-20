@@ -5,6 +5,7 @@ import { HistoricoPage } from '../pages/HistoricoPage'
 import { LoginPage } from '../pages/LoginPage'
 import { NovoApontamentoPage } from '../pages/NovoApontamentoPage'
 import { PerfilPage } from '../pages/PerfilPage'
+import { FolgasPage } from '../pages/FolgasPage'
 import { ProtectedRoute } from '../features/session/ProtectedRoute'
 import { PublicOnlyRoute } from '../features/session/PublicOnlyRoute'
 
@@ -18,6 +19,7 @@ export function AppRoutes() {
         <Route path="apontamentos/novo" element={<NovoApontamentoPage />} />
         <Route path="apontamentos/:entryId/editar" element={<NovoApontamentoPage />} />
         <Route path="historico" element={<HistoricoPage />} />
+        <Route path="folgas" element={<FolgasPage />} />
         <Route path="perfil" element={<PerfilPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/login" replace />} />
