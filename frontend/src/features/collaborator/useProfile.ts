@@ -1,28 +1,80 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import type { CollaboratorProfile } from '../profile/types'
+import type { AssignmentSnapshot, Squad } from '../squads/types'
+import type { WorkloadChangeRequest, WorkloadVersion } from '../workloads/types'
 import { profileService } from '../../services/profileService'
-import type { CollaboratorProfile } from '../../shared/types/domain'
+import { squadService } from '../../services/squadService'
+import { workloadService } from '../../services/workloadService'
+import { getCorporateToday } from '../../shared/utils/date'
 import { useSession } from '../session/useSession'
+
+type ProfileData = {
+  profile: CollaboratorProfile
+  assignment: AssignmentSnapshot | null
+  squads: Squad[]
+  workloadVersions: WorkloadVersion[]
+  workloadRequests: WorkloadChangeRequest[]
+  currentWorkload: WorkloadVersion | null
+}
+
+type ProfileState = { data: ProfileData | null; isLoading: boolean; error: string | null }
 
 export function useProfile() {
   const { profile: sessionProfile } = useSession()
-  const [profile, setProfile] = useState<CollaboratorProfile | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [state, setState] = useState<ProfileState>({ data: null, isLoading: true, error: null })
+  const [isSaving, setIsSaving] = useState(false)
 
-  useEffect(() => {
-    if (!sessionProfile) return
-    setIsLoading(true)
-    profileService.getById(sessionProfile.id)
-      .then((result) => {
-        setProfile(result)
-        setError(result ? null : 'Perfil profissional não encontrado.')
+  const load = useCallback(async () => {
+    if (!sessionProfile) {
+      setState({ data: null, isLoading: false, error: 'Sessão demonstrativa não encontrada.' })
+      return
+    }
+    setState((current) => ({ ...current, isLoading: true, error: null }))
+    try {
+      const [profile, squads, workloadVersions, workloadRequests] = await Promise.all([
+        profileService.getById(sessionProfile.id),
+        squadService.listActive(),
+        workloadService.listVersions(sessionProfile.id),
+        workloadService.listRequests(sessionProfile.id),
+      ])
+      if (!profile) throw new Error('Perfil profissional não encontrado.')
+      setState({
+        data: {
+          profile,
+          assignment: profileService.resolveAssignment(profile.id),
+          squads,
+          workloadVersions,
+          workloadRequests,
+          currentWorkload: await workloadService.getCurrent(profile.id, getCorporateToday()),
+        },
+        isLoading: false,
+        error: null,
       })
-      .catch((loadError: unknown) => {
-        console.error('Falha ao carregar perfil.', loadError)
-        setError('Não foi possível carregar o perfil profissional.')
-      })
-      .finally(() => setIsLoading(false))
+    } catch (error) {
+      console.error('Falha ao carregar perfil.', error)
+      setState({ data: null, isLoading: false, error: error instanceof Error ? error.message : 'Não foi possível carregar o perfil profissional.' })
+    }
   }, [sessionProfile])
 
-  return { profile, isLoading, error }
+  useEffect(() => { void load() }, [load])
+
+  const runAndReload = useCallback(async (operation: (collaboratorId: string) => Promise<unknown>) => {
+    if (!sessionProfile) throw new Error('Sessão demonstrativa não encontrada.')
+    setIsSaving(true)
+    try {
+      await operation(sessionProfile.id)
+      await load()
+    } finally {
+      setIsSaving(false)
+    }
+  }, [load, sessionProfile])
+
+  return {
+    ...state,
+    isSaving,
+    reload: load,
+    changeSquad: (squadId: string) => runAndReload((collaboratorId) => profileService.changeActiveSquad(collaboratorId, squadId)),
+    createInitialWorkload: (dailyMinutes: number, effectiveFrom: string) => runAndReload((collaboratorId) => workloadService.createInitial(collaboratorId, dailyMinutes, effectiveFrom)),
+    requestWorkloadChange: (input: { requestedDailyMinutes: number; requestedEffectiveFrom: string; justification: string }) => runAndReload((collaboratorId) => workloadService.requestChange(collaboratorId, input)),
+  }
 }

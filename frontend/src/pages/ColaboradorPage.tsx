@@ -7,7 +7,6 @@ import { MonthlyCalendar } from '../features/calendar/MonthlyCalendar'
 import { DayDetails } from '../features/calendar/DayDetails'
 import { useSession } from '../features/session/useSession'
 import { formatMinutes, formatSignedMinutes } from '../features/time-entries/domain'
-import { demoAssignmentSnapshot, demoWorkloadVersions } from '../mocks/demoData'
 import { getCorporateToday, getMonthKey } from '../shared/utils/date'
 
 export function ColaboradorPage() {
@@ -18,12 +17,14 @@ export function ColaboradorPage() {
   const dashboard = useCollaboratorDashboard(selectedDate, monthKey)
 
   if (!profile) return null
-  const dailyMinutes = demoWorkloadVersions.at(-1)?.dailyMinutes ?? 0
+  const contextDescription = dashboard.data
+    ? `${profile.jobTitle} · ${dashboard.data.assignment?.squadName ?? 'Squad não definida'} · Supervisão: ${dashboard.data.assignment?.supervisorName ?? 'não definida'}. Carga vigente ${dashboard.data.currentWorkload ? formatMinutes(dashboard.data.currentWorkload.dailyMinutes) : 'não cadastrada'}.`
+    : `${profile.jobTitle} · Carregando contexto profissional.`
 
   return (
     <PageContainer
       title={`Olá, ${profile.name}`}
-      description={`${profile.jobTitle} · ${demoAssignmentSnapshot.squadName} · Supervisão: ${demoAssignmentSnapshot.supervisorName}. Carga vigente ${formatMinutes(dailyMinutes)}.`}
+      description={contextDescription}
       contained={false}
     >
       <div className="space-y-6">
@@ -44,11 +45,12 @@ export function ColaboradorPage() {
               <SummaryCard label="Projeção futura" value={formatSignedMinutes(dashboard.data.monthSummary.projectedBalanceMinutes)} helper="Separada do saldo real; considera datas futuras visíveis." />
             </div>
 
-            <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Pendências e ações">
+            <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5" aria-label="Pendências e ações">
               <article className="rounded-2xl border border-red-200 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950/30"><p className="text-sm font-bold text-red-900 dark:text-red-100">Dias pendentes</p><p className="mt-2 text-2xl font-extrabold">{dashboard.data.attention.pendingDays}</p></article>
               <article className="rounded-2xl border border-blue-200 bg-blue-50 p-4 dark:border-blue-900 dark:bg-blue-950/30"><p className="text-sm font-bold text-blue-900 dark:text-blue-100">Disponíveis para aprovação</p><p className="mt-2 text-2xl font-extrabold">{dashboard.data.attention.availableForApprovalDays}</p></article>
               <article className="rounded-2xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950/30"><p className="text-sm font-bold text-amber-900 dark:text-amber-100">Correções solicitadas</p><p className="mt-2 text-2xl font-extrabold">{dashboard.data.attention.correctionRequestedDays}</p></article>
               <article className="rounded-2xl border border-violet-200 bg-violet-50 p-4 dark:border-violet-900 dark:bg-violet-950/30"><p className="text-sm font-bold text-violet-900 dark:text-violet-100">Folgas pendentes</p><p className="mt-2 text-2xl font-extrabold">{dashboard.data.pendingTimeOffRequests}</p></article>
+              <article className="rounded-2xl border border-cyan-200 bg-cyan-50 p-4 dark:border-cyan-900 dark:bg-cyan-950/30"><p className="text-sm font-bold text-cyan-900 dark:text-cyan-100">Cargas pendentes</p><p className="mt-2 text-2xl font-extrabold">{dashboard.data.pendingWorkloadRequests}</p></article>
             </section>
 
             {dashboard.data.approvals.some((approval) => approval.status === 'CORRECTION_REQUESTED') && (

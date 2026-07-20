@@ -10,8 +10,11 @@ import { holidayProvider } from '../../services/holidayProvider'
 import { timeEntryService } from '../../services/timeEntryService'
 import { timeOffService } from '../../services/timeOffService'
 import type { TimeOffRequest } from '../time-off/types'
-import { demoWorkLocation, demoWorkloadVersions } from '../../mocks/demoData'
+import type { AssignmentSnapshot } from '../squads/types'
+import type { WorkloadVersion } from '../workloads/types'
 import { eachIsoDate, getCorporateToday, getMonthRange } from '../../shared/utils/date'
+import { profileService } from '../../services/profileService'
+import { workloadService } from '../../services/workloadService'
 import { useSession } from '../session/useSession'
 
 type DashboardData = {
@@ -26,6 +29,9 @@ type DashboardData = {
   approvals: DayApproval[]
   selectedTimeOffRequests: TimeOffRequest[]
   pendingTimeOffRequests: number
+  pendingWorkloadRequests: number
+  assignment: AssignmentSnapshot | null
+  currentWorkload: WorkloadVersion | null
   attention: ReturnType<typeof buildAttentionSummary>
 }
 
@@ -48,14 +54,20 @@ export function useCollaboratorDashboard(selectedDate: string, monthKey: string)
     try {
       const today = getCorporateToday()
       const monthRange = getMonthRange(monthKey)
-      const totalStartDate = demoWorkloadVersions[0]?.effectiveFrom ?? today
+      const [professionalProfile, workloadVersions, workloadRequests] = await Promise.all([
+        profileService.getById(profile.id),
+        workloadService.listVersions(profile.id),
+        workloadService.listRequests(profile.id),
+      ])
+      if (!professionalProfile) throw new Error('Perfil profissional não encontrado.')
+      const totalStartDate = workloadVersions[0]?.effectiveFrom ?? today
       const [monthEntries, totalEntries, monthEvents, totalEvents, monthHolidays, totalHolidays, monthTimeOff, totalTimeOff] = await Promise.all([
         timeEntryService.listByRange(profile.id, monthRange.startDate, monthRange.endDate),
         timeEntryService.listByRange(profile.id, totalStartDate, today),
         calendarEventService.listByRange(profile.id, monthRange.startDate, monthRange.endDate),
         calendarEventService.listByRange(profile.id, totalStartDate, today),
-        holidayProvider.list(demoWorkLocation, monthRange.startDate, monthRange.endDate),
-        holidayProvider.list(demoWorkLocation, totalStartDate, today),
+        holidayProvider.list(professionalProfile.location, monthRange.startDate, monthRange.endDate),
+        holidayProvider.list(professionalProfile.location, totalStartDate, today),
         timeOffService.listByRange(profile.id, monthRange.startDate, monthRange.endDate),
         timeOffService.listApprovedByRange(profile.id, totalStartDate, today),
       ])
@@ -63,11 +75,11 @@ export function useCollaboratorDashboard(selectedDate: string, monthKey: string)
       const totalAllEvents = [...totalEvents, ...holidaysToEvents(profile.id, totalHolidays)]
       const monthSummary = calculatePeriodSummary({
         ...monthRange, today, collaboratorId: profile.id, entries: monthEntries, events: monthAllEvents,
-        timeOffRequests: monthTimeOff, workloadVersions: demoWorkloadVersions,
+        timeOffRequests: monthTimeOff, workloadVersions,
       })
       const totalSummary = calculatePeriodSummary({
         startDate: totalStartDate, endDate: today, today, collaboratorId: profile.id, entries: totalEntries, events: totalAllEvents,
-        timeOffRequests: totalTimeOff, workloadVersions: demoWorkloadVersions,
+        timeOffRequests: totalTimeOff, workloadVersions,
       })
       const calendarDates = eachIsoDate(monthRange.startDate, monthRange.endDate)
       const approvals = await Promise.all(calendarDates.filter((date) => date <= today).map((date) => {
@@ -79,11 +91,11 @@ export function useCollaboratorDashboard(selectedDate: string, monthKey: string)
       const selectedTimeOffRequests = monthTimeOff.filter((request) => request.date === selectedDate && request.status !== 'CANCELLED')
       const selectedSummary = monthSummary.days.find((day) => day.date === selectedDate) ?? calculateDaySummary({
         date: selectedDate, today, collaboratorId: profile.id, entries: selectedEntries, events: selectedEvents,
-        timeOffRequests: monthTimeOff, workloadVersions: demoWorkloadVersions,
+        timeOffRequests: monthTimeOff, workloadVersions,
       })
       const todaySummary = monthKey === today.slice(0, 7)
         ? monthSummary.days.find((day) => day.date === today) ?? selectedSummary
-        : calculateDaySummary({ date: today, today, collaboratorId: profile.id, entries: totalEntries, events: totalAllEvents, timeOffRequests: totalTimeOff, workloadVersions: demoWorkloadVersions })
+        : calculateDaySummary({ date: today, today, collaboratorId: profile.id, entries: totalEntries, events: totalAllEvents, timeOffRequests: totalTimeOff, workloadVersions })
       const selectedApproval = approvals.find((approval) => approval.entryDate === selectedDate)
         ?? await dayApprovalService.getForDate(profile.id, selectedDate, selectedEntries.some((entry) => entry.status === 'ACTIVE'), selectedEntries[0]?.assignmentSnapshot ?? null)
       setState({
@@ -91,6 +103,9 @@ export function useCollaboratorDashboard(selectedDate: string, monthKey: string)
           monthSummary, totalSummary, todaySummary, selectedSummary, calendarDays: monthSummary.days,
           selectedEntries, selectedEvents, selectedTimeOffRequests, selectedApproval, approvals,
           pendingTimeOffRequests: monthTimeOff.filter((request) => request.status === 'PENDING').length,
+          pendingWorkloadRequests: workloadRequests.filter((request) => request.status === 'PENDING').length,
+          assignment: profileService.resolveAssignment(profile.id),
+          currentWorkload: await workloadService.getCurrent(profile.id, today),
           attention: buildAttentionSummary({ today, days: monthSummary.days, approvals }),
         },
         isLoading: false,

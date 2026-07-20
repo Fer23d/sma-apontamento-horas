@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { timeEntryService } from '../../services/timeEntryService'
-import { demoWorkloadVersions } from '../../mocks/demoData'
+import { workloadService } from '../../services/workloadService'
 import type { DailySummary, TimeEntry } from '../../shared/types/domain'
 import { useSession } from '../session/useSession'
 
@@ -19,9 +19,10 @@ export function useDailyDashboard(date: string) {
     if (!profile) return
     setState((current) => ({ ...current, isLoading: true, error: null }))
     try {
+      const workloadVersions = await workloadService.listVersions(profile.id)
       const [entries, summary] = await Promise.all([
         timeEntryService.listByDate(profile.id, date),
-        timeEntryService.getDailySummary(profile.id, date, demoWorkloadVersions),
+        timeEntryService.getDailySummary(profile.id, date, workloadVersions),
       ])
       setState({ entries, summary, isLoading: false, error: null })
     } catch (error) {

@@ -4,8 +4,8 @@ import type { TimeOffRequest } from '../features/time-off/types'
 import { getCorporateToday, isIsoDate } from '../shared/utils/date'
 import { auditService } from './auditService'
 import { notificationService } from './notificationService'
+import { profileService } from './profileService'
 import { createBrowserStorage, type StorageLike } from './storage'
-import { demoAssignmentSnapshot, demoCollaborator } from '../mocks/demoData'
 
 export const TIME_OFF_STORAGE_KEY = 'sma:time-off-requests:v1'
 
@@ -161,7 +161,7 @@ export class LocalTimeOffService {
 
 export const timeOffService = new LocalTimeOffService({
   storage: createBrowserStorage(),
-  resolveAssignment: (collaboratorId) => collaboratorId === demoCollaborator.id ? demoAssignmentSnapshot : null,
+  resolveAssignment: (collaboratorId) => profileService.resolveAssignment(collaboratorId),
   audit: auditService,
   notifications: notificationService,
 })

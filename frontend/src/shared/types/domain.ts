@@ -13,25 +13,7 @@ export type {
   TimeEntryStatus,
   TimeEntryValidationErrors,
 } from '../../features/time-entries/types'
-
-export interface WorkSchedule {
-  mondayMinutes: number
-  tuesdayMinutes: number
-  wednesdayMinutes: number
-  thursdayMinutes: number
-  fridayMinutes: number
-  saturdayMinutes: number
-  sundayMinutes: number
-}
-
-export interface CollaboratorProfile {
-  id: string
-  name: string
-  email: string
-  jobTitle: string
-  squadName: string
-  workSchedule: WorkSchedule
-}
+export type { CollaboratorProfile, WorkLocation } from '../../features/profile/types'
 
 export interface Client {
   id: string

@@ -10,15 +10,10 @@ export const demoCollaborator: CollaboratorProfile = {
   name: 'Colaborador Demonstração',
   email: 'colaborador.demo@sma.local',
   jobTitle: 'Projetista',
-  squadName: 'Engenharia',
-  workSchedule: {
-    mondayMinutes: weekdayMinutes,
-    tuesdayMinutes: weekdayMinutes,
-    wednesdayMinutes: weekdayMinutes,
-    thursdayMinutes: weekdayMinutes,
-    fridayMinutes: weekdayMinutes,
-    saturdayMinutes: 0,
-    sundayMinutes: 0,
+  active: true,
+  activeSquadId: 'squad-automation',
+  location: {
+    countryCode: 'BR', stateCode: 'SP', city: 'São Paulo', timeZone: 'America/Sao_Paulo',
   },
 }
 

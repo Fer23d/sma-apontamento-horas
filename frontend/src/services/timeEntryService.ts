@@ -9,7 +9,7 @@ import { isIsoDate } from '../shared/utils/date'
 import { createBrowserStorage, type StorageLike } from './storage'
 import { auditService } from './auditService'
 import { dayApprovalService } from './dayApprovalService'
-import { demoAssignmentSnapshot, demoCollaborator } from '../mocks/demoData'
+import { profileService } from './profileService'
 import {
   LEGACY_V2_TIME_ENTRY_STORAGE_KEY,
   migrateV2TimeEntries,
@@ -427,7 +427,7 @@ export class LocalStorageTimeEntryService implements TimeEntryService {
 
 export const timeEntryService = new LocalStorageTimeEntryService({
   storage: createBrowserStorage(),
-  resolveAssignment: (collaboratorId) => collaboratorId === demoCollaborator.id ? demoAssignmentSnapshot : null,
+  resolveAssignment: (collaboratorId) => profileService.resolveAssignment(collaboratorId),
   mutationPolicy: dayApprovalService,
   audit: auditService,
 })

@@ -1,12 +1,8 @@
 import type {
   Activity,
   Client,
-  CollaboratorProfile,
   CreateTimeEntryData,
-  DailySummary,
-  TimeEntry,
   TimeEntryValidationErrors,
-  WorkSchedule,
 } from '../../shared/types/domain'
 import { compareIsoDates } from '../../shared/utils/date'
 
@@ -50,52 +46,6 @@ function isValidIsoDate(value: string) {
   return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day
 }
 
-export function getExpectedMinutesForDate(date: string, schedule: WorkSchedule) {
-  if (!isValidIsoDate(date)) return 0
-  const [year, month, day] = date.split('-').map(Number)
-  const weekday = new Date(year, month - 1, day, 12).getDay()
-  const minutesByDay = [
-    schedule.sundayMinutes,
-    schedule.mondayMinutes,
-    schedule.tuesdayMinutes,
-    schedule.wednesdayMinutes,
-    schedule.thursdayMinutes,
-    schedule.fridayMinutes,
-    schedule.saturdayMinutes,
-  ]
-  return minutesByDay[weekday]
-}
-
-export function sumActiveMinutes(entries: TimeEntry[], collaboratorId: string, date: string) {
-  return entries.reduce((total, entry) => {
-    if (entry.status !== 'ACTIVE' || entry.collaboratorId !== collaboratorId || entry.entryDate !== date) return total
-    return total + entry.durationMinutes
-  }, 0)
-}
-
-export function calculateDailySummary(
-  date: string,
-  schedule: WorkSchedule,
-  entries: TimeEntry[],
-  collaboratorId: string,
-): DailySummary {
-  const expectedMinutes = getExpectedMinutesForDate(date, schedule)
-  const workedMinutes = sumActiveMinutes(entries, collaboratorId, date)
-  const regularMinutes = Math.min(workedMinutes, expectedMinutes)
-  const extraMinutes = Math.max(workedMinutes - expectedMinutes, 0)
-  const missingMinutes = Math.max(expectedMinutes - workedMinutes, 0)
-
-  return {
-    date,
-    expectedMinutes,
-    workedMinutes,
-    regularMinutes,
-    extraMinutes,
-    missingMinutes,
-    balanceMinutes: workedMinutes - expectedMinutes,
-  }
-}
-
 export function validateTimeEntry(
   data: CreateTimeEntryData,
   clients: Client[],
@@ -118,8 +68,4 @@ export function validateTimeEntry(
   if (!isValidDuration(data.durationMinutes)) errors.durationMinutes = 'A duração deve ser maior que zero e de no máximo 24 horas.'
   if (!data.details.trim()) errors.details = 'Descreva o trabalho realizado.'
   return errors
-}
-
-export function getDailyTargetLabel(profile: CollaboratorProfile) {
-  return formatMinutes(profile.workSchedule.mondayMinutes)
 }
