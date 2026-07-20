@@ -1,4 +1,18 @@
-export type TimeEntryStatus = 'ACTIVE' | 'CANCELLED'
+import type {
+  CreateTimeEntryData,
+  TimeEntry,
+  TimeEntryStatus,
+  TimeEntryValidationErrors,
+} from '../../features/time-entries/types'
+
+export type {
+  CreateTimeEntryData,
+  DisciplineCode,
+  DocumentTypeCode,
+  TimeEntry,
+  TimeEntryStatus,
+  TimeEntryValidationErrors,
+} from '../../features/time-entries/types'
 
 export interface WorkSchedule {
   mondayMinutes: number
@@ -31,26 +45,6 @@ export interface Activity {
   active: boolean
 }
 
-export interface TimeEntry {
-  id: string
-  collaboratorId: string
-  entryDate: string
-  clientId: string
-  projectCode: string
-  activityId: string
-  durationMinutes: number
-  details: string
-  status: TimeEntryStatus
-  version: number
-  createdAt: string
-  updatedAt: string
-}
-
-export type CreateTimeEntryData = Pick<
-  TimeEntry,
-  'entryDate' | 'clientId' | 'projectCode' | 'activityId' | 'durationMinutes' | 'details'
->
-
 export interface DailySummary {
   date: string
   expectedMinutes: number
@@ -61,4 +55,7 @@ export interface DailySummary {
   balanceMinutes: number
 }
 
-export type TimeEntryValidationErrors = Partial<Record<keyof CreateTimeEntryData, string>>
+export type CurrentTimeEntry = TimeEntry
+export type CurrentTimeEntryStatus = TimeEntryStatus
+export type CurrentCreateTimeEntryData = CreateTimeEntryData
+export type CurrentTimeEntryValidationErrors = TimeEntryValidationErrors

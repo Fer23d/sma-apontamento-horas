@@ -1,8 +1,16 @@
 import { describe, expect, it, vi } from 'vitest'
-import { LocalStorageTimeEntryService, type StorageLike } from './timeEntryService'
+import type { AuditEvent } from '../features/audit/types'
+import type { AssignmentSnapshot } from '../features/squads/types'
+import type { CreateTimeEntryData } from '../features/time-entries/types'
+import {
+  LEGACY_V2_TIME_ENTRY_STORAGE_KEY,
+  LocalStorageTimeEntryService,
+  TIME_ENTRY_STORAGE_KEY,
+  type StorageLike,
+} from './timeEntryService'
 
 class MemoryStorage implements StorageLike {
-  private values = new Map<string, string>()
+  protected values = new Map<string, string>()
   readonly writes = new Map<string, number>()
 
   getItem(key: string) {
@@ -15,223 +23,302 @@ class MemoryStorage implements StorageLike {
   }
 }
 
-class CorruptingV2Storage extends MemoryStorage {
+class CorruptingV3Storage extends MemoryStorage {
   setItem(key: string, value: string) {
-    super.setItem(key, key === v2Key ? '{invalid-v2' : value)
+    super.setItem(key, key === TIME_ENTRY_STORAGE_KEY ? '{invalid-v3' : value)
   }
 }
 
-const v1Key = 'sma:time-entries:v1'
-const v2Key = 'sma:time-entries:v2'
+const collaboratorId = 'demo-collaborator-001'
+const assignment: AssignmentSnapshot = {
+  squadId: 'squad-automation',
+  squadName: 'Engenharia de Automação',
+  supervisorId: 'supervisor-demo-001',
+  supervisorName: 'Supervisora Demonstração',
+}
 
-function legacyEntry(projectId: unknown, overrides: Record<string, unknown> = {}) {
+const validData: CreateTimeEntryData = {
+  entryDate: '2026-07-13',
+  clientId: 'client-industrial-alpha',
+  projectCode: 'Ab-001/2.03',
+  activityId: 'activity-project-design',
+  disciplineCode: '—',
+  documentTypeCode: '—',
+  durationMinutes: 60,
+  details: 'Teste de persistência',
+}
+
+function v2Entry(overrides: Record<string, unknown> = {}) {
   return {
-    id: 'legacy-entry-1',
-    collaboratorId: 'demo-collaborator-001',
+    id: 'legacy-v2-entry-1',
+    collaboratorId,
     entryDate: '2026-07-13',
     clientId: 'client-industrial-alpha',
-    projectId,
+    projectCode: 'LEG-001',
     activityId: 'activity-project-design',
     durationMinutes: 60,
-    details: 'Registro legado',
+    details: 'Registro legado v2',
     status: 'ACTIVE',
     version: 1,
     createdAt: '2026-07-13T12:00:00.000Z',
     updatedAt: '2026-07-13T12:00:00.000Z',
+    progressPercent: 80,
+    projectDocumentId: 'LD-001',
     ...overrides,
   }
 }
 
-function currentEntry(projectCode: string, overrides: Record<string, unknown> = {}) {
-  const { projectId: _projectId, ...entry } = legacyEntry(undefined, overrides)
-  return { ...entry, projectCode }
+function v3Entry(overrides: Record<string, unknown> = {}) {
+  return {
+    ...v2Entry(),
+    disciplineCode: '—',
+    documentTypeCode: '—',
+    assignmentSnapshot: assignment,
+    ...overrides,
+  }
 }
 
-describe('LocalStorageTimeEntryService', () => {
-  it('não quebra quando o storage contém JSON inválido', async () => {
-    const storage = new MemoryStorage()
-    storage.setItem(v1Key, '{invalid')
-    const onStorageError = vi.fn()
-    const service = new LocalStorageTimeEntryService({ storage, onStorageError })
+function buildService(storage: StorageLike, overrides: Record<string, unknown> = {}) {
+  return new LocalStorageTimeEntryService({
+    storage,
+    createId: () => 'stable-entry-id',
+    now: () => '2026-07-20T12:00:00.000Z',
+    resolveAssignment: () => assignment,
+    mutationPolicy: { canMutate: async () => true },
+    ...overrides,
+  })
+}
 
-    await expect(service.listByDate('demo-collaborator-001', '2026-07-13')).resolves.toEqual([])
+describe('migração segura de apontamentos v2 para v3', () => {
+  it('migra campos preservados, preenche não aplicável e remove campos descontinuados', async () => {
+    const storage = new MemoryStorage()
+    storage.setItem(LEGACY_V2_TIME_ENTRY_STORAGE_KEY, JSON.stringify({
+      version: 2,
+      entriesByCollaborator: { [collaboratorId]: [v2Entry()] },
+    }))
+
+    const [migrated] = await buildService(storage).listByDate(collaboratorId, '2026-07-13')
+
+    expect(migrated).toMatchObject({
+      id: 'legacy-v2-entry-1',
+      projectCode: 'LEG-001',
+      disciplineCode: '—',
+      documentTypeCode: '—',
+      assignmentSnapshot: assignment,
+    })
+    expect(migrated).not.toHaveProperty('progressPercent')
+    expect(migrated).not.toHaveProperty('projectDocumentId')
+  })
+
+  it('não inventa squad para colaborador legado desconhecido', async () => {
+    const storage = new MemoryStorage()
+    storage.setItem(LEGACY_V2_TIME_ENTRY_STORAGE_KEY, JSON.stringify({
+      version: 2,
+      entriesByCollaborator: { stranger: [v2Entry({ collaboratorId: 'stranger' })] },
+    }))
+
+    const [migrated] = await buildService(storage).listByDate('stranger', '2026-07-13')
+
+    expect(migrated.assignmentSnapshot).toBeNull()
+  })
+
+  it('é idempotente, não duplica e prioriza uma v3 válida preexistente', async () => {
+    const storage = new MemoryStorage()
+    const originalV2 = JSON.stringify({ version: 2, entriesByCollaborator: { [collaboratorId]: [v2Entry()] } })
+    storage.setItem(LEGACY_V2_TIME_ENTRY_STORAGE_KEY, originalV2)
+
+    const firstRead = await buildService(storage).listByDate(collaboratorId, '2026-07-13')
+    const persistedV3 = storage.getItem(TIME_ENTRY_STORAGE_KEY)
+    const secondRead = await buildService(storage).listByDate(collaboratorId, '2026-07-13')
+
+    expect(firstRead).toHaveLength(1)
+    expect(secondRead).toHaveLength(1)
+    expect(storage.getItem(TIME_ENTRY_STORAGE_KEY)).toBe(persistedV3)
+    expect(storage.writes.get(TIME_ENTRY_STORAGE_KEY)).toBe(1)
+    expect(storage.getItem(LEGACY_V2_TIME_ENTRY_STORAGE_KEY)).toBe(originalV2)
+  })
+
+  it('não mistura registros de v2 quando v3 válida já existe', async () => {
+    const storage = new MemoryStorage()
+    storage.setItem(LEGACY_V2_TIME_ENTRY_STORAGE_KEY, JSON.stringify({ version: 2, entriesByCollaborator: { [collaboratorId]: [v2Entry()] } }))
+    storage.setItem(TIME_ENTRY_STORAGE_KEY, JSON.stringify({ version: 3, entriesByCollaborator: { [collaboratorId]: [v3Entry({ id: 'v3-only', projectCode: 'V3-ONLY' })] } }))
+
+    const entries = await buildService(storage).listByDate(collaboratorId, '2026-07-13')
+
+    expect(entries.map((entry) => entry.projectCode)).toEqual(['V3-ONLY'])
+    expect(storage.writes.get(TIME_ENTRY_STORAGE_KEY)).toBe(1)
+  })
+
+  it('preserva registros válidos quando outro registro v2 é inválido', async () => {
+    const storage = new MemoryStorage()
+    storage.setItem(LEGACY_V2_TIME_ENTRY_STORAGE_KEY, JSON.stringify({
+      version: 2,
+      entriesByCollaborator: { [collaboratorId]: [v2Entry(), v2Entry({ id: 'invalid', durationMinutes: 'x' })] },
+    }))
+
+    const entries = await buildService(storage).listByDate(collaboratorId, '2026-07-13')
+
+    expect(entries).toHaveLength(1)
+    expect(entries[0].id).toBe('legacy-v2-entry-1')
+  })
+
+  it('trata JSON inválido sem quebrar nem alterar a v2', async () => {
+    const storage = new MemoryStorage()
+    const invalidV2 = '{invalid'
+    storage.setItem(LEGACY_V2_TIME_ENTRY_STORAGE_KEY, invalidV2)
+    const onStorageError = vi.fn()
+
+    await expect(buildService(storage, { onStorageError }).listByDate(collaboratorId, '2026-07-13')).resolves.toEqual([])
+    expect(storage.getItem(LEGACY_V2_TIME_ENTRY_STORAGE_KEY)).toBe(invalidV2)
+    expect(storage.getItem(TIME_ENTRY_STORAGE_KEY)).toBeNull()
     expect(onStorageError).toHaveBeenCalledOnce()
   })
 
-  it('persiste e isola apontamentos por colaborador', async () => {
-    const storage = new MemoryStorage()
-    const service = new LocalStorageTimeEntryService({
-      storage,
-      createId: () => 'stable-entry-id',
-      now: () => '2026-07-13T12:00:00.000Z',
-    })
-    await service.create('demo-collaborator-001', {
-      entryDate: '2026-07-13',
-      clientId: 'client-industrial-alpha',
-      projectCode: 'Ab-001/2.03',
-      activityId: 'activity-project-design',
-      durationMinutes: 60,
-      details: 'Teste de persistência',
-    })
-
-    const ownEntries = await service.listByDate('demo-collaborator-001', '2026-07-13')
-    expect(ownEntries).toHaveLength(1)
-    expect(ownEntries[0].id).toBe('stable-entry-id')
-    expect(ownEntries[0].projectCode).toBe('Ab-001/2.03')
-    await expect(service.listByDate('other-user', '2026-07-13')).resolves.toEqual([])
-  })
-
-  it('descarta registro armazenado no grupo de outro colaborador', async () => {
-    const storage = new MemoryStorage()
-    storage.setItem(v2Key, JSON.stringify({
-      version: 2,
-      entriesByCollaborator: {
-        'demo-collaborator-001': [{
-          id: 'foreign-entry',
-          collaboratorId: 'other-user',
-          entryDate: '2026-07-13',
-          clientId: 'client-industrial-alpha',
-          projectCode: 'ALF-001',
-          activityId: 'activity-project-design',
-          durationMinutes: 60,
-          details: 'Registro em grupo incorreto',
-          status: 'ACTIVE',
-          version: 1,
-          createdAt: '2026-07-13T12:00:00.000Z',
-          updatedAt: '2026-07-13T12:00:00.000Z',
-        }],
-      },
-    }))
-    const service = new LocalStorageTimeEntryService({ storage })
-
-    await expect(service.listByDate('demo-collaborator-001', '2026-07-13')).resolves.toEqual([])
-  })
-
-  it('remove somente espaços externos antes de persistir e preserva o restante do código', async () => {
-    const storage = new MemoryStorage()
-    const service = new LocalStorageTimeEntryService({ storage, createId: () => 'trimmed', now: () => '2026-07-13T12:00:00.000Z' })
-
-    await service.create('demo-collaborator-001', {
-      entryDate: '2026-07-13',
-      clientId: 'client-industrial-alpha',
-      projectCode: '  Ab-00  1/2.03  ',
-      activityId: 'activity-project-design',
-      durationMinutes: 60,
-      details: 'Teste',
-    })
-
-    const [saved] = await service.listByDate('demo-collaborator-001', '2026-07-13')
-    expect(saved.projectCode).toBe('Ab-00  1/2.03')
-  })
-
-  it('migra projectId conhecido para o código demonstrativo correspondente', async () => {
-    const storage = new MemoryStorage()
-    storage.setItem(v1Key, JSON.stringify({ version: 1, entriesByCollaborator: { 'demo-collaborator-001': [legacyEntry('project-alpha-automation')] } }))
-    const service = new LocalStorageTimeEntryService({ storage })
-
-    const entries = await service.listByDate('demo-collaborator-001', '2026-07-13')
-
-    expect(entries).toHaveLength(1)
-    expect(entries[0].projectCode).toBe('ALF-001')
-    expect(storage.getItem(v2Key)).not.toBeNull()
-  })
-
-  it('preserva projectId desconhecido como projectCode', async () => {
-    const storage = new MemoryStorage()
-    storage.setItem(v1Key, JSON.stringify({ version: 1, entriesByCollaborator: { 'demo-collaborator-001': [legacyEntry('LEGADO-X/007')] } }))
-    const service = new LocalStorageTimeEntryService({ storage })
-
-    const [entry] = await service.listByDate('demo-collaborator-001', '2026-07-13')
-
-    expect(entry.projectCode).toBe('LEGADO-X/007')
-  })
-
-  it('é idempotente e não duplica registros em execuções repetidas', async () => {
-    const storage = new MemoryStorage()
-    const originalV1 = JSON.stringify({ version: 1, entriesByCollaborator: { 'demo-collaborator-001': [legacyEntry('project-alpha-automation')] } })
-    storage.setItem(v1Key, originalV1)
-
-    await new LocalStorageTimeEntryService({ storage }).listByDate('demo-collaborator-001', '2026-07-13')
-    const v2AfterFirstMigration = storage.getItem(v2Key)
-    const secondRead = await new LocalStorageTimeEntryService({ storage }).listByDate('demo-collaborator-001', '2026-07-13')
-
-    expect(secondRead).toHaveLength(1)
-    expect(storage.getItem(v2Key)).toBe(v2AfterFirstMigration)
-    expect(storage.writes.get(v2Key)).toBe(1)
-    expect(storage.getItem(v1Key)).toBe(originalV1)
-  })
-
-  it('prioriza uma v2 válida e não mistura registros da v1', async () => {
-    const storage = new MemoryStorage()
-    storage.setItem(v1Key, JSON.stringify({ version: 1, entriesByCollaborator: { 'demo-collaborator-001': [legacyEntry('project-alpha-automation')] } }))
-    storage.setItem(v2Key, JSON.stringify({ version: 2, entriesByCollaborator: { 'demo-collaborator-001': [currentEntry('V2-ONLY')] } }))
-    const service = new LocalStorageTimeEntryService({ storage })
-
-    const entries = await service.listByDate('demo-collaborator-001', '2026-07-13')
-
-    expect(entries.map((entry) => entry.projectCode)).toEqual(['V2-ONLY'])
-  })
-
-  it('preserva registros válidos quando outro registro legado é inválido', async () => {
-    const storage = new MemoryStorage()
-    storage.setItem(v1Key, JSON.stringify({
-      version: 1,
-      entriesByCollaborator: {
-        'demo-collaborator-001': [legacyEntry('project-alpha-automation'), legacyEntry(null, { id: 'invalid' })],
-      },
-    }))
-    const service = new LocalStorageTimeEntryService({ storage })
-
-    const entries = await service.listByDate('demo-collaborator-001', '2026-07-13')
-
-    expect(entries).toHaveLength(1)
-    expect(entries[0].projectCode).toBe('ALF-001')
-  })
-
-  it('retorna vazio e preserva v1 quando a v2 gravada não pode ser validada', async () => {
-    const storage = new CorruptingV2Storage()
-    const originalV1 = JSON.stringify({ version: 1, entriesByCollaborator: { 'demo-collaborator-001': [legacyEntry('project-alpha-automation')] } })
-    storage.setItem(v1Key, originalV1)
+  it('só conclui depois de gravar, reler e validar a v3', async () => {
+    const storage = new CorruptingV3Storage()
+    const originalV2 = JSON.stringify({ version: 2, entriesByCollaborator: { [collaboratorId]: [v2Entry()] } })
+    storage.setItem(LEGACY_V2_TIME_ENTRY_STORAGE_KEY, originalV2)
     const onStorageError = vi.fn()
-    const service = new LocalStorageTimeEntryService({ storage, onStorageError })
 
-    const entries = await service.listByDate('demo-collaborator-001', '2026-07-13')
+    const entries = await buildService(storage, { onStorageError }).listByDate(collaboratorId, '2026-07-13')
 
     expect(entries).toEqual([])
-    expect(storage.getItem(v1Key)).toBe(originalV1)
-    expect(onStorageError).toHaveBeenCalled()
+    expect(storage.getItem(LEGACY_V2_TIME_ENTRY_STORAGE_KEY)).toBe(originalV2)
+    expect(onStorageError).toHaveBeenCalledOnce()
   })
+})
 
-  it('não sobrescreve uma v2 inválida ao tentar criar novo registro', async () => {
+describe('comandos e consultas de apontamento', () => {
+  it('cria com snapshot, trim externo e preservação dos caracteres internos', async () => {
     const storage = new MemoryStorage()
-    const invalidV2 = '{invalid-v2'
-    storage.setItem(v2Key, invalidV2)
-    const service = new LocalStorageTimeEntryService({ storage, onStorageError: vi.fn() })
+    const service = buildService(storage)
 
-    await expect(service.create('demo-collaborator-001', {
-      entryDate: '2026-07-13',
-      clientId: 'client-industrial-alpha',
-      projectCode: 'NEW-001',
-      activityId: 'activity-project-design',
-      durationMinutes: 60,
-      details: 'Não deve ser gravado',
-    })).rejects.toThrow('Não foi possível preparar o armazenamento local para gravação.')
-    expect(storage.getItem(v2Key)).toBe(invalidV2)
-  })
-
-  it('persiste e relê projectCode após nova instância do service', async () => {
-    const storage = new MemoryStorage()
-    await new LocalStorageTimeEntryService({ storage, createId: () => 'reload-entry' }).create('demo-collaborator-001', {
-      entryDate: '2026-07-13',
-      clientId: 'client-industrial-alpha',
-      projectCode: 'Reload-001',
-      activityId: 'activity-project-design',
-      durationMinutes: 60,
-      details: 'Persistência após reload',
+    const created = await service.create(collaboratorId, {
+      ...validData,
+      projectCode: '  Ab-00  1/2.03  ',
+      details: '  Entrega concluída  ',
     })
 
-    const [entry] = await new LocalStorageTimeEntryService({ storage }).listByDate('demo-collaborator-001', '2026-07-13')
+    expect(created).toMatchObject({
+      id: 'stable-entry-id',
+      projectCode: 'Ab-00  1/2.03',
+      details: 'Entrega concluída',
+      assignmentSnapshot: assignment,
+      status: 'ACTIVE',
+      version: 1,
+    })
+  })
 
-    expect(entry.projectCode).toBe('Reload-001')
+  it('recusa criação sem squad ativa', async () => {
+    const storage = new MemoryStorage()
+    const service = buildService(storage, { resolveAssignment: () => null })
+    await expect(service.create(collaboratorId, validData)).rejects.toThrow('squad ativa')
+  })
+
+  it('edita preservando identidade e criação, incrementa versão e exige motivo', async () => {
+    const storage = new MemoryStorage()
+    const service = buildService(storage)
+    const created = await service.create(collaboratorId, validData)
+
+    await expect(service.update(collaboratorId, created.id, created.version, { ...validData, durationMinutes: 120 }, '  ')).rejects.toThrow('motivo')
+    const updated = await service.update(collaboratorId, created.id, created.version, { ...validData, durationMinutes: 120 }, 'Detalhamento corrigido')
+
+    expect(updated).toMatchObject({ id: created.id, createdAt: created.createdAt, durationMinutes: 120, version: 2, lastEditReason: 'Detalhamento corrigido' })
+  })
+
+  it('recusa conflito de versão', async () => {
+    const storage = new MemoryStorage()
+    const service = buildService(storage)
+    const created = await service.create(collaboratorId, validData)
+    await expect(service.update(collaboratorId, created.id, 99, validData, 'Correção')).rejects.toThrow('versão')
+  })
+
+  it('duplica com novo ID, versão 1, snapshot atual e referência à origem', async () => {
+    const storage = new MemoryStorage()
+    let nextId = 0
+    const service = buildService(storage, { createId: () => `id-${++nextId}` })
+    const created = await service.create(collaboratorId, validData)
+
+    const duplicate = await service.duplicate(collaboratorId, created.id, created.version, {
+      entryDate: '2026-07-14',
+      durationMinutes: 90,
+    })
+
+    expect(duplicate.id).not.toBe(created.id)
+    expect(duplicate).toMatchObject({ sourceEntryId: created.id, entryDate: '2026-07-14', durationMinutes: 90, version: 1, status: 'ACTIVE', assignmentSnapshot: assignment })
+  })
+
+  it('cancela logicamente, preserva o registro e o retira do saldo', async () => {
+    const storage = new MemoryStorage()
+    const service = buildService(storage)
+    const created = await service.create(collaboratorId, validData)
+    await expect(service.cancel(collaboratorId, created.id, created.version, '  ')).rejects.toThrow('motivo')
+
+    const cancelled = await service.cancel(collaboratorId, created.id, created.version, 'Lançamento duplicado')
+    const summary = await service.getDailySummary(collaboratorId, validData.entryDate, [])
+
+    expect(cancelled).toMatchObject({ status: 'CANCELLED', cancelReason: 'Lançamento duplicado', version: 2 })
+    expect(await service.listByDate(collaboratorId, validData.entryDate)).toHaveLength(1)
+    expect(summary.workedMinutes).toBe(0)
+  })
+
+  it('bloqueia mutação quando a política informa dia aprovado', async () => {
+    const storage = new MemoryStorage()
+    const service = buildService(storage, { mutationPolicy: { canMutate: async () => false } })
+    await expect(service.create(collaboratorId, validData)).rejects.toThrow('somente leitura')
+  })
+
+  it('isola propriedade e não permite editar registro de outro colaborador', async () => {
+    const storage = new MemoryStorage()
+    const service = buildService(storage)
+    const created = await service.create(collaboratorId, validData)
+
+    await expect(service.update('other', created.id, 1, validData, 'Tentativa indevida')).rejects.toThrow('não encontrado')
+    await expect(service.listByDate('other', validData.entryDate)).resolves.toEqual([])
+  })
+
+  it('pagina e filtra sem expor registros de outro colaborador', async () => {
+    const storage = new MemoryStorage()
+    let nextId = 0
+    const service = buildService(storage, { createId: () => `entry-${++nextId}` })
+    await service.create(collaboratorId, validData)
+    await service.create(collaboratorId, { ...validData, entryDate: '2026-07-14', clientId: 'client-energy-beta', projectCode: 'BET-001' })
+    await service.create(collaboratorId, { ...validData, entryDate: '2026-07-15', projectCode: 'SMA-003' })
+
+    const firstPage = await service.list({ collaboratorId, startDate: '2026-07-01', endDate: '2026-07-31', pageSize: 2 })
+    const filtered = await service.list({ collaboratorId, startDate: '2026-07-01', endDate: '2026-07-31', pageSize: 10, filters: { clientId: 'client-energy-beta' } })
+
+    expect(firstPage.items).toHaveLength(2)
+    expect(firstPage.nextCursor).toBe('2')
+    expect((await service.list({ collaboratorId, startDate: '2026-07-01', endDate: '2026-07-31', pageSize: 2, cursor: firstPage.nextCursor ?? undefined })).items).toHaveLength(1)
+    expect(filtered.items.map((item) => item.projectCode)).toEqual(['BET-001'])
+  })
+
+  it('persiste e relê após nova instância do service', async () => {
+    const storage = new MemoryStorage()
+    await buildService(storage).create(collaboratorId, validData)
+    const [reloaded] = await buildService(storage).listByDate(collaboratorId, validData.entryDate)
+    expect(reloaded.projectCode).toBe(validData.projectCode)
+  })
+
+  it('registra auditoria para criação, edição, duplicação e cancelamento', async () => {
+    const storage = new MemoryStorage()
+    const events: AuditEvent[] = []
+    let nextId = 0
+    const service = buildService(storage, {
+      createId: () => `id-${++nextId}`,
+      audit: { record: async (event: AuditEvent) => { events.push(event) } },
+    })
+    const created = await service.create(collaboratorId, validData)
+    const updated = await service.update(collaboratorId, created.id, 1, validData, 'Ajuste')
+    await service.duplicate(collaboratorId, updated.id, 2, {})
+    await service.cancel(collaboratorId, updated.id, 2, 'Cancelamento')
+
+    expect(events.map((event) => event.type)).toEqual([
+      'TIME_ENTRY_CREATED',
+      'TIME_ENTRY_EDITED',
+      'TIME_ENTRY_DUPLICATED',
+      'TIME_ENTRY_CANCELLED',
+    ])
   })
 })

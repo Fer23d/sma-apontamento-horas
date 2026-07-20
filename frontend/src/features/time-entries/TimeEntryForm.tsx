@@ -21,6 +21,8 @@ export function TimeEntryForm() {
   const [clientId, setClientId] = useState('')
   const [projectCode, setProjectCode] = useState('')
   const [activityId, setActivityId] = useState('')
+  const [disciplineCode, setDisciplineCode] = useState<CreateTimeEntryData['disciplineCode'] | ''>('')
+  const [documentTypeCode, setDocumentTypeCode] = useState<CreateTimeEntryData['documentTypeCode'] | ''>('')
   const [hours, setHours] = useState('')
   const [minutes, setMinutes] = useState('')
   const [details, setDetails] = useState('')
@@ -42,6 +44,8 @@ export function TimeEntryForm() {
       clientId,
       projectCode: projectCode.trim(),
       activityId,
+      disciplineCode: disciplineCode as CreateTimeEntryData['disciplineCode'],
+      documentTypeCode: documentTypeCode as CreateTimeEntryData['documentTypeCode'],
       durationMinutes: hoursAndMinutesToMinutes(durationHours, durationRemainderMinutes),
       details,
     }
@@ -59,6 +63,8 @@ export function TimeEntryForm() {
       setClientId('')
       setProjectCode('')
       setActivityId('')
+      setDisciplineCode('')
+      setDocumentTypeCode('')
       setHours('')
       setMinutes('')
       setDetails('')
@@ -129,6 +135,33 @@ export function TimeEntryForm() {
             {demoActivities.filter((activity) => activity.active).map((activity) => <option key={activity.id} value={activity.id}>{activity.name}</option>)}
           </select>
           <FieldError id="activity-error" message={errors.activityId} />
+        </div>
+
+        <div>
+          <label htmlFor="discipline" className="text-sm font-bold text-slate-800 dark:text-slate-200">Disciplina</label>
+          <select id="discipline" value={disciplineCode} onChange={(event) => setDisciplineCode(event.target.value as CreateTimeEntryData['disciplineCode'])} className={fieldClassName} aria-invalid={Boolean(errors.disciplineCode)} aria-describedby={errors.disciplineCode ? 'discipline-error' : undefined}>
+            <option value="">Selecione uma disciplina</option>
+            <option value="—">— — Não se aplica</option>
+            <option value="A">A — Automação</option>
+            <option value="E">E — Elétrica</option>
+          </select>
+          <FieldError id="discipline-error" message={errors.disciplineCode} />
+        </div>
+
+        <div>
+          <label htmlFor="document-type" className="text-sm font-bold text-slate-800 dark:text-slate-200">Tipo de documento</label>
+          <select id="document-type" value={documentTypeCode} onChange={(event) => setDocumentTypeCode(event.target.value as CreateTimeEntryData['documentTypeCode'])} className={fieldClassName} aria-invalid={Boolean(errors.documentTypeCode)} aria-describedby={errors.documentTypeCode ? 'document-type-error' : undefined}>
+            <option value="">Selecione um tipo</option>
+            {[
+              ['—', '— — Não se aplica'], ['RN', 'RN — Reunião'], ['GR', 'GR — Gerenciamento'], ['G', 'G — Geral'],
+              ['FD', 'FD — Folha de Dados'], ['DE', 'DE — Desenho'], ['LM', 'LM — Lista de Material'], ['DI', 'DI — Diagrama'],
+              ['LC', 'LC — Lista de Cabos'], ['LI', 'LI — Lista de Instrumentos'], ['ET', 'ET — Especificação Técnica'],
+              ['MC', 'MC — Memória de Cálculo'], ['MO', 'MO — Modelo 3D'], ['MD', 'MD — Memorial Descritivo'],
+              ['FG', 'FG — Fluxograma'], ['LA', 'LA — Lista de Cargas'], ['ES', 'ES — Relação de Entradas e Saídas'],
+              ['CF', 'CF — Arquitetura de Rede'],
+            ].map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+          </select>
+          <FieldError id="document-type-error" message={errors.documentTypeCode} />
         </div>
       </div>
 

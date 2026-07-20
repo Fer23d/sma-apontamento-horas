@@ -107,6 +107,10 @@ export function validateTimeEntry(
   if (!projectCode) errors.projectCode = 'Informe o número do projeto.'
   else if (projectCode.length > MAX_PROJECT_CODE_LENGTH) errors.projectCode = 'O número do projeto deve ter no máximo 80 caracteres.'
   if (!activities.some((activity) => activity.id === data.activityId && activity.active)) errors.activityId = 'Selecione uma atividade ativa.'
+  if (!['—', 'A', 'E'].includes(data.disciplineCode)) errors.disciplineCode = 'Selecione uma disciplina.'
+  if (!['—', 'RN', 'GR', 'G', 'FD', 'DE', 'LM', 'DI', 'LC', 'LI', 'ET', 'MC', 'MO', 'MD', 'FG', 'LA', 'ES', 'CF'].includes(data.documentTypeCode)) {
+    errors.documentTypeCode = 'Selecione um tipo de documento.'
+  }
   if (!isValidDuration(data.durationMinutes)) errors.durationMinutes = 'A duração deve ser maior que zero e de no máximo 24 horas.'
   if (!data.details.trim()) errors.details = 'Descreva o trabalho realizado.'
   return errors
