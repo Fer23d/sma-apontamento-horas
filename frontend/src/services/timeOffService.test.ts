@@ -87,6 +87,18 @@ describe('LocalTimeOffService', () => {
     expect(notifications.map((notification) => notification.type)).toEqual(['TIME_OFF_CANCELLED'])
   })
 
+  it('permite que somente o supervisor do snapshot aprove a folga e registra auditoria', async () => {
+    const storage = new MemoryStorage()
+    const { service, audits } = buildService(storage)
+    const created = await service.create('collaborator-1', { date: '2026-07-25', reason: 'Compromisso' })
+
+    await expect(service.approve('outro-supervisor', created.id)).rejects.toThrow('supervisor')
+    const approved = await service.approve('supervisor-demo-001', created.id)
+
+    expect(approved).toMatchObject({ status: 'APPROVED', decidedAt: '2026-07-20T12:00:00.000Z' })
+    expect(audits.map((event) => event.type)).toEqual(['TIME_OFF_REQUESTED', 'TIME_OFF_APPROVED'])
+  })
+
   it('bloqueia cancelamento direto quando a data já ocorreu', async () => {
     const storage = new MemoryStorage()
     storage.setItem(TIME_OFF_STORAGE_KEY, JSON.stringify(approvedStorage('2026-07-20')))

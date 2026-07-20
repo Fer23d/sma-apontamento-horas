@@ -41,4 +41,46 @@ describe('LocalDayApprovalService', () => {
     expect(events.map((event) => event.type)).toEqual(['CORRECTION_COMPLETED'])
     expect(events[0].entityId).toBe(correction.id)
   })
+
+  it('aprova o conjunto diário com déficit e registra a justificativa', async () => {
+    const events: AuditEvent[] = []
+    const service = new LocalDayApprovalService(new MemoryStorage(), () => '2026-07-20', {
+      record: async (event) => { events.push(event) },
+    }, () => '2026-07-20T15:00:00.000Z')
+    await service.save({ ...correction, status: 'AVAILABLE_FOR_APPROVAL', correctionReason: undefined })
+
+    const approved = await service.approveDay({ supervisorId: 'supervisor-1', collaboratorId: 'collaborator-1', date: '2026-07-17', balanceMinutes: -60, justification: 'Saída autorizada' })
+
+    expect(approved).toMatchObject({ status: 'APPROVED', deficitJustification: 'Saída autorizada', approvedAt: '2026-07-20T15:00:00.000Z' })
+    expect(events.map((event) => event.type)).toEqual(['DAY_APPROVED_WITH_DEFICIT'])
+  })
+
+  it('registra solicitação de correção e mantém o dia mutável', async () => {
+    const events: AuditEvent[] = []
+    const service = new LocalDayApprovalService(new MemoryStorage(), () => '2026-07-20', {
+      record: async (event) => { events.push(event) },
+    })
+    await service.save({ ...correction, status: 'AVAILABLE_FOR_APPROVAL', correctionReason: undefined })
+
+    const requested = await service.requestCorrection('supervisor-1', 'collaborator-1', '2026-07-17', 'Detalhar documento')
+
+    expect(requested).toMatchObject({ status: 'CORRECTION_REQUESTED', correctionReason: 'Detalhar documento' })
+    await expect(service.canMutate('collaborator-1', '2026-07-17')).resolves.toBe(true)
+    expect(events.map((event) => event.type)).toEqual(['CORRECTION_REQUESTED'])
+  })
+
+  it('fecha a competência, deriva ausência de envio e audita reaberturas', async () => {
+    const events: AuditEvent[] = []
+    const service = new LocalDayApprovalService(new MemoryStorage(), () => '2026-07-20', {
+      record: async (event) => { events.push(event) },
+    }, () => '2026-07-20T15:00:00.000Z')
+
+    await service.closeCompetency('2026-07')
+    expect((await service.getForDate('collaborator-1', '2026-07-15', false)).status).toBe('NO_SUBMISSION')
+    await service.reopenDay('supervisor-1', 'collaborator-1', '2026-07-15', 'Documento localizado')
+    await service.reopenCompetency('supervisor-1', '2026-07', 'Ajuste mensal autorizado')
+
+    await expect(service.canMutate('collaborator-1', '2026-07-15')).resolves.toBe(true)
+    expect(events.map((event) => event.type)).toEqual(['DAY_REOPENED', 'COMPETENCY_REOPENED'])
+  })
 })

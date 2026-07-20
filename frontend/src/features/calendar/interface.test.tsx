@@ -36,6 +36,7 @@ describe('calendário acessível', () => {
     const markup = renderToStaticMarkup(<MonthlyCalendar monthKey="2026-07" selectedDate="2026-07-20" days={[]} onMonthChange={vi.fn()} onSelectDate={vi.fn()} />)
     expect(markup).toContain('aria-label="Mês anterior"')
     expect(markup).toContain('aria-label="Próximo mês"')
+    expect(markup).toContain('aria-label="Selecionar mês do calendário"')
     expect(markup).toContain('Julho de 2026')
   })
 })

@@ -122,12 +122,13 @@ export class LocalWorkloadService {
     return request
   }
 
-  async applyApprovedRequest(requestId: string, approvedEffectiveFrom: string) {
+  async applyApprovedRequest(requestId: string, approvedEffectiveFrom: string, supervisorId: string) {
     const storage = this.read()
     const index = storage.requests.findIndex((request) => request.id === requestId)
     if (index < 0) throw new Error('Solicitação de carga não encontrada.')
     const current = storage.requests[index]
     if (current.status !== 'PENDING') throw new Error('A solicitação não está pendente.')
+    if (!current.assignmentSnapshot || current.assignmentSnapshot.supervisorId !== supervisorId) throw new Error('Somente o supervisor associado pode aprovar a nova carga.')
     const timestamp = this.now()
     const approved: WorkloadChangeRequest = { ...current, status: 'APPROVED', requestedEffectiveFrom: approvedEffectiveFrom, decidedAt: timestamp, updatedAt: timestamp }
     storage.requests[index] = approved
@@ -136,8 +137,28 @@ export class LocalWorkloadService {
       effectiveFrom: approvedEffectiveFrom, status: 'APPROVED', createdAt: timestamp, approvedAt: timestamp,
     })
     this.write(storage)
-    await this.audit?.record({ id: crypto.randomUUID(), type: 'WORKLOAD_CHANGE_APPROVED', occurredAt: timestamp, actorId: current.assignmentSnapshot?.supervisorId ?? 'system', actorRole: 'SUPERVISOR', entityType: 'WorkloadChangeRequest', entityId: current.id, previousValue: current, newValue: approved })
+    await this.audit?.record({ id: crypto.randomUUID(), type: 'WORKLOAD_CHANGE_APPROVED', occurredAt: timestamp, actorId: supervisorId, actorRole: 'SUPERVISOR', entityType: 'WorkloadChangeRequest', entityId: current.id, previousValue: current, newValue: approved })
     return approved
+  }
+
+  async rejectRequest(requestId: string, reason: string, supervisorId: string) {
+    const rejectionReason = reason.trim()
+    if (!rejectionReason) throw new Error('Informe a justificativa da rejeição.')
+    const storage = this.read()
+    const index = storage.requests.findIndex((request) => request.id === requestId)
+    if (index < 0) throw new Error('Solicitação de carga não encontrada.')
+    const current = storage.requests[index]
+    if (current.status !== 'PENDING') throw new Error('A solicitação não está pendente.')
+    if (!current.assignmentSnapshot || current.assignmentSnapshot.supervisorId !== supervisorId) throw new Error('Somente o supervisor associado pode rejeitar a nova carga.')
+    const timestamp = this.now()
+    const rejected: WorkloadChangeRequest = { ...current, status: 'REJECTED', rejectionReason, decidedAt: timestamp, updatedAt: timestamp }
+    storage.requests[index] = rejected
+    this.write(storage)
+    await this.audit?.record({
+      id: crypto.randomUUID(), type: 'WORKLOAD_CHANGE_REJECTED', occurredAt: timestamp, actorId: supervisorId, actorRole: 'SUPERVISOR',
+      entityType: 'WorkloadChangeRequest', entityId: current.id, previousValue: current, newValue: rejected, justification: rejectionReason,
+    })
+    return rejected
   }
 }
 

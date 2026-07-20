@@ -1,4 +1,12 @@
-import { canMutateDay, completeCorrection, deriveDayApprovalStatus } from '../features/approvals/domain'
+import {
+  approveDay as approveDayTransition,
+  canMutateDay,
+  completeCorrection,
+  deriveDayApprovalStatus,
+  reopenCompetency as reopenCompetencyTransition,
+  reopenDay as reopenDayTransition,
+  requestCorrection as requestCorrectionTransition,
+} from '../features/approvals/domain'
 import type { CompetencyState, DayApproval } from '../features/approvals/types'
 import type { AuditEvent } from '../features/audit/types'
 import { getCorporateToday, getMonthKey } from '../shared/utils/date'
@@ -11,12 +19,14 @@ const COMPETENCY_STORAGE_KEY = 'sma:competencies:v1'
 export class LocalDayApprovalService {
   private readonly storage: StorageLike
   private readonly today: () => string
+  private readonly now: () => string
   private readonly audit?: { record(event: AuditEvent): Promise<void> }
 
-  constructor(storage: StorageLike, today: () => string = getCorporateToday, audit?: { record(event: AuditEvent): Promise<void> }) {
+  constructor(storage: StorageLike, today: () => string = getCorporateToday, audit?: { record(event: AuditEvent): Promise<void> }, now: () => string = () => new Date().toISOString()) {
     this.storage = storage
     this.today = today
     this.audit = audit
+    this.now = now
   }
 
   private readRecord<T>(key: string): Record<string, T> {
@@ -61,7 +71,7 @@ export class LocalDayApprovalService {
         hasEntries,
       }),
       version: 1,
-      updatedAt: new Date().toISOString(),
+      updatedAt: this.now(),
     } satisfies DayApproval
   }
 
@@ -79,10 +89,89 @@ export class LocalDayApprovalService {
     this.storage.setItem(APPROVAL_STORAGE_KEY, JSON.stringify(current))
   }
 
+  private getStoredApproval(collaboratorId: string, date: string) {
+    const stored = this.readRecord<DayApproval>(APPROVAL_STORAGE_KEY)[this.approvalKey(collaboratorId, date)]
+    if (!stored) throw new Error('O conjunto diário não foi encontrado.')
+    return stored
+  }
+
+  private assertResponsibleSupervisor(approval: DayApproval, supervisorId: string) {
+    if (approval.assignmentSnapshot && approval.assignmentSnapshot.supervisorId !== supervisorId) {
+      throw new Error('Somente o supervisor associado ao conjunto diário pode executar esta operação.')
+    }
+  }
+
+  private async recordSupervisorAction(type: AuditEvent['type'], supervisorId: string, previous: DayApproval, next: DayApproval, justification?: string) {
+    await this.audit?.record({
+      id: crypto.randomUUID(), type, occurredAt: next.updatedAt, actorId: supervisorId, actorRole: 'SUPERVISOR',
+      entityType: 'DayApproval', entityId: next.id, previousValue: previous, newValue: next, justification,
+    })
+  }
+
+  async approveDay(command: { supervisorId: string; collaboratorId: string; date: string; balanceMinutes: number; justification: string }) {
+    const current = this.getStoredApproval(command.collaboratorId, command.date)
+    this.assertResponsibleSupervisor(current, command.supervisorId)
+    const timestamp = this.now()
+    const approved = {
+      ...approveDayTransition(current, { today: this.today(), balanceMinutes: command.balanceMinutes, justification: command.justification }),
+      approvedAt: timestamp,
+      updatedAt: timestamp,
+    }
+    await this.save(approved)
+    await this.recordSupervisorAction(command.balanceMinutes < 0 ? 'DAY_APPROVED_WITH_DEFICIT' : 'DAY_APPROVED', command.supervisorId, current, approved, approved.deficitJustification)
+    return approved
+  }
+
+  async requestCorrection(supervisorId: string, collaboratorId: string, date: string, reason: string) {
+    const current = this.getStoredApproval(collaboratorId, date)
+    this.assertResponsibleSupervisor(current, supervisorId)
+    const requested = { ...requestCorrectionTransition(current, reason), updatedAt: this.now() }
+    await this.save(requested)
+    await this.recordSupervisorAction('CORRECTION_REQUESTED', supervisorId, current, requested, requested.correctionReason)
+    return requested
+  }
+
+  async closeCompetency(monthKey: string) {
+    if (!/^\d{4}-\d{2}$/.test(monthKey)) throw new Error('Competência inválida.')
+    const competencies = this.readRecord<CompetencyState>(COMPETENCY_STORAGE_KEY)
+    competencies[monthKey] = { ...this.getCompetency(monthKey), status: 'CLOSED' }
+    this.storage.setItem(COMPETENCY_STORAGE_KEY, JSON.stringify(competencies))
+    return competencies[monthKey]
+  }
+
+  async reopenDay(supervisorId: string, collaboratorId: string, date: string, justification: string) {
+    const current = this.readRecord<DayApproval>(APPROVAL_STORAGE_KEY)[this.approvalKey(collaboratorId, date)]
+      ?? await this.getForDate(collaboratorId, date, false)
+    this.assertResponsibleSupervisor(current, supervisorId)
+    const reopened = { ...reopenDayTransition(current, justification), updatedAt: this.now() }
+    await this.save(reopened)
+    await this.recordSupervisorAction('DAY_REOPENED', supervisorId, current, reopened, reopened.reopenJustification)
+    return reopened
+  }
+
+  async reopenCompetency(supervisorId: string, monthKey: string, justification: string) {
+    const current = this.getCompetency(monthKey)
+    const reopened = {
+      ...reopenCompetencyTransition(current, justification),
+      reopenedBy: supervisorId,
+      reopenedAt: this.now(),
+    }
+    const competencies = this.readRecord<CompetencyState>(COMPETENCY_STORAGE_KEY)
+    competencies[monthKey] = reopened
+    this.storage.setItem(COMPETENCY_STORAGE_KEY, JSON.stringify(competencies))
+    await this.audit?.record({
+      id: crypto.randomUUID(), type: 'COMPETENCY_REOPENED', occurredAt: reopened.reopenedAt,
+      actorId: supervisorId, actorRole: 'SUPERVISOR', entityType: 'CompetencyState', entityId: monthKey,
+      previousValue: current, newValue: reopened, justification: reopened.reopenJustification,
+    })
+    return reopened
+  }
+
   async completeCorrection(collaboratorId: string, date: string) {
     const stored = this.readRecord<DayApproval>(APPROVAL_STORAGE_KEY)[this.approvalKey(collaboratorId, date)]
     if (!stored) throw new Error('Não existe solicitação de correção para esta data.')
-    const completed = { ...completeCorrection(stored), correctionCompletedAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
+    const timestamp = this.now()
+    const completed = { ...completeCorrection(stored), correctionCompletedAt: timestamp, updatedAt: timestamp }
     await this.save(completed)
     await this.audit?.record({
       id: crypto.randomUUID(),

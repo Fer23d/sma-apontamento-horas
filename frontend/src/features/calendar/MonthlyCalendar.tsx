@@ -27,9 +27,12 @@ export function MonthlyCalendar({ monthKey, selectedDate, days, onMonthChange, o
 
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5 dark:border-slate-800 dark:bg-slate-900" aria-labelledby="calendar-title">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <button type="button" aria-label="Mês anterior" onClick={() => onMonthChange(shiftMonth(monthKey, -1))} className="rounded-xl border border-slate-300 px-3 py-2 font-bold dark:border-slate-700">‹</button>
-        <h2 id="calendar-title" className="text-lg font-extrabold text-sma-navy dark:text-white">{monthLabel(monthKey)}</h2>
+        <div className="text-center">
+          <h2 id="calendar-title" className="text-lg font-extrabold text-sma-navy dark:text-white">{monthLabel(monthKey)}</h2>
+          <input type="month" value={monthKey} onChange={(event) => onMonthChange(event.target.value)} aria-label="Selecionar mês do calendário" className="mt-1 rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200" />
+        </div>
         <button type="button" aria-label="Próximo mês" onClick={() => onMonthChange(shiftMonth(monthKey, 1))} className="rounded-xl border border-slate-300 px-3 py-2 font-bold dark:border-slate-700">›</button>
       </div>
       <div className="mt-5 grid grid-cols-7 gap-1 text-center text-[11px] font-bold uppercase tracking-wider text-slate-500 sm:gap-2">

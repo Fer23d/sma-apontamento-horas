@@ -8,6 +8,9 @@ import type { HistoryRow } from './useTimeEntryHistory'
 import { useTimeEntryHistory } from './useTimeEntryHistory'
 import { HistoryFilters } from './HistoryFilters'
 import { fieldClassName } from '../time-entries/TimeEntryFields'
+import { formatSignedMinutes } from '../time-entries/domain'
+import { getCalendarVisualState } from '../calendar/domain'
+import { HistoryPeriodSummary } from './HistoryPeriodSummary'
 
 const approvalLabels = {
   IN_PROGRESS: 'Em andamento', AVAILABLE_FOR_APPROVAL: 'Disponível para aprovação', CORRECTION_REQUESTED: 'Correção solicitada',
@@ -38,6 +41,7 @@ export function TimeEntryHistory() {
       {history.feedback && <p role="status" className="rounded-xl border border-emerald-300 bg-emerald-50 p-4 text-sm font-semibold text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-100">{history.feedback}</p>}
       {history.error && <div role="alert" className="rounded-xl border border-red-300 bg-red-50 p-4 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200"><p>{history.error}</p><button type="button" onClick={() => void history.reload()} className="mt-2 font-bold underline">Tentar novamente</button></div>}
       {history.isLoading && <p aria-live="polite" className="rounded-2xl bg-white p-8 text-center font-semibold text-slate-600 dark:bg-slate-900 dark:text-slate-300">Carregando histórico…</p>}
+      {!history.isLoading && history.periodSummary && <HistoryPeriodSummary summary={history.periodSummary} events={history.periodEvents} timeOffRequests={history.periodTimeOffRequests} />}
       {!history.isLoading && !history.error && history.rows.length === 0 && <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center dark:border-slate-700 dark:bg-slate-900"><p className="font-bold text-sma-navy dark:text-white">Nenhum apontamento encontrado.</p><p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Ajuste os filtros ou registre um novo apontamento.</p></div>}
       {!history.isLoading && history.rows.length > 0 && (
         <div className="space-y-4">
@@ -63,7 +67,10 @@ export function TimeEntryHistory() {
                       <div><dt className="font-bold text-slate-500">Tipo de documento</dt><dd>{entry.documentTypeCode}</dd></div>
                       <div><dt className="font-bold text-slate-500">Squad registrada</dt><dd>{entry.assignmentSnapshot?.squadName ?? 'Não disponível (legado)'}</dd></div>
                       <div><dt className="font-bold text-slate-500">Supervisor registrado</dt><dd>{entry.assignmentSnapshot?.supervisorName ?? 'Não disponível (legado)'}</dd></div>
+                      <div><dt className="font-bold text-slate-500">Situação da jornada</dt><dd>{getCalendarVisualState(row.summary).label}</dd></div>
+                      <div><dt className="font-bold text-slate-500">Saldo do dia</dt><dd>{formatSignedMinutes(row.summary.balanceMinutes)}</dd></div>
                     </dl>
+                    {(row.events.length > 0 || row.timeOffRequests.length > 0) && <p className="mt-3 text-sm text-slate-600 dark:text-slate-300"><strong>Eventos do dia:</strong> {[...row.events.map((event) => event.title), ...row.timeOffRequests.map((request) => `Folga ${request.status.toLocaleLowerCase('pt-BR')}`)].join(' · ')}</p>}
                     <p className="mt-4 text-sm leading-6 text-slate-700 dark:text-slate-300">{entry.details}</p>
                     {approval.correctionReason && <p className="mt-3 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100"><strong>Motivo da correção:</strong> {approval.correctionReason}</p>}
                     {approval.deficitJustification && <p className="mt-3 text-sm text-slate-600 dark:text-slate-300"><strong>Justificativa de aprovação com déficit:</strong> {approval.deficitJustification}</p>}

@@ -19,6 +19,7 @@ import { useSession } from '../session/useSession'
 
 type DashboardData = {
   monthSummary: PeriodSummary
+  filteredSummary: PeriodSummary
   totalSummary: PeriodSummary
   todaySummary: DailySummary
   selectedSummary: DailySummary
@@ -44,7 +45,7 @@ function holidaysToEvents(collaboratorId: string, holidays: Awaited<ReturnType<t
   }))
 }
 
-export function useCollaboratorDashboard(selectedDate: string, monthKey: string) {
+export function useCollaboratorDashboard(selectedDate: string, monthKey: string, periodStart?: string, periodEnd?: string) {
   const { profile } = useSession()
   const [state, setState] = useState<DashboardState>({ data: null, isLoading: true, error: null })
 
@@ -81,6 +82,20 @@ export function useCollaboratorDashboard(selectedDate: string, monthKey: string)
         startDate: totalStartDate, endDate: today, today, collaboratorId: profile.id, entries: totalEntries, events: totalAllEvents,
         timeOffRequests: totalTimeOff, workloadVersions,
       })
+      let filteredSummary = monthSummary
+      if (periodStart && periodEnd) {
+        if (periodStart > periodEnd) throw new Error('A data inicial do intervalo deve ser anterior à data final.')
+        const [periodEntries, periodEvents, periodHolidays, periodTimeOff] = await Promise.all([
+          timeEntryService.listByRange(profile.id, periodStart, periodEnd),
+          calendarEventService.listByRange(profile.id, periodStart, periodEnd),
+          holidayProvider.list(professionalProfile.location, periodStart, periodEnd),
+          timeOffService.listByRange(profile.id, periodStart, periodEnd),
+        ])
+        filteredSummary = calculatePeriodSummary({
+          startDate: periodStart, endDate: periodEnd, today, collaboratorId: profile.id, entries: periodEntries,
+          events: [...periodEvents, ...holidaysToEvents(profile.id, periodHolidays)], timeOffRequests: periodTimeOff, workloadVersions,
+        })
+      }
       const calendarDates = eachIsoDate(monthRange.startDate, monthRange.endDate)
       const approvals = await Promise.all(calendarDates.filter((date) => date <= today).map((date) => {
         const entries = monthEntries.filter((entry) => entry.entryDate === date)
@@ -100,7 +115,7 @@ export function useCollaboratorDashboard(selectedDate: string, monthKey: string)
         ?? await dayApprovalService.getForDate(profile.id, selectedDate, selectedEntries.some((entry) => entry.status === 'ACTIVE'), selectedEntries[0]?.assignmentSnapshot ?? null)
       setState({
         data: {
-          monthSummary, totalSummary, todaySummary, selectedSummary, calendarDays: monthSummary.days,
+          monthSummary, filteredSummary, totalSummary, todaySummary, selectedSummary, calendarDays: monthSummary.days,
           selectedEntries, selectedEvents, selectedTimeOffRequests, selectedApproval, approvals,
           pendingTimeOffRequests: monthTimeOff.filter((request) => request.status === 'PENDING').length,
           pendingWorkloadRequests: workloadRequests.filter((request) => request.status === 'PENDING').length,
@@ -114,7 +129,7 @@ export function useCollaboratorDashboard(selectedDate: string, monthKey: string)
     } catch (error) {
       setState({ data: null, isLoading: false, error: error instanceof Error ? error.message : 'Não foi possível carregar a visão geral.' })
     }
-  }, [monthKey, profile, selectedDate])
+  }, [monthKey, periodEnd, periodStart, profile, selectedDate])
 
   useEffect(() => { void load() }, [load])
   return { ...state, reload: load }

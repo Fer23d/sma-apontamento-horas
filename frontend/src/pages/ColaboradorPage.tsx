@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { PageContainer } from '../components/PageContainer'
 import { DailyEntryList } from '../features/collaborator/DailyEntryList'
@@ -5,16 +6,42 @@ import { SummaryCard } from '../features/collaborator/SummaryCard'
 import { useCollaboratorDashboard } from '../features/collaborator/useCollaboratorDashboard'
 import { MonthlyCalendar } from '../features/calendar/MonthlyCalendar'
 import { DayDetails } from '../features/calendar/DayDetails'
+import { BalancePeriodFilter } from '../features/calendar/BalancePeriodFilter'
 import { useSession } from '../features/session/useSession'
 import { formatMinutes, formatSignedMinutes } from '../features/time-entries/domain'
-import { getCorporateToday, getMonthKey } from '../shared/utils/date'
+import { getCorporateToday, getMonthKey, getMonthRange, isIsoDate } from '../shared/utils/date'
 
 export function ColaboradorPage() {
   const { profile } = useSession()
   const [searchParams, setSearchParams] = useSearchParams()
   const selectedDate = searchParams.get('date') ?? getCorporateToday()
   const monthKey = getMonthKey(selectedDate)
-  const dashboard = useCollaboratorDashboard(selectedDate, monthKey)
+  const customStart = searchParams.get('start') ?? undefined
+  const customEnd = searchParams.get('end') ?? undefined
+  const hasCustomRange = Boolean(customStart && customEnd && isIsoDate(customStart) && isIsoDate(customEnd) && customStart <= customEnd)
+  const monthRange = getMonthRange(monthKey)
+  const [range, setRange] = useState({ startDate: customStart ?? monthRange.startDate, endDate: customEnd ?? monthRange.endDate })
+  const [rangeError, setRangeError] = useState<string | null>(null)
+  const dashboard = useCollaboratorDashboard(selectedDate, monthKey, hasCustomRange ? customStart : undefined, hasCustomRange ? customEnd : undefined)
+
+  useEffect(() => {
+    if (!customStart || !customEnd) setRange(getMonthRange(monthKey))
+  }, [customEnd, customStart, monthKey])
+
+  function applyRange() {
+    if (!isIsoDate(range.startDate) || !isIsoDate(range.endDate) || range.startDate > range.endDate) {
+      setRangeError('Informe um intervalo válido, com a data inicial anterior à data final.')
+      return
+    }
+    setRangeError(null)
+    setSearchParams({ date: selectedDate, start: range.startDate, end: range.endDate })
+  }
+
+  function useCalendarMonth() {
+    setRangeError(null)
+    setRange(getMonthRange(monthKey))
+    setSearchParams({ date: selectedDate })
+  }
 
   if (!profile) return null
   const contextDescription = dashboard.data
@@ -36,13 +63,15 @@ export function ColaboradorPage() {
 
         {dashboard.isLoading && <p className="rounded-2xl bg-white p-8 text-center font-semibold text-slate-600 dark:bg-slate-900 dark:text-slate-300" aria-live="polite">Carregando visão geral…</p>}
         {dashboard.error && <div role="alert" className="rounded-2xl border border-red-300 bg-red-50 p-5 text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200"><p>{dashboard.error}</p><button type="button" onClick={() => void dashboard.reload()} className="mt-3 font-bold underline">Tentar novamente</button></div>}
+        {rangeError && <p role="alert" className="rounded-xl border border-red-300 bg-red-50 p-4 text-sm font-semibold text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200">{rangeError}</p>}
         {dashboard.data && !dashboard.isLoading && (
           <>
+            <BalancePeriodFilter startDate={range.startDate} endDate={range.endDate} isCustomRange={hasCustomRange} onChange={(field, value) => setRange((current) => ({ ...current, [field]: value }))} onApply={applyRange} onClear={useCalendarMonth} />
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
               <SummaryCard label="Saldo de hoje" value={formatSignedMinutes(dashboard.data.todaySummary.balanceMinutes)} helper="Resultado real até o dia corporativo atual." tone={dashboard.data.todaySummary.balanceMinutes >= 0 ? 'positive' : 'warning'} />
-              <SummaryCard label="Saldo do mês" value={formatSignedMinutes(dashboard.data.monthSummary.realBalanceMinutes)} helper={`${formatMinutes(dashboard.data.monthSummary.workedMinutes)} apontadas no período.`} tone={dashboard.data.monthSummary.realBalanceMinutes >= 0 ? 'positive' : 'warning'} />
+              <SummaryCard label={hasCustomRange ? 'Saldo do intervalo' : 'Saldo do mês'} value={formatSignedMinutes(dashboard.data.filteredSummary.realBalanceMinutes)} helper={`${formatMinutes(dashboard.data.filteredSummary.workedMinutes)} apontadas no período.`} tone={dashboard.data.filteredSummary.realBalanceMinutes >= 0 ? 'positive' : 'warning'} />
               <SummaryCard label="Saldo total acumulado" value={formatSignedMinutes(dashboard.data.totalSummary.realBalanceMinutes)} helper="Acumulado desde a primeira carga demonstrativa vigente." tone={dashboard.data.totalSummary.realBalanceMinutes >= 0 ? 'positive' : 'warning'} />
-              <SummaryCard label="Projeção futura" value={formatSignedMinutes(dashboard.data.monthSummary.projectedBalanceMinutes)} helper="Separada do saldo real; considera datas futuras visíveis." />
+              <SummaryCard label="Projeção futura" value={formatSignedMinutes(dashboard.data.filteredSummary.projectedBalanceMinutes)} helper="Separada do saldo real; considera datas futuras do período selecionado." />
             </div>
 
             <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5" aria-label="Pendências e ações">
@@ -69,7 +98,7 @@ export function ColaboradorPage() {
               selectedDate={selectedDate}
               days={dashboard.data.calendarDays}
               onMonthChange={(nextMonth) => setSearchParams({ date: `${nextMonth}-01` })}
-              onSelectDate={(date) => setSearchParams({ date })}
+              onSelectDate={(date) => setSearchParams(hasCustomRange ? { date, start: customStart!, end: customEnd! } : { date })}
             />
             <DayDetails summary={dashboard.data.selectedSummary} events={dashboard.data.selectedEvents} timeOffRequests={dashboard.data.selectedTimeOffRequests} approval={dashboard.data.selectedApproval} />
             <DailyEntryList entries={dashboard.data.selectedEntries} date={selectedDate} />

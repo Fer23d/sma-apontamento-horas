@@ -127,6 +127,26 @@ export class LocalTimeOffService {
     return request
   }
 
+  async approve(supervisorId: string, id: string) {
+    const storage = this.read()
+    const index = storage.requests.findIndex((request) => request.id === id)
+    if (index < 0) throw new Error('Solicitação de folga não encontrada.')
+    const current = storage.requests[index]
+    if (current.status !== 'PENDING') throw new Error('A solicitação de folga não está pendente.')
+    if (!current.assignmentSnapshot || current.assignmentSnapshot.supervisorId !== supervisorId) {
+      throw new Error('Somente o supervisor associado à solicitação pode aprovar a folga.')
+    }
+    const timestamp = this.now()
+    const approved: TimeOffRequest = { ...current, status: 'APPROVED', decidedAt: timestamp, updatedAt: timestamp }
+    storage.requests[index] = approved
+    this.write(storage)
+    await this.audit?.record({
+      id: crypto.randomUUID(), type: 'TIME_OFF_APPROVED', occurredAt: timestamp, actorId: supervisorId, actorRole: 'SUPERVISOR',
+      entityType: 'TimeOffRequest', entityId: approved.id, previousValue: current, newValue: approved,
+    })
+    return approved
+  }
+
   async removePending(collaboratorId: string, id: string) {
     const storage = this.read()
     const index = storage.requests.findIndex((request) => request.id === id && request.collaboratorId === collaboratorId)
