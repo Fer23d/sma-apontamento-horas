@@ -1,6 +1,8 @@
 import { getMonthRange, isIsoDate } from '../../shared/utils/date'
+import type { TimeEntryStatus } from '../time-entries/types'
 
 export type HistoryPeriodMode = 'DAY' | 'MONTH' | 'RANGE' | 'ALL'
+export type EntrySituationFilter = TimeEntryStatus | 'ALL'
 
 export type HistoryPeriodInput = {
   mode: HistoryPeriodMode
@@ -22,4 +24,12 @@ export function resolveHistoryPeriod(input: HistoryPeriodInput) {
   if (!isIsoDate(input.startDate) || !isIsoDate(input.endDate)) throw new Error('Informe um intervalo válido.')
   if (input.startDate > input.endDate) throw new Error('A data inicial do intervalo deve ser anterior à data final.')
   return { startDate: input.startDate, endDate: input.endDate }
+}
+
+export function toServiceStatusFilter(status: EntrySituationFilter): TimeEntryStatus | undefined {
+  return status === 'ALL' ? undefined : status
+}
+
+export function getInitialHistoryPagination() {
+  return { cursor: undefined as string | undefined, cursorHistory: [] as string[] }
 }

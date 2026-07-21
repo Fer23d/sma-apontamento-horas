@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { resolveHistoryPeriod } from './domain'
+import { getInitialHistoryPagination, resolveHistoryPeriod, toServiceStatusFilter } from './domain'
 
 describe('períodos do histórico individual', () => {
   it('resolve um dia específico', () => {
@@ -25,5 +25,17 @@ describe('períodos do histórico individual', () => {
   it('rejeita intervalo invertido', () => {
     expect(() => resolveHistoryPeriod({ mode: 'RANGE', day: '', month: '', startDate: '2026-07-20', endDate: '2026-07-01', firstAvailableDate: '2026-01-01', today: '2026-07-20' }))
       .toThrow('intervalo')
+  })
+})
+
+describe('filtros e paginação do histórico individual', () => {
+  it('traduz as três situações para o filtro do service', () => {
+    expect(toServiceStatusFilter('ACTIVE')).toBe('ACTIVE')
+    expect(toServiceStatusFilter('CANCELLED')).toBe('CANCELLED')
+    expect(toServiceStatusFilter('ALL')).toBeUndefined()
+  })
+
+  it('reinicia cursor e pilha ao aplicar novos filtros', () => {
+    expect(getInitialHistoryPagination()).toEqual({ cursor: undefined, cursorHistory: [] })
   })
 })

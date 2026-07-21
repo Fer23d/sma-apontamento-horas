@@ -13,7 +13,7 @@ const values: TimeEntryFormValues = {
 
 const filters: HistoryFiltersValue = {
   mode: 'MONTH', day: '2026-07-20', month: '2026-07', startDate: '2026-07-01', endDate: '2026-07-20',
-  clientId: '', projectCode: '', activityId: '', disciplineCode: '', documentTypeCode: '', status: '',
+  clientId: '', projectCode: '', activityId: '', disciplineCode: '', documentTypeCode: '', status: 'ACTIVE',
 }
 
 describe('markup acessível de apontamentos e histórico', () => {
@@ -42,6 +42,9 @@ describe('markup acessível de apontamentos e histórico', () => {
     expect(markup).toContain('for="history-client"')
     expect(markup).toContain('for="history-project"')
     expect(markup).toContain('for="history-document-type"')
+    expect(markup).toContain('Situação do apontamento')
+    expect(markup).toContain('Somente ativos')
+    expect(markup).toContain('Somente cancelados')
     expect(markup).not.toContain('Exibição paginada')
   })
 

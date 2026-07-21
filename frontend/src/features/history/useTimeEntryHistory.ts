@@ -5,7 +5,13 @@ import type { DayApproval } from '../approvals/types'
 import type { DisciplineCode, DocumentTypeCode, TimeEntry } from '../time-entries/types'
 import { getCorporateToday, getMonthKey } from '../../shared/utils/date'
 import { useSession } from '../session/useSession'
-import { resolveHistoryPeriod, type HistoryPeriodMode } from './domain'
+import {
+  getInitialHistoryPagination,
+  resolveHistoryPeriod,
+  toServiceStatusFilter,
+  type EntrySituationFilter,
+  type HistoryPeriodMode,
+} from './domain'
 import { calendarEventService } from '../../services/calendarEventService'
 import { holidayProvider } from '../../services/holidayProvider'
 import { profileService } from '../../services/profileService'
@@ -26,7 +32,7 @@ export type HistoryFiltersValue = {
   activityId: string
   disciplineCode: DisciplineCode | ''
   documentTypeCode: DocumentTypeCode | ''
-  status: TimeEntry['status'] | ''
+  status: EntrySituationFilter
 }
 
 export type HistoryRow = {
@@ -41,7 +47,7 @@ export type HistoryRow = {
 const today = getCorporateToday()
 const initialFilters: HistoryFiltersValue = {
   mode: 'MONTH', day: today, month: getMonthKey(today), startDate: `${getMonthKey(today)}-01`, endDate: today,
-  clientId: '', projectCode: '', activityId: '', disciplineCode: '', documentTypeCode: '', status: '',
+  clientId: '', projectCode: '', activityId: '', disciplineCode: '', documentTypeCode: '', status: 'ACTIVE',
 }
 
 function holidaysToEvents(collaboratorId: string, holidays: Awaited<ReturnType<typeof holidayProvider.list>>): CalendarEvent[] {
@@ -90,7 +96,7 @@ export function useTimeEntryHistory() {
           activityId: filters.activityId || undefined,
           disciplineCode: filters.disciplineCode || undefined,
           documentTypeCode: filters.documentTypeCode || undefined,
-          status: filters.status || undefined,
+          status: toServiceStatusFilter(filters.status),
         },
         }),
         timeEntryService.listByRange(profile.id, period.startDate, period.endDate),
@@ -134,8 +140,9 @@ export function useTimeEntryHistory() {
   useEffect(() => { void load() }, [load])
 
   const applyFilters = () => {
-    setCursor(undefined)
-    setCursorHistory([])
+    const pagination = getInitialHistoryPagination()
+    setCursor(pagination.cursor)
+    setCursorHistory(pagination.cursorHistory)
     setFilters(draftFilters)
   }
 
