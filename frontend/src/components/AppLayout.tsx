@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { Outlet } from 'react-router-dom'
 import { Header } from './Header'
 import { Sidebar } from './Sidebar'
-import { shouldCloseDrawerForKey } from './drawer'
+import { focusDrawerInitialElement, shouldCloseDrawerForKey } from './drawer'
 
 const focusableSelector = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
 
@@ -23,8 +23,12 @@ export function AppLayout() {
       closeSidebar(true)
     }
     document.addEventListener('keydown', handleKeyDown)
-    requestAnimationFrame(() => document.querySelector<HTMLElement>('[data-drawer-initial-focus]')?.focus())
-    return () => document.removeEventListener('keydown', handleKeyDown)
+    focusDrawerInitialElement()
+    const focusFrame = requestAnimationFrame(() => focusDrawerInitialElement())
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      cancelAnimationFrame(focusFrame)
+    }
   }, [isSidebarOpen])
 
   const trapDrawerFocus = (event: KeyboardEvent<HTMLElement>) => {

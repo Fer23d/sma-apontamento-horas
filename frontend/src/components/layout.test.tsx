@@ -5,7 +5,7 @@ import { ThemeContext } from '../app/themeContext'
 import { demoCollaborator } from '../mocks/demoData'
 import { SessionContext } from '../features/session/sessionContext'
 import { AppLayout } from './AppLayout'
-import { shouldCloseDrawerForKey } from './drawer'
+import { focusDrawerInitialElement, shouldCloseDrawerForKey } from './drawer'
 import { PageContainer } from './PageContainer'
 
 function renderLayout() {
@@ -58,6 +58,15 @@ describe('layout responsivo do colaborador', () => {
     expect(shouldCloseDrawerForKey('Escape')).toBe(true)
     expect(shouldCloseDrawerForKey('Enter')).toBe(false)
     expect(shouldCloseDrawerForKey('Tab')).toBe(false)
+  })
+
+  it('move o foco para o primeiro controle do drawer ao abrir', () => {
+    const focus = vi.fn()
+    const root = { querySelector: vi.fn(() => ({ focus })) } as unknown as ParentNode
+
+    expect(focusDrawerInitialElement(root)).toBe(true)
+    expect(root.querySelector).toHaveBeenCalledWith('[data-drawer-initial-focus]')
+    expect(focus).toHaveBeenCalledOnce()
   })
 
   it('centraliza a página sem aplicar offset lateral manual', () => {
