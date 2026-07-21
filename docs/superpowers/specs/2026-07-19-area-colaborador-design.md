@@ -74,7 +74,7 @@ Não existem `projectId`, `projectName`, Avanço (%) ou Documento (LD). A migra�
 - Data: hoje ou data anterior da mesma competência aberta; nunca futura. Competência fechada bloqueia criação/edição, salvo reabertura explícita do dia ou do mês.
 - Cliente: seletor obrigatório baseado no catálogo demonstrativo e independente do projeto.
 - Código do projeto: obrigatório, máximo de 80 caracteres após `trim()`, preservando capitalização, espaços internos, zeros, pontos, barras e hífens.
-- Atividade: catálogo fixo preservado do React atual — Elaboração de projeto, Análise de documento, Reunião interna, Reunião com cliente e Apoio a colaborador — mais Outros.
+- Atividade: catálogo fixo de vinte atividades de trabalho definido na rodada corretiva de 20/07/2026. Férias, afastamentos, feriados e folgas são eventos administrativos e não podem ser criados pelo seletor de atividade.
 - Disciplina: escolha obrigatória entre `—` (Não se aplica), `A` (Automação) e `E` (Elétrica). O valor `—` é explícito e válido.
 - Tipo de documento: escolha obrigatória entre `—`, `RN`, `GR`, `G`, `FD`, `DE`, `LM`, `DI`, `LC`, `LI`, `ET`, `MC`, `MO`, `MD`, `FG`, `LA`, `ES` e `CF`. O valor `—` é explícito e válido.
 - Duração: horas inteiras de 0 a 24 e minutos inteiros de 0 a 59, total maior que zero e no máximo 24 horas; persistência em minutos.
@@ -122,10 +122,10 @@ Regras de evento:
 - horas acima da jornada geram saldo positivo;
 - horas abaixo da jornada geram saldo negativo, inclusive quando o dia for aprovado com justificativa;
 - datas futuras não entram no saldo real;
-- folgas futuras aprovadas entram apenas no saldo projetado;
+- datas futuras não entram no saldo real e não são apresentadas como projeção na área do Colaborador;
 - final de semana sem evento não exige apontamento.
 
-Cada resumo diário oferece jornada base, jornada ajustada, minutos justificados, trabalhados, normais, extras, faltantes e saldo. Resumos de mês, intervalo e total agregam resumos diários limitados ao período. Resultado real (até hoje) e projeção futura são apresentados separadamente.
+Cada resumo diário oferece jornada base, jornada ajustada, minutos justificados, trabalhados, normais, extras, faltantes e saldo. Resumos de mês, intervalo e total agregam somente datas até o dia atual. A área do Colaborador apresenta apenas valores reais; intervalos futuros são limitados sem gerar déficit hipotético.
 
 ## Eventos e feriados
 
@@ -145,7 +145,7 @@ O Colaborador solicita folga de dia inteiro para data futura, com justificativa 
 
 ## Calendário
 
-O calendário mensal navegável mostra por dia: data, total trabalhado, jornada ajustada, saldo, eventos e situação de completude. A seleção atualiza detalhes e cards.
+O calendário mensal navegável mostra por dia: data, total trabalhado, jornada ajustada, saldo, eventos e situação de completude. A seleção atualiza detalhes e cards. Somente datas do mês selecionado são visíveis e interativas; células de alinhamento dos meses adjacentes permanecem vazias e ignoradas por teclado e leitores de tela.
 
 Estados visuais e textuais:
 
@@ -166,7 +166,7 @@ A Visão geral prioriza ações do Colaborador e apresenta:
 
 - saudação, squad, supervisor e carga vigente;
 - saldo de hoje, mês e total acumulado;
-- projeção futura separada quando aplicável;
+- aviso discreto quando um intervalo contém datas futuras, que não participam do saldo real;
 - resumo e apontamentos do dia selecionado;
 - calendário mensal;
 - pendências, dias disponíveis para aprovação e correções solicitadas com justificativa;

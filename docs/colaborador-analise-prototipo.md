@@ -284,3 +284,17 @@ A primeira fatia funcional corrige os pontos centrais do protótipo sem copiá-l
 - não há feriados, ausências, compensações, calendário mensal, edição, duplicação, cancelamento pela interface, documentos da LD, avanço, exportação, agregado de squad ou homologação.
 
 Essas decisões substituem qualquer interpretação anterior de classificação definitiva no registro ou de atividades de ausência modeladas como apontamentos de trabalho.
+
+## 13. Atualização corretiva de 20/07/2026
+
+As decisões abaixo substituem as limitações de implementação registradas anteriormente, sem alterar a análise histórica do protótipo:
+
+- o catálogo criável passa a conter exatamente vinte atividades de trabalho; Férias, Afastamentos médicos, Feriado/emenda e Folga compensação de horas permanecem fora de `TimeEntry`;
+- registros históricos com atividades legadas são preservados, mas essas atividades não voltam ao seletor de criação;
+- o Colaborador visualiza somente saldos reais até o dia atual; projeção futura não pertence mais à sua interface;
+- feriado, férias e afastamento integral neutralizam jornada e saldo, bloqueiam novo apontamento e preservam conflitos antigos apenas para auditoria;
+- o calendário mostra somente datas do mês selecionado; espaços de alinhamento são células vazias sem interação;
+- apontamentos com `version > 1` recebem a característica visual “Editado”, sem transformar edição em status de aprovação;
+- o histórico inicia em “Somente ativos” e permite consultar separadamente cancelados ou todos.
+
+A especificação detalhada desta atualização está em `docs/superpowers/specs/2026-07-20-rodada-corretiva-colaborador-design.md`.

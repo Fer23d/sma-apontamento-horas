@@ -440,3 +440,18 @@ Esses pontos são **Fora do escopo da fase do Colaborador** e não devem gerar i
 2. implementar histórico paginado e o ciclo de vida versionado como segunda fatia;
 3. definir `CalendarEvent` e políticas de jornada antes do calendário completo;
 4. manter testes de domínio como contrato para a futura API/backend.
+
+## 11. Rodada corretiva aprovada em 20/07/2026
+
+A base evoluiu além do retrato da primeira fatia acima. A sequência corretiva atual, detalhada em `docs/superpowers/plans/2026-07-20-rodada-corretiva-colaborador-implementation.md`, é:
+
+1. corrigir shell, sidebar/drawer, foco e marca reutilizável;
+2. substituir datas adjacentes do calendário por placeholders inertes e esclarecer a origem demonstrativa dos feriados;
+3. completar o catálogo com vinte atividades e remover a ação duplicada;
+4. remover projeção futura e limitar saldos reais ao dia atual;
+5. neutralizar conflitos de eventos integrais e bloquear novos lançamentos nessas datas;
+6. reformular filtro de situação e ações de cancelados;
+7. destacar versões editadas sem alterar status de aprovação;
+8. verificar todas as páginas, temas, breakpoints, console e suíte integral.
+
+Essa rodada preserva `sma:time-entries:v3`, seus backups, auditoria, dados históricos e o acesso demonstrativo atual. Não cria autenticação, backend, fonte oficial de feriados, Supervisor ou Diretor.

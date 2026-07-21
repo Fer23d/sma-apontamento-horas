@@ -346,3 +346,18 @@ Enquanto não houver backend:
 10. Campos e formato da exportação individual.
 11. Janela de edição/cancelamento antes da futura homologação.
 12. Limiar de anonimização da visão agregada da squad.
+
+## 15. Regras consolidadas na rodada corretiva de 20/07/2026
+
+Para a interface atual do Colaborador, ficam resolvidas e substituem trechos anteriores em conflito:
+
+- o saldo é real e limitado ao dia atual; datas futuras não geram jornada faltante e não existe card ou resumo de projeção futura;
+- o catálogo possui vinte atividades de trabalho fixas. Eventos administrativos são somente leitura e não podem ser escolhidos como atividade;
+- férias, feriado e afastamento integral zeram a jornada ajustada e o saldo. Registro histórico conflitante é preservado, sinalizado e não gera horas normais/extras;
+- afastamento parcial reduz somente a parcela justificada e permite apontar o restante;
+- uma data com evento integral bloqueia criação/duplicação/edição conflitante com mensagem específica;
+- calendário mensal usa placeholders inertes e expõe somente datas reais do mês;
+- situação de histórico é `ACTIVE`, `CANCELLED` ou consulta `ALL`, com ativos como padrão;
+- `Editado` é indicador derivado de `version > 1`, acompanhado de `updatedAt` válido, e continua separado do status de aprovação.
+
+Autenticação real, fonte oficial de feriados e resolução administrativa de conflitos permanecem futuras.

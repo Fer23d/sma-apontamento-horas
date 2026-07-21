@@ -5,7 +5,7 @@
 ## Escopo disponível
 
 - sessão demonstrativa e perfil profissional;
-- dashboard com saldos real e projetado por dia, mês, intervalo e total;
+- dashboard com saldos reais consolidados por dia, mês, intervalo e total, sempre limitados ao dia atual;
 - calendário mensal com feriados e eventos demonstrativos;
 - criação, edição, duplicação e cancelamento lógico de apontamentos;
 - histórico individual paginado, filtros e eventos do período;
@@ -27,7 +27,7 @@ O Vite exibirá no terminal o endereço local da aplicação.
 
 Os repositórios locais escondem o acesso ao `localStorage`, de modo que possam ser substituídos por uma API. Apontamentos usam `sma:time-entries:v3`; na primeira leitura, uma base `v2` é migrada com validação e preservada como backup. Perfil, cargas, folgas, aprovações, notificações e auditoria usam chaves versionadas próprias.
 
-Feriados e eventos profissionais vêm de providers demonstrativos determinísticos. Eles não representam uma fonte oficial completa.
+Feriados e eventos profissionais vêm de fontes demonstrativas determinísticas. Eles não representam uma fonte oficial completa. A interface do Colaborador não apresenta projeção futura; datas futuras não geram déficit no saldo real.
 
 ## Validação
 
