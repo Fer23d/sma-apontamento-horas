@@ -101,7 +101,7 @@ export function ColaboradorPage() {
               onSelectDate={(date) => setSearchParams(hasCustomRange ? { date, start: customStart!, end: customEnd! } : { date })}
             />
             <DayDetails summary={dashboard.data.selectedSummary} events={dashboard.data.selectedEvents} timeOffRequests={dashboard.data.selectedTimeOffRequests} approval={dashboard.data.selectedApproval} />
-            <DailyEntryList entries={dashboard.data.selectedEntries} date={selectedDate} />
+            <DailyEntryList entries={dashboard.data.selectedEntries} />
           </>
         )}
       </div>

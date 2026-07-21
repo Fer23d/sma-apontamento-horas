@@ -1,21 +1,17 @@
-import { Link } from 'react-router-dom'
 import { demoActivities, demoClients } from '../../mocks/demoData'
 import type { TimeEntry } from '../../shared/types/domain'
 import { formatMinutes } from '../time-entries/domain'
 
-export function DailyEntryList({ entries, date }: { entries: TimeEntry[]; date: string }) {
+export function DailyEntryList({ entries }: { entries: TimeEntry[] }) {
   const activeEntries = entries.filter((entry) => entry.status === 'ACTIVE')
 
   return (
     <section className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900" aria-labelledby="daily-entries-title">
-      <div className="flex flex-col gap-3 border-b border-slate-200 p-5 sm:flex-row sm:items-center sm:justify-between dark:border-slate-800">
+      <div className="border-b border-slate-200 p-5 dark:border-slate-800">
         <div>
           <h2 id="daily-entries-title" className="text-lg font-extrabold text-sma-navy dark:text-white">Apontamentos do dia</h2>
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Somente seus registros ativos para a data selecionada.</p>
         </div>
-        <Link className="rounded-xl bg-sma-navy px-4 py-2.5 text-center text-sm font-bold text-white hover:bg-sma-navy-dark dark:bg-sma-green dark:text-sma-navy" to={`/colaborador/apontamentos/novo?date=${date}`}>
-          Novo apontamento
-        </Link>
       </div>
 
       {activeEntries.length === 0 ? (

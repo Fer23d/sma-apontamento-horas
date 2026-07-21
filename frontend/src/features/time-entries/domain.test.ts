@@ -11,6 +11,40 @@ import {
 
 const monday = '2026-07-13'
 describe('validações e formatação', () => {
+  it('expõe exatamente as vinte atividades de trabalho na ordem aprovada', () => {
+    expect(demoActivities.map((activity) => activity.name)).toEqual([
+      'Análise de documento',
+      'Apoio a colaborador',
+      'Apoio propostas',
+      'Apontamento de projeto — acompanhamento',
+      'ASO — mobilização',
+      'Atendimento de comentários do cliente',
+      'Atendimento de comentários internos',
+      'Elaboração de projeto',
+      'Emissão de documento',
+      'Gerenciamento e cronograma',
+      'Levantamento de campo',
+      'Levantamento de dados para início de atividade',
+      'Modelo 3D',
+      'Ociosidade',
+      'Ociosidade por TI',
+      'Reunião com cliente',
+      'Reunião interna',
+      'Treinamentos',
+      'Verificação de documento',
+      'Outros',
+    ])
+  })
+
+  it('mantém eventos administrativos fora do catálogo criável', () => {
+    const names = demoActivities.map((activity) => activity.name)
+
+    expect(names).not.toContain('Férias')
+    expect(names).not.toContain('Afastamentos médicos')
+    expect(names).not.toContain('Feriado/emenda')
+    expect(names).not.toContain('Folga compensação de horas')
+  })
+
   it('rejeita duração igual a zero', () => expect(isValidDuration(0)).toBe(false))
   it('rejeita duração negativa', () => expect(isValidDuration(-1)).toBe(false))
   it('rejeita duração superior a 24 horas', () => expect(isValidDuration(1441)).toBe(false))

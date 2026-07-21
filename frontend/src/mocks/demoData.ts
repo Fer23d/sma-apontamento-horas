@@ -23,11 +23,25 @@ export const demoClients: Client[] = [
 ]
 
 export const demoActivities: Activity[] = [
-  { id: 'activity-project-design', name: 'Elaboração de projeto', active: true },
   { id: 'activity-document-analysis', name: 'Análise de documento', active: true },
-  { id: 'activity-internal-meeting', name: 'Reunião interna', active: true },
-  { id: 'activity-client-meeting', name: 'Reunião com cliente', active: true },
   { id: 'activity-collaborator-support', name: 'Apoio a colaborador', active: true },
+  { id: 'activity-proposal-support', name: 'Apoio propostas', active: true },
+  { id: 'activity-project-follow-up', name: 'Apontamento de projeto — acompanhamento', active: true },
+  { id: 'activity-aso-mobilization', name: 'ASO — mobilização', active: true },
+  { id: 'activity-client-comments', name: 'Atendimento de comentários do cliente', active: true },
+  { id: 'activity-internal-comments', name: 'Atendimento de comentários internos', active: true },
+  { id: 'activity-project-design', name: 'Elaboração de projeto', active: true },
+  { id: 'activity-document-issue', name: 'Emissão de documento', active: true },
+  { id: 'activity-management-schedule', name: 'Gerenciamento e cronograma', active: true },
+  { id: 'activity-field-survey', name: 'Levantamento de campo', active: true },
+  { id: 'activity-start-data-survey', name: 'Levantamento de dados para início de atividade', active: true },
+  { id: 'activity-3d-model', name: 'Modelo 3D', active: true },
+  { id: 'activity-idleness', name: 'Ociosidade', active: true },
+  { id: 'activity-it-idleness', name: 'Ociosidade por TI', active: true },
+  { id: 'activity-client-meeting', name: 'Reunião com cliente', active: true },
+  { id: 'activity-internal-meeting', name: 'Reunião interna', active: true },
+  { id: 'activity-training', name: 'Treinamentos', active: true },
+  { id: 'activity-document-verification', name: 'Verificação de documento', active: true },
   { id: 'activity-other', name: 'Outros', active: true },
 ]
 
