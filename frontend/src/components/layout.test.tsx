@@ -5,6 +5,8 @@ import { ThemeContext } from '../app/themeContext'
 import { demoCollaborator } from '../mocks/demoData'
 import { SessionContext } from '../features/session/sessionContext'
 import { AppLayout } from './AppLayout'
+import { shouldCloseDrawerForKey } from './drawer'
+import { PageContainer } from './PageContainer'
 
 function renderLayout() {
   return renderToStaticMarkup(
@@ -37,5 +39,32 @@ describe('layout responsivo do colaborador', () => {
     expect(markup).toContain('top-20')
     expect(markup).toContain('-translate-x-full')
     expect(markup).toContain('lg:translate-x-0')
+    expect(markup).toContain('lg:grid-cols-[18rem_minmax(0,1fr)]')
+    expect(markup).toContain('overflow-x-clip')
+  })
+
+  it('exibe o resumo profissional e todos os links principais na sidebar', () => {
+    const markup = renderLayout()
+
+    expect(markup).toContain('Colaborador Demonstração')
+    expect(markup).toContain('Projetista')
+    expect(markup).toContain('Engenharia de Automação')
+    for (const label of ['Visão geral', 'Novo apontamento', 'Histórico', 'Folgas', 'Meu perfil']) {
+      expect(markup).toContain(label)
+    }
+  })
+
+  it('fecha o drawer somente com a tecla Escape', () => {
+    expect(shouldCloseDrawerForKey('Escape')).toBe(true)
+    expect(shouldCloseDrawerForKey('Enter')).toBe(false)
+    expect(shouldCloseDrawerForKey('Tab')).toBe(false)
+  })
+
+  it('centraliza a página sem aplicar offset lateral manual', () => {
+    const markup = renderToStaticMarkup(<PageContainer title="Página" description="Descrição" />)
+
+    expect(markup).toContain('mx-auto')
+    expect(markup).toContain('max-w-7xl')
+    expect(markup).not.toContain('lg:ml-')
   })
 })

@@ -11,6 +11,22 @@
   --color-sma-green-dark: #2e6c4d;
 }
 
+:root {
+  --sma-surface-page: #f8fafc;
+  --sma-surface-header: rgb(255 255 255 / 0.95);
+  --sma-shell-sidebar: #0c3c60;
+  --sma-border: #e2e8f0;
+  --sma-text-primary: #0f172a;
+}
+
+.dark {
+  --sma-surface-page: #020617;
+  --sma-surface-header: rgb(15 23 42 / 0.95);
+  --sma-shell-sidebar: #072a45;
+  --sma-border: #1e293b;
+  --sma-text-primary: #f8fafc;
+}
+
 @layer base {
   html {
     font-family: var(--font-sans);
