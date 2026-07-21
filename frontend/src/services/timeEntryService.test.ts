@@ -268,6 +268,39 @@ describe('comandos e consultas de apontamento', () => {
     await expect(service.create(collaboratorId, validData)).rejects.toThrow('somente leitura')
   })
 
+  it('bloqueia criação quando a data possui evento integral', async () => {
+    const storage = new MemoryStorage()
+    const dateGuard = {
+      getBlock: vi.fn(async () => ({
+        blocked: true as const,
+        message: 'Esta data está coberta por férias integrais e não permite apontamentos.',
+      })),
+    }
+    const service = buildService(storage, { dateGuard })
+
+    await expect(service.create(collaboratorId, validData)).rejects.toThrow('férias integrais')
+    await expect(service.listByDate(collaboratorId, validData.entryDate)).resolves.toEqual([])
+    expect(dateGuard.getBlock).toHaveBeenCalledWith(collaboratorId, validData.entryDate)
+  })
+
+  it('preserva registro conflitante e impede edição, duplicação e cancelamento pelo colaborador', async () => {
+    const storage = new MemoryStorage()
+    let blocked = false
+    const dateGuard = {
+      getBlock: async () => blocked
+        ? { blocked: true as const, message: 'Esta data está coberta por férias integrais e não permite apontamentos.' }
+        : { blocked: false as const },
+    }
+    const service = buildService(storage, { dateGuard })
+    const created = await service.create(collaboratorId, validData)
+    blocked = true
+
+    await expect(service.update(collaboratorId, created.id, created.version, validData, 'Correção')).rejects.toThrow('férias integrais')
+    await expect(service.duplicate(collaboratorId, created.id, created.version, {})).rejects.toThrow('férias integrais')
+    await expect(service.cancel(collaboratorId, created.id, created.version, 'Conflito')).rejects.toThrow('férias integrais')
+    await expect(service.getById(collaboratorId, created.id)).resolves.toMatchObject({ status: 'ACTIVE', version: 1, durationMinutes: 60 })
+  })
+
   it('isola propriedade e não permite editar registro de outro colaborador', async () => {
     const storage = new MemoryStorage()
     const service = buildService(storage)

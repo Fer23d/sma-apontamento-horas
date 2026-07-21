@@ -131,6 +131,15 @@ describe('saldos diários e eventos', () => {
     expect(withTimeOff.visualState).toBe('TIME_OFF')
   })
 
+  it('aplica evento integral antes de folga aprovada', () => {
+    const summary = calculateDaySummary({
+      date: '2026-07-21', today: '2026-07-21', collaboratorId, entries: [],
+      events: [event('VACATION', '2026-07-21')], timeOffRequests: [timeOff('2026-07-21')], workloadVersions,
+    })
+
+    expect(summary).toMatchObject({ expectedMinutes: 0, balanceMinutes: 0, visualState: 'VACATION' })
+  })
+
   it('ignora apontamento cancelado', () => {
     const summary = calculateDaySummary({
       date: '2026-07-20', today: '2026-07-20', collaboratorId,

@@ -10,6 +10,8 @@ import { createBrowserStorage, type StorageLike } from './storage'
 import { auditService } from './auditService'
 import { dayApprovalService } from './dayApprovalService'
 import { profileService } from './profileService'
+import type { EntryDateBlock } from '../features/calendar/entryDatePolicy'
+import { entryDateAvailabilityService } from './entryDateAvailabilityService'
 import {
   LEGACY_V2_TIME_ENTRY_STORAGE_KEY,
   migrateV2TimeEntries,
@@ -49,6 +51,10 @@ export interface EntryMutationPolicy {
   canMutate(collaboratorId: string, date: string): Promise<boolean>
 }
 
+export interface EntryDateGuard {
+  getBlock(collaboratorId: string, date: string): Promise<EntryDateBlock>
+}
+
 export interface AuditRecorder {
   record(event: AuditEvent): Promise<void>
 }
@@ -71,6 +77,7 @@ type ServiceDependencies = {
   now?: () => string
   resolveAssignment?: (collaboratorId: string) => AssignmentSnapshot | null
   mutationPolicy?: EntryMutationPolicy
+  dateGuard?: EntryDateGuard
   audit?: AuditRecorder
   onStorageError?: (message: string, error: unknown) => void
 }
@@ -172,15 +179,17 @@ export class LocalStorageTimeEntryService implements TimeEntryService {
   private readonly now: () => string
   private readonly resolveAssignment: (collaboratorId: string) => AssignmentSnapshot | null
   private readonly mutationPolicy: EntryMutationPolicy
+  private readonly dateGuard: EntryDateGuard
   private readonly audit?: AuditRecorder
   private readonly onStorageError: (message: string, error: unknown) => void
 
-  constructor({ storage, createId, now, resolveAssignment, mutationPolicy, audit, onStorageError }: ServiceDependencies) {
+  constructor({ storage, createId, now, resolveAssignment, mutationPolicy, dateGuard, audit, onStorageError }: ServiceDependencies) {
     this.storage = storage
     this.createId = createId ?? (() => crypto.randomUUID())
     this.now = now ?? (() => new Date().toISOString())
     this.resolveAssignment = resolveAssignment ?? (() => null)
     this.mutationPolicy = mutationPolicy ?? { canMutate: async () => true }
+    this.dateGuard = dateGuard ?? { getBlock: async () => ({ blocked: false }) }
     this.audit = audit
     this.onStorageError = onStorageError ?? ((message, error) => console.error(message, error))
   }
@@ -241,6 +250,11 @@ export class LocalStorageTimeEntryService implements TimeEntryService {
     if (!await this.mutationPolicy.canMutate(collaboratorId, date)) {
       throw new Error('Este dia está somente leitura ou fora de uma competência aberta.')
     }
+  }
+
+  private async ensureDateAvailable(collaboratorId: string, date: string) {
+    const block = await this.dateGuard.getBlock(collaboratorId, date)
+    if (block.blocked) throw new Error(block.message)
   }
 
   private getOwnEntry(data: TimeEntryStorageV3, collaboratorId: string, id: string) {
@@ -305,6 +319,7 @@ export class LocalStorageTimeEntryService implements TimeEntryService {
   async create(collaboratorId: string, data: CreateTimeEntryData) {
     const normalized = normalizeCreateData(data)
     await this.ensureMutable(collaboratorId, normalized.entryDate)
+    await this.ensureDateAvailable(collaboratorId, normalized.entryDate)
     const assignmentSnapshot = this.resolveAssignment(collaboratorId)
     if (!assignmentSnapshot) throw new Error('Não existe squad ativa para vincular o apontamento.')
     const readResult = this.read()
@@ -338,6 +353,8 @@ export class LocalStorageTimeEntryService implements TimeEntryService {
     if (entry.status === 'CANCELLED') throw new Error('Um apontamento cancelado não pode ser editado.')
     await this.ensureMutable(collaboratorId, entry.entryDate)
     await this.ensureMutable(collaboratorId, normalized.entryDate)
+    await this.ensureDateAvailable(collaboratorId, entry.entryDate)
+    if (normalized.entryDate !== entry.entryDate) await this.ensureDateAvailable(collaboratorId, normalized.entryDate)
     const updated: TimeEntry = {
       ...entry,
       ...normalized,
@@ -367,6 +384,8 @@ export class LocalStorageTimeEntryService implements TimeEntryService {
       details: overrides.details ?? entry.details,
     })
     await this.ensureMutable(collaborId, normalized.entryDate)
+    await this.ensureDateAvailable(collaborId, entry.entryDate)
+    if (normalized.entryDate !== entry.entryDate) await this.ensureDateAvailable(collaborId, normalized.entryDate)
     const assignmentSnapshot = this.resolveAssignment(collaborId)
     if (!assignmentSnapshot) throw new Error('Não existe squad ativa para vincular o apontamento.')
     const timestamp = this.now()
@@ -397,6 +416,7 @@ export class LocalStorageTimeEntryService implements TimeEntryService {
     this.assertVersion(entry, expectedVersion)
     if (entry.status === 'CANCELLED') throw new Error('O apontamento já está cancelado.')
     await this.ensureMutable(collaboratorId, entry.entryDate)
+    await this.ensureDateAvailable(collaboratorId, entry.entryDate)
     const timestamp = this.now()
     const cancelled: TimeEntry = {
       ...entry,
@@ -429,5 +449,6 @@ export const timeEntryService = new LocalStorageTimeEntryService({
   storage: createBrowserStorage(),
   resolveAssignment: (collaboratorId) => profileService.resolveAssignment(collaboratorId),
   mutationPolicy: dayApprovalService,
+  dateGuard: entryDateAvailabilityService,
   audit: auditService,
 })
