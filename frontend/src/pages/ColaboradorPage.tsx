@@ -2,13 +2,13 @@ import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { PageContainer } from '../components/PageContainer'
 import { DailyEntryList } from '../features/collaborator/DailyEntryList'
-import { SummaryCard } from '../features/collaborator/SummaryCard'
+import { BalanceSummaryCards } from '../features/collaborator/BalanceSummaryCards'
 import { useCollaboratorDashboard } from '../features/collaborator/useCollaboratorDashboard'
 import { MonthlyCalendar } from '../features/calendar/MonthlyCalendar'
 import { DayDetails } from '../features/calendar/DayDetails'
 import { BalancePeriodFilter } from '../features/calendar/BalancePeriodFilter'
 import { useSession } from '../features/session/useSession'
-import { formatMinutes, formatSignedMinutes } from '../features/time-entries/domain'
+import { formatMinutes } from '../features/time-entries/domain'
 import { getCorporateToday, getMonthKey, getMonthRange, isIsoDate } from '../shared/utils/date'
 
 export function ColaboradorPage() {
@@ -67,12 +67,12 @@ export function ColaboradorPage() {
         {dashboard.data && !dashboard.isLoading && (
           <>
             <BalancePeriodFilter startDate={range.startDate} endDate={range.endDate} isCustomRange={hasCustomRange} onChange={(field, value) => setRange((current) => ({ ...current, [field]: value }))} onApply={applyRange} onClear={useCalendarMonth} />
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              <SummaryCard label="Saldo de hoje" value={formatSignedMinutes(dashboard.data.todaySummary.balanceMinutes)} helper="Resultado real até o dia corporativo atual." tone={dashboard.data.todaySummary.balanceMinutes >= 0 ? 'positive' : 'warning'} />
-              <SummaryCard label={hasCustomRange ? 'Saldo do intervalo' : 'Saldo do mês'} value={formatSignedMinutes(dashboard.data.filteredSummary.realBalanceMinutes)} helper={`${formatMinutes(dashboard.data.filteredSummary.workedMinutes)} apontadas no período.`} tone={dashboard.data.filteredSummary.realBalanceMinutes >= 0 ? 'positive' : 'warning'} />
-              <SummaryCard label="Saldo total acumulado" value={formatSignedMinutes(dashboard.data.totalSummary.realBalanceMinutes)} helper="Acumulado desde a primeira carga demonstrativa vigente." tone={dashboard.data.totalSummary.realBalanceMinutes >= 0 ? 'positive' : 'warning'} />
-              <SummaryCard label="Projeção futura" value={formatSignedMinutes(dashboard.data.filteredSummary.projectedBalanceMinutes)} helper="Separada do saldo real; considera datas futuras do período selecionado." />
-            </div>
+            <BalanceSummaryCards
+              todaySummary={dashboard.data.todaySummary}
+              filteredSummary={dashboard.data.filteredSummary}
+              totalSummary={dashboard.data.totalSummary}
+              periodLabel={hasCustomRange ? 'Saldo do intervalo' : 'Saldo do mês'}
+            />
 
             <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5" aria-label="Pendências e ações">
               <article className="rounded-2xl border border-red-200 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950/30"><p className="text-sm font-bold text-red-900 dark:text-red-100">Dias pendentes</p><p className="mt-2 text-2xl font-extrabold">{dashboard.data.attention.pendingDays}</p></article>

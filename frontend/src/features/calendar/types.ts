@@ -51,6 +51,7 @@ export interface DailySummary {
   missingMinutes: number
   balanceMinutes: number
   isFuture: boolean
+  hasIntegralEventConflict: boolean
   visualState: CalendarVisualState
 }
 
@@ -64,6 +65,6 @@ export interface PeriodSummary {
   missingMinutes: number
   justifiedMinutes: number
   realBalanceMinutes: number
-  projectedBalanceMinutes: number
+  hasFutureDates: boolean
   days: DailySummary[]
 }

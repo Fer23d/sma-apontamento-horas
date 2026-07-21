@@ -30,6 +30,10 @@ function calculateAdjustedExpectation(baseExpectedMinutes: number, events: Calen
   return { expectedMinutes: baseExpectedMinutes - justifiedMinutes, justifiedMinutes }
 }
 
+function hasFullNeutralizer(events: CalendarEvent[]) {
+  return events.some((event) => event.type === 'HOLIDAY' || event.type === 'VACATION' || event.type === 'MEDICAL_LEAVE_FULL')
+}
+
 function deriveVisualState(
   events: CalendarEvent[],
   hasApprovedTimeOff: boolean,
@@ -50,11 +54,16 @@ function deriveVisualState(
 export function calculateDaySummary(input: DaySummaryInput): DailySummary {
   const applicableEvents = input.events.filter((event) => eventApplies(event, input.collaboratorId, input.date))
   const baseExpectedMinutes = getBaseExpectedMinutes(input.date, input.workloadVersions)
-  const { expectedMinutes, justifiedMinutes } = calculateAdjustedExpectation(baseExpectedMinutes, applicableEvents)
-  const workedMinutes = input.entries.reduce((total, entry) => {
+  const adjustedExpectation = calculateAdjustedExpectation(baseExpectedMinutes, applicableEvents)
+  const recordedWorkedMinutes = input.entries.reduce((total, entry) => {
     if (entry.collaboratorId !== input.collaboratorId || entry.entryDate !== input.date || entry.status !== 'ACTIVE') return total
     return total + entry.durationMinutes
   }, 0)
+  const isFuture = compareIsoDates(input.date, input.today) > 0
+  const hasIntegralEvent = hasFullNeutralizer(applicableEvents)
+  const expectedMinutes = isFuture ? 0 : adjustedExpectation.expectedMinutes
+  const justifiedMinutes = isFuture ? 0 : adjustedExpectation.justifiedMinutes
+  const workedMinutes = isFuture || hasIntegralEvent ? 0 : recordedWorkedMinutes
   const regularMinutes = Math.min(workedMinutes, expectedMinutes)
   const extraMinutes = Math.max(workedMinutes - expectedMinutes, 0)
   const missingMinutes = Math.max(expectedMinutes - workedMinutes, 0)
@@ -71,7 +80,8 @@ export function calculateDaySummary(input: DaySummaryInput): DailySummary {
     extraMinutes,
     missingMinutes,
     balanceMinutes: workedMinutes - expectedMinutes,
-    isFuture: compareIsoDates(input.date, input.today) > 0,
+    isFuture,
+    hasIntegralEventConflict: hasIntegralEvent && recordedWorkedMinutes > 0,
     visualState: deriveVisualState(applicableEvents, hasApprovedTimeOff, expectedMinutes, workedMinutes),
   }
 }
@@ -87,8 +97,7 @@ export function calculatePeriodSummary(input: PeriodSummaryInput): PeriodSummary
     summary.extraMinutes += day.extraMinutes
     summary.missingMinutes += day.missingMinutes
     summary.justifiedMinutes += day.justifiedMinutes
-    if (day.isFuture) summary.projectedBalanceMinutes += day.balanceMinutes
-    else summary.realBalanceMinutes += day.balanceMinutes
+    summary.realBalanceMinutes += day.balanceMinutes
     return summary
   }, {
     startDate: input.startDate,
@@ -100,7 +109,7 @@ export function calculatePeriodSummary(input: PeriodSummaryInput): PeriodSummary
     missingMinutes: 0,
     justifiedMinutes: 0,
     realBalanceMinutes: 0,
-    projectedBalanceMinutes: 0,
+    hasFutureDates: compareIsoDates(input.endDate, input.today) > 0,
     days,
   })
 }

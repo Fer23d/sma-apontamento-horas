@@ -7,7 +7,7 @@ import { HistoryPeriodSummary } from './HistoryPeriodSummary'
 const summary: PeriodSummary = {
   startDate: '2026-07-01', endDate: '2026-07-31', expectedMinutes: 480, workedMinutes: 420,
   regularMinutes: 420, extraMinutes: 0, missingMinutes: 60, justifiedMinutes: 480,
-  realBalanceMinutes: -60, projectedBalanceMinutes: -480, days: [],
+  realBalanceMinutes: -60, hasFutureDates: true, days: [],
 }
 
 const timeOff: TimeOffRequest = {
@@ -16,15 +16,15 @@ const timeOff: TimeOffRequest = {
 }
 
 describe('resumo do período no histórico', () => {
-  it('separa saldo real e projeção e mostra eventos mesmo sem apontamento', () => {
+  it('mostra somente saldo real, informa o corte futuro e preserva eventos sem apontamento', () => {
     const markup = renderToStaticMarkup(<HistoryPeriodSummary summary={summary} events={[{
       id: 'holiday-1', collaboratorId: 'collaborator-1', type: 'HOLIDAY', startDate: '2026-07-09', endDate: '2026-07-09',
       title: 'Feriado demonstrativo', source: 'DEMO', createdAt: '2026-07-01T12:00:00.000Z',
     }]} timeOffRequests={[timeOff]} />)
     expect(markup).toContain('Saldo real do período')
     expect(markup).toContain('-01:00')
-    expect(markup).toContain('Projeção futura')
-    expect(markup).toContain('-08:00')
+    expect(markup).not.toContain('Projeção futura')
+    expect(markup).toContain('Datas futuras não são consideradas no saldo real.')
     expect(markup).toContain('Feriado demonstrativo')
     expect(markup).toContain('Folga aprovada')
   })

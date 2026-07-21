@@ -12,12 +12,12 @@ export function HistoryPeriodSummary({ summary, events, timeOffRequests }: { sum
   return (
     <section className="space-y-4" aria-labelledby="history-period-title">
       <h2 id="history-period-title" className="sr-only">Resumo do período consultado</h2>
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <article className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900"><p className="text-sm font-bold text-slate-500">Saldo real do período</p><p className="mt-2 text-2xl font-extrabold text-sma-navy dark:text-white">{formatSignedMinutes(summary.realBalanceMinutes)}</p></article>
-        <article className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900"><p className="text-sm font-bold text-slate-500">Projeção futura</p><p className="mt-2 text-2xl font-extrabold text-sma-navy dark:text-white">{formatSignedMinutes(summary.projectedBalanceMinutes)}</p></article>
         <article className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900"><p className="text-sm font-bold text-slate-500">Jornada ajustada</p><p className="mt-2 text-2xl font-extrabold text-sma-navy dark:text-white">{formatMinutes(summary.expectedMinutes)}</p></article>
         <article className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900"><p className="text-sm font-bold text-slate-500">Horas apontadas</p><p className="mt-2 text-2xl font-extrabold text-sma-navy dark:text-white">{formatMinutes(summary.workedMinutes)}</p></article>
       </div>
+      {summary.hasFutureDates && <p role="note" className="text-xs text-slate-500 dark:text-slate-400">Datas futuras não são consideradas no saldo real.</p>}
       <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
         <h3 className="font-extrabold text-sma-navy dark:text-white">Eventos do período</h3>
         {events.length === 0 && visibleTimeOff.length === 0 ? <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">Nenhum evento encontrado no período.</p> : (

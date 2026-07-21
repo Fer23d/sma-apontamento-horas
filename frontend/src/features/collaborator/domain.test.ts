@@ -8,7 +8,7 @@ function day(date: string, workedMinutes: number, expectedMinutes: number): Dail
     date, baseExpectedMinutes: expectedMinutes, expectedMinutes, justifiedMinutes: 0, workedMinutes,
     regularMinutes: Math.min(workedMinutes, expectedMinutes), extraMinutes: Math.max(workedMinutes - expectedMinutes, 0),
     missingMinutes: Math.max(expectedMinutes - workedMinutes, 0), balanceMinutes: workedMinutes - expectedMinutes,
-    isFuture: false, visualState: workedMinutes === 0 ? 'NO_ENTRY' : workedMinutes < expectedMinutes ? 'INCOMPLETE' : 'COMPLETE',
+    isFuture: false, hasIntegralEventConflict: false, visualState: workedMinutes === 0 ? 'NO_ENTRY' : workedMinutes < expectedMinutes ? 'INCOMPLETE' : 'COMPLETE',
   }
 }
 

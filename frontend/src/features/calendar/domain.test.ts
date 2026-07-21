@@ -87,7 +87,26 @@ describe('saldos diários e eventos', () => {
       date: '2026-07-20', today: '2026-07-20', collaboratorId, entries: [],
       events: [event(type, '2026-07-20')], timeOffRequests: [], workloadVersions,
     })
-    expect(summary).toMatchObject({ baseExpectedMinutes: 480, expectedMinutes: 0, justifiedMinutes: 480, balanceMinutes: 0 })
+    expect(summary).toMatchObject({ baseExpectedMinutes: 480, expectedMinutes: 0, justifiedMinutes: 480, balanceMinutes: 0, hasIntegralEventConflict: false })
+  })
+
+  it.each(['HOLIDAY', 'VACATION', 'MEDICAL_LEAVE_FULL'] as const)('%s neutraliza saldo de registro histórico conflitante sem apagar sua origem', (type) => {
+    const historicalConflict = entry('2026-07-20', 480)
+    const summary = calculateDaySummary({
+      date: '2026-07-20', today: '2026-07-20', collaboratorId,
+      entries: [historicalConflict], events: [event(type, '2026-07-20')], timeOffRequests: [], workloadVersions,
+    })
+
+    expect(summary).toMatchObject({
+      expectedMinutes: 0,
+      workedMinutes: 0,
+      regularMinutes: 0,
+      extraMinutes: 0,
+      missingMinutes: 0,
+      balanceMinutes: 0,
+      hasIntegralEventConflict: true,
+    })
+    expect(historicalConflict).toMatchObject({ status: 'ACTIVE', durationMinutes: 480 })
   })
 
   it('afastamento parcial reduz somente a jornada justificada', () => {
@@ -128,16 +147,20 @@ describe('saldos por período e calendário', () => {
       entries: [entry('2026-07-20', 480), entry('2026-07-21', 540), entry('2026-07-22', 360)],
       events: [], timeOffRequests: [], workloadVersions,
     })
-    expect(result).toMatchObject({ expectedMinutes: 1440, workedMinutes: 1380, realBalanceMinutes: -60, projectedBalanceMinutes: 0 })
+    expect(result).toMatchObject({ expectedMinutes: 1440, workedMinutes: 1380, realBalanceMinutes: -60, hasFutureDates: false })
   })
 
-  it('exclui datas futuras do saldo real e apresenta projeção separada', () => {
+  it('exclui datas futuras de jornada, déficit e saldo real', () => {
     const result = calculatePeriodSummary({
       startDate: '2026-07-20', endDate: '2026-07-21', today: '2026-07-20', collaboratorId,
       entries: [entry('2026-07-20', 480)], events: [], timeOffRequests: [timeOff('2026-07-21')], workloadVersions,
     })
     expect(result.realBalanceMinutes).toBe(0)
-    expect(result.projectedBalanceMinutes).toBe(-480)
+    expect(result.expectedMinutes).toBe(480)
+    expect(result.missingMinutes).toBe(0)
+    expect(result.hasFutureDates).toBe(true)
+    expect(result.days[1]).toMatchObject({ isFuture: true, expectedMinutes: 0, missingMinutes: 0, balanceMinutes: 0 })
+    expect('projectedBalanceMinutes' in result).toBe(false)
   })
 
   it('mantém status de completude separado do status de aprovação', () => {

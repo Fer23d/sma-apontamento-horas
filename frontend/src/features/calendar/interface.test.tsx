@@ -3,14 +3,21 @@ import { describe, expect, it, vi } from 'vitest'
 import type { DailySummary } from './types'
 import { CalendarLegend } from './CalendarLegend'
 import { MonthlyCalendar } from './MonthlyCalendar'
+import { DayDetails } from './DayDetails'
+import type { DayApproval } from '../approvals/types'
 
 function day(date: string, visualState: DailySummary['visualState'], workedMinutes = 0, expectedMinutes = 480): DailySummary {
   return {
     date, baseExpectedMinutes: expectedMinutes, expectedMinutes, justifiedMinutes: 0, workedMinutes,
     regularMinutes: Math.min(workedMinutes, expectedMinutes), extraMinutes: Math.max(0, workedMinutes - expectedMinutes),
     missingMinutes: Math.max(0, expectedMinutes - workedMinutes), balanceMinutes: workedMinutes - expectedMinutes,
-    isFuture: false, visualState,
+    isFuture: false, hasIntegralEventConflict: false, visualState,
   }
+}
+
+const approval: DayApproval = {
+  id: 'approval-1', collaboratorId: 'demo-collaborator-001', entryDate: '2026-07-20', assignmentSnapshot: null,
+  status: 'AVAILABLE_FOR_APPROVAL', version: 1, updatedAt: '2026-07-20T12:00:00.000Z',
 }
 
 describe('calendário acessível', () => {
@@ -57,5 +64,17 @@ describe('calendário acessível', () => {
     expect(markup).toContain('role="note"')
     expect(markup).not.toContain('HolidayProvider')
     expect(markup).not.toContain('provider demonstrativo')
+  })
+
+  it('sinaliza registro histórico conflitante com evento integral', () => {
+    const summary = { ...day('2026-07-20', 'VACATION'), hasIntegralEventConflict: true }
+    const markup = renderToStaticMarkup(<DayDetails summary={summary} events={[{
+      id: 'vacation-1', collaboratorId: 'demo-collaborator-001', type: 'VACATION', startDate: '2026-07-20', endDate: '2026-07-20',
+      title: 'Férias demonstrativas', source: 'DEMO', createdAt: '2026-07-01T12:00:00.000Z',
+    }]} approval={approval} />)
+
+    expect(markup).toContain('Conflito com evento integral')
+    expect(markup).toContain('preservado para auditoria')
+    expect(markup).toContain('role="alert"')
   })
 })
