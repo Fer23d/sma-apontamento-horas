@@ -39,4 +39,23 @@ describe('calendário acessível', () => {
     expect(markup).toContain('aria-label="Selecionar mês do calendário"')
     expect(markup).toContain('Julho de 2026')
   })
+
+  it('renderiza somente dias do mês e mantém placeholders fora do foco', () => {
+    const markup = renderToStaticMarkup(<MonthlyCalendar monthKey="2026-07" selectedDate="2026-07-20" days={[]} onMonthChange={vi.fn()} onSelectDate={vi.fn()} />)
+
+    expect(markup.match(/data-calendar-day=/g)).toHaveLength(31)
+    expect(markup.match(/data-calendar-placeholder=/g)).toHaveLength(4)
+    expect(markup).not.toContain('29 de junho de 2026')
+    expect(markup).not.toContain('1 de agosto de 2026')
+    expect(markup).toContain('data-calendar-placeholder="true" aria-hidden="true"')
+  })
+
+  it('explica que o calendário é demonstrativo sem expor termos técnicos', () => {
+    const markup = renderToStaticMarkup(<MonthlyCalendar monthKey="2026-07" selectedDate="2026-07-20" days={[]} onMonthChange={vi.fn()} onSelectDate={vi.fn()} />)
+
+    expect(markup).toContain('Calendário de demonstração: os feriados nacionais, estaduais e municipais ainda não estão integrados a uma fonte oficial.')
+    expect(markup).toContain('role="note"')
+    expect(markup).not.toContain('HolidayProvider')
+    expect(markup).not.toContain('provider demonstrativo')
+  })
 })

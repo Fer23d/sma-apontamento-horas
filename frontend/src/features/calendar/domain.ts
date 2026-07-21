@@ -1,4 +1,4 @@
-import { addDays, compareIsoDates, eachIsoDate } from '../../shared/utils/date'
+import { compareIsoDates, eachIsoDate } from '../../shared/utils/date'
 import type { TimeEntry } from '../time-entries/types'
 import type { TimeOffRequest } from '../time-off/types'
 import { getBaseExpectedMinutes } from '../workloads/domain'
@@ -127,10 +127,28 @@ export function shiftMonth(monthKey: string, amount: number) {
   return `${shifted.getUTCFullYear()}-${String(shifted.getUTCMonth() + 1).padStart(2, '0')}`
 }
 
-export function getMonthGridDates(monthKey: string) {
+export type MonthGridCell =
+  | { kind: 'placeholder'; key: string }
+  | { kind: 'day'; key: string; date: string }
+
+export function getMonthGridCells(monthKey: string): MonthGridCell[] {
   const firstDate = `${monthKey}-01`
   const firstWeekday = new Date(`${firstDate}T12:00:00.000Z`).getUTCDay()
-  const mondayOffset = firstWeekday === 0 ? 6 : firstWeekday - 1
-  const gridStart = addDays(firstDate, -mondayOffset)
-  return Array.from({ length: 42 }, (_, index) => addDays(gridStart, index))
+  const leadingPlaceholders = firstWeekday === 0 ? 6 : firstWeekday - 1
+  const [year, month] = monthKey.split('-').map(Number)
+  const daysInMonth = new Date(Date.UTC(year, month, 0, 12)).getUTCDate()
+  const trailingPlaceholders = (7 - ((leadingPlaceholders + daysInMonth) % 7)) % 7
+
+  return [
+    ...Array.from({ length: leadingPlaceholders }, (_, index): MonthGridCell => ({
+      kind: 'placeholder', key: `leading-${index}`,
+    })),
+    ...Array.from({ length: daysInMonth }, (_, index): MonthGridCell => {
+      const date = `${monthKey}-${String(index + 1).padStart(2, '0')}`
+      return { kind: 'day', key: date, date }
+    }),
+    ...Array.from({ length: trailingPlaceholders }, (_, index): MonthGridCell => ({
+      kind: 'placeholder', key: `trailing-${index}`,
+    })),
+  ]
 }

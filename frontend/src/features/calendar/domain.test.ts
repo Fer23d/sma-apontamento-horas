@@ -3,7 +3,7 @@ import type { CalendarEvent } from './types'
 import type { TimeEntry } from '../time-entries/types'
 import type { TimeOffRequest } from '../time-off/types'
 import type { WorkloadVersion } from '../workloads/types'
-import { calculateDaySummary, calculatePeriodSummary, getCalendarVisualState, getMonthGridDates, shiftMonth } from './domain'
+import { calculateDaySummary, calculatePeriodSummary, getCalendarVisualState, getMonthGridCells, shiftMonth } from './domain'
 
 const collaboratorId = 'collaborator-1'
 const workloadVersions: WorkloadVersion[] = [{
@@ -149,11 +149,35 @@ describe('saldos por período e calendário', () => {
     expect('approvalStatus' in getCalendarVisualState(summary)).toBe(false)
   })
 
-  it('gera grade mensal completa de seis semanas iniciada na segunda-feira', () => {
-    const dates = getMonthGridDates('2026-07')
-    expect(dates).toHaveLength(42)
-    expect(dates[0]).toBe('2026-06-29')
-    expect(dates.at(-1)).toBe('2026-08-09')
+  it('gera somente os dias de julho e placeholders para o alinhamento semanal', () => {
+    const cells = getMonthGridCells('2026-07')
+    const days = cells.filter((cell) => cell.kind === 'day')
+    const placeholders = cells.filter((cell) => cell.kind === 'placeholder')
+
+    expect(cells).toHaveLength(35)
+    expect(days).toHaveLength(31)
+    expect(placeholders).toHaveLength(4)
+    expect(days[0]).toMatchObject({ date: '2026-07-01' })
+    expect(days.at(-1)).toMatchObject({ date: '2026-07-31' })
+    expect(cells.slice(0, 2).every((cell) => cell.kind === 'placeholder')).toBe(true)
+    expect(cells.slice(-2).every((cell) => cell.kind === 'placeholder')).toBe(true)
+  })
+
+  it('não cria preenchimento inicial quando o mês começa na segunda-feira', () => {
+    const cells = getMonthGridCells('2026-06')
+
+    expect(cells[0]).toMatchObject({ kind: 'day', date: '2026-06-01' })
+    expect(cells.filter((cell) => cell.kind === 'day')).toHaveLength(30)
+    expect(cells.filter((cell) => cell.kind === 'placeholder')).toHaveLength(5)
+  })
+
+  it('usa placeholders sem datas adjacentes em um fevereiro iniciado no domingo', () => {
+    const cells = getMonthGridCells('2026-02')
+    const days = cells.filter((cell) => cell.kind === 'day')
+
+    expect(days).toHaveLength(28)
+    expect(days.every((cell) => cell.date.startsWith('2026-02'))).toBe(true)
+    expect(cells.filter((cell) => cell.kind === 'placeholder')).toHaveLength(7)
   })
 
   it('navega entre meses atravessando o ano', () => {
