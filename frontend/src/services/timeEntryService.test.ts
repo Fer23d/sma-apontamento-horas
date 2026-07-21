@@ -90,6 +90,19 @@ function buildService(storage: StorageLike, overrides: Record<string, unknown> =
 }
 
 describe('migração segura de apontamentos v2 para v3', () => {
+  it('preserva registro v3 antigo sem updatedAt usando fallback vazio', async () => {
+    const storage = new MemoryStorage()
+    const legacyWithoutUpdatedAt = v3Entry({ version: 2, updatedAt: undefined })
+    storage.setItem(TIME_ENTRY_STORAGE_KEY, JSON.stringify({
+      version: 3,
+      entriesByCollaborator: { [collaboratorId]: [legacyWithoutUpdatedAt] },
+    }))
+
+    const [preserved] = await buildService(storage).listByDate(collaboratorId, '2026-07-13')
+
+    expect(preserved).toMatchObject({ id: 'legacy-v2-entry-1', version: 2, updatedAt: '' })
+  })
+
   it('migra campos preservados, preenche não aplicável e remove campos descontinuados', async () => {
     const storage = new MemoryStorage()
     storage.setItem(LEGACY_V2_TIME_ENTRY_STORAGE_KEY, JSON.stringify({
@@ -217,13 +230,22 @@ describe('comandos e consultas de apontamento', () => {
 
   it('edita preservando identidade e criação, incrementa versão e exige motivo', async () => {
     const storage = new MemoryStorage()
-    const service = buildService(storage)
+    const timestamps = ['2026-07-20T12:00:00.000Z', '2026-07-20T13:00:00.000Z']
+    const service = buildService(storage, { now: () => timestamps.shift() ?? '2026-07-20T13:00:00.000Z' })
     const created = await service.create(collaboratorId, validData)
 
     await expect(service.update(collaboratorId, created.id, created.version, { ...validData, durationMinutes: 120 }, '  ')).rejects.toThrow('motivo')
     const updated = await service.update(collaboratorId, created.id, created.version, { ...validData, durationMinutes: 120 }, 'Detalhamento corrigido')
 
-    expect(updated).toMatchObject({ id: created.id, createdAt: created.createdAt, durationMinutes: 120, version: 2, lastEditReason: 'Detalhamento corrigido' })
+    expect(updated).toMatchObject({
+      id: created.id,
+      createdAt: '2026-07-20T12:00:00.000Z',
+      updatedAt: '2026-07-20T13:00:00.000Z',
+      durationMinutes: 120,
+      version: 2,
+      lastEditReason: 'Detalhamento corrigido',
+      status: 'ACTIVE',
+    })
   })
 
   it('recusa conflito de versão', async () => {

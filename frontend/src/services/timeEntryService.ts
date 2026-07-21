@@ -127,8 +127,7 @@ function normalizeStoredEntry(value: unknown, collaboratorId: string): TimeEntry
     || (entry.assignmentSnapshot !== null && !isAssignmentSnapshot(entry.assignmentSnapshot))
     || (entry.status !== 'ACTIVE' && entry.status !== 'CANCELLED')
     || !Number.isInteger(entry.version)
-    || typeof entry.createdAt !== 'string'
-    || typeof entry.updatedAt !== 'string') return null
+    || typeof entry.createdAt !== 'string') return null
 
   return {
     id: entry.id,
@@ -145,7 +144,7 @@ function normalizeStoredEntry(value: unknown, collaboratorId: string): TimeEntry
     status: entry.status,
     version: Number(entry.version),
     createdAt: entry.createdAt,
-    updatedAt: entry.updatedAt,
+    updatedAt: typeof entry.updatedAt === 'string' ? entry.updatedAt : '',
     lastEditReason: optionalString(entry.lastEditReason),
     sourceEntryId: optionalString(entry.sourceEntryId),
     cancelledAt: optionalString(entry.cancelledAt),

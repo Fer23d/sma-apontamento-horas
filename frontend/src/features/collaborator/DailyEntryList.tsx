@@ -1,6 +1,7 @@
 import { demoActivities, demoClients } from '../../mocks/demoData'
 import type { TimeEntry } from '../../shared/types/domain'
 import { formatMinutes } from '../time-entries/domain'
+import { EntryRevisionBadge } from '../time-entries/EntryRevisionBadge'
 
 export function DailyEntryList({ entries }: { entries: TimeEntry[] }) {
   const activeEntries = entries.filter((entry) => entry.status === 'ACTIVE')
@@ -28,7 +29,10 @@ export function DailyEntryList({ entries }: { entries: TimeEntry[] }) {
               <li key={entry.id} className="p-5">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div>
-                    <p className="font-bold text-sma-navy dark:text-white">Número do projeto: {entry.projectCode}</p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-bold text-sma-navy dark:text-white">Número do projeto: {entry.projectCode}</p>
+                      <EntryRevisionBadge version={entry.version} />
+                    </div>
                     <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{client?.name} · {activity?.name}</p>
                     <p className="mt-3 text-sm leading-6 text-slate-700 dark:text-slate-300">{entry.details}</p>
                   </div>

@@ -12,6 +12,7 @@ import { formatSignedMinutes } from '../time-entries/domain'
 import { getCalendarVisualState } from '../calendar/domain'
 import { HistoryPeriodSummary } from './HistoryPeriodSummary'
 import { getHistoryEntryActions } from './entryActions'
+import { EntryRevisionBadge, EntryRevisionDetails } from '../time-entries/EntryRevisionBadge'
 
 const approvalLabels = {
   IN_PROGRESS: 'Em andamento', AVAILABLE_FOR_APPROVAL: 'Disponível para aprovação', CORRECTION_REQUESTED: 'Correção solicitada',
@@ -65,6 +66,7 @@ export function TimeEntryHistory() {
                       <h2 className="font-extrabold text-sma-navy dark:text-white">{formatDatePtBr(entry.entryDate)} · Projeto {entry.projectCode}</h2>
                       {entry.status === 'CANCELLED' && <span className="rounded-full bg-slate-200 px-2.5 py-1 text-xs font-bold text-slate-700 dark:bg-slate-700 dark:text-slate-200">Cancelado</span>}
                       <span className="rounded-full border border-slate-300 px-2.5 py-1 text-xs font-bold text-slate-700 dark:border-slate-700 dark:text-slate-200">{approvalLabels[approval.status]}</span>
+                      <EntryRevisionBadge version={entry.version} />
                     </div>
                     <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{client} · {activity} · {formatMinutes(entry.durationMinutes)}</p>
                     <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
@@ -81,7 +83,7 @@ export function TimeEntryHistory() {
                     {approval.deficitJustification && <p className="mt-3 text-sm text-slate-600 dark:text-slate-300"><strong>Justificativa de aprovação com déficit:</strong> {approval.deficitJustification}</p>}
                     {entry.cancelReason && <p className="mt-3 text-sm text-slate-500"><strong>Motivo do cancelamento:</strong> {entry.cancelReason}</p>}
                     {row.summary.hasIntegralEventConflict && <p role="alert" className="mt-3 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100"><strong>Conflito com evento integral:</strong> registro preservado para auditoria e fora do saldo.</p>}
-                    <p className="mt-3 text-xs text-slate-500">Versão {entry.version} · última alteração {new Date(entry.updatedAt).toLocaleString('pt-BR')}</p>
+                    <EntryRevisionDetails version={entry.version} updatedAt={entry.updatedAt} />
                   </div>
                   <div className="flex min-w-44 flex-col gap-2">
                     {actions.edit && <Link to={`/colaborador/apontamentos/${entry.id}/editar`} className="rounded-xl border border-sma-navy px-3 py-2 text-center text-sm font-bold text-sma-navy dark:border-sma-green dark:text-sma-green">Editar</Link>}

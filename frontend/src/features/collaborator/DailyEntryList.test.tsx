@@ -36,4 +36,12 @@ describe('lista diária de apontamentos', () => {
     expect(markup).toContain('Elaboração de projeto')
     expect(markup).toContain('Registro criado antes da ampliação do catálogo.')
   })
+
+  it('destaca um registro editado e omite o badge na versão inicial', () => {
+    const editedMarkup = renderToStaticMarkup(<DailyEntryList entries={[{ ...historicalEntry, version: 2 }]} />)
+    const initialMarkup = renderToStaticMarkup(<DailyEntryList entries={[historicalEntry]} />)
+
+    expect(editedMarkup).toContain('Editado')
+    expect(initialMarkup).not.toContain('Editado')
+  })
 })
