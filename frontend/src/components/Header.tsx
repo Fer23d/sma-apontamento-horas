@@ -24,7 +24,7 @@ export const Header = forwardRef<HTMLButtonElement, HeaderProps>(function Header
         >
           <span aria-hidden="true">☰</span>
         </button>
-        <BrandMark variant="compact" alt="SM&A" className="hidden sm:inline-flex" />
+        <BrandMark variant="compact" />
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-sma-green-dark dark:text-sma-green">Área do colaborador</p>
           <p className="text-sm text-slate-500 dark:text-slate-400">Apontamento de horas por projeto</p>

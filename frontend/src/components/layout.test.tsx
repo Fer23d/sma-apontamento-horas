@@ -42,6 +42,19 @@ describe('layout responsivo do colaborador', () => {
     expect(markup.indexOf('data-desktop-sidebar="true"')).toBeLessThan(markup.indexOf('id="main-content"'))
   })
 
+  it('exibe uma única logo oficial no header e não repete marca no cartão da squad', () => {
+    const markup = renderLayout()
+    const headerStart = markup.indexOf('data-layout-region="global-header"')
+    const headerMarkup = markup.slice(headerStart, markup.indexOf('</header>', headerStart))
+    const squadStart = markup.indexOf('Squad ativa')
+    const squadMarkup = markup.slice(Math.max(0, squadStart - 300), squadStart + 300)
+
+    expect(markup.match(/<img/g) ?? []).toHaveLength(1)
+    expect(headerMarkup).toContain('sma-logo.jpg')
+    expect(squadMarkup).not.toContain('sma-logo.jpg')
+    expect(squadMarkup).not.toContain('SM&amp;A')
+  })
+
   it('expõe estado e alvo do menu mobile para tecnologias assistivas', () => {
     const markup = renderLayout()
     expect(markup).toContain('aria-controls="collaborator-mobile-navigation"')

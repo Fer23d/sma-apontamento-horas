@@ -1,23 +1,24 @@
+import { useState } from 'react'
+import officialLogo from '../assets/brand/sma-logo.jpg'
+
 type BrandMarkProps = {
-  alt: string
+  alt?: string
   variant?: 'compact' | 'full'
   src?: string
   className?: string
 }
 
-export function BrandMark({ alt, variant = 'compact', src, className = '' }: BrandMarkProps) {
-  const sizeClassName = variant === 'compact' ? 'h-11 w-11' : 'min-h-12 px-3'
+const defaultAlt = 'SM&A — Sistemas Elétricos e Automação'
+
+export function BrandMark({ alt = defaultAlt, variant = 'compact', src = officialLogo, className = '' }: BrandMarkProps) {
+  const [failed, setFailed] = useState(false)
+  const showImage = Boolean(src) && !failed
 
   return (
-    <div
-      className={`inline-flex shrink-0 items-center justify-center rounded-xl bg-sma-green font-extrabold text-sma-navy ${sizeClassName} ${className}`}
-      data-brand-variant={variant}
-      aria-label={alt}
-    >
-      {src ? <img src={src} alt={alt} className="max-h-10 max-w-full object-contain" /> : (
-        <span aria-hidden="true">SM&amp;A</span>
-      )}
-      {variant === 'full' && !src && <span className="sr-only">{alt}</span>}
-    </div>
+    <span className={`brand-mark brand-mark--${variant} ${className}`} data-brand-variant={variant}>
+      {showImage
+        ? <img src={src} alt={alt} className="h-full w-full object-contain" onError={() => setFailed(true)} />
+        : <span className="brand-mark__fallback" role="img" aria-label={alt}>SM&amp;A</span>}
+    </span>
   )
 }

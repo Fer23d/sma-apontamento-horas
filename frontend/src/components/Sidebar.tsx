@@ -3,7 +3,6 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import { collaboratorNavigation } from '../mocks/navigation'
 import { useSession } from '../features/session/useSession'
 import { profileService } from '../services/profileService'
-import { BrandMark } from './BrandMark'
 
 type SidebarContentProps = {
   onNavigate: () => void
@@ -42,7 +41,6 @@ function SidebarContent({ onNavigate }: SidebarContentProps) {
             </div>
           </div>
           <div className="mt-4 flex items-center gap-2 rounded-xl bg-white/10 p-3">
-            <BrandMark variant="compact" alt="SM&A" className="h-9 w-9 text-[10px]" />
             <div className="min-w-0">
               <p className="text-[10px] font-bold uppercase tracking-wider text-slate-300">Squad ativa</p>
               <p className="text-xs font-bold leading-tight">{assignment?.squadName ?? 'Não definida'}</p>
