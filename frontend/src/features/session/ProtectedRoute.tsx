@@ -1,9 +1,18 @@
 import type { ReactNode } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
+import { resolveProtectedDemoRoute } from './routePolicy'
+import type { DemoRole } from './types'
 import { useSession } from './useSession'
 
-export function ProtectedRoute({ children }: { children: ReactNode }) {
-  const { profile, isLoading } = useSession()
+const COLLABORATOR_ONLY: readonly DemoRole[] = ['COLLABORATOR']
+
+type ProtectedRouteProps = {
+  children: ReactNode
+  allowedRoles?: readonly DemoRole[]
+}
+
+export function ProtectedRoute({ children, allowedRoles = COLLABORATOR_ONLY }: ProtectedRouteProps) {
+  const { session, isLoading } = useSession()
   const location = useLocation()
 
   if (isLoading) {
@@ -14,6 +23,7 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
     )
   }
 
-  if (!profile) return <Navigate to="/login" replace state={{ from: location.pathname }} />
+  const redirect = resolveProtectedDemoRoute(session, allowedRoles, location)
+  if (redirect) return <Navigate to={redirect.to} replace state={redirect.state} />
   return children
 }

@@ -1,10 +1,14 @@
 import type { ReactNode } from 'react'
-import { Navigate } from 'react-router-dom'
+import { Navigate, useLocation } from 'react-router-dom'
+import { resolvePublicOnlyDemoRoute } from './routePolicy'
 import { useSession } from './useSession'
 
 export function PublicOnlyRoute({ children }: { children: ReactNode }) {
-  const { profile, isLoading } = useSession()
+  const { session, isLoading } = useSession()
+  const location = useLocation()
   if (isLoading) return null
-  if (profile) return <Navigate to="/colaborador" replace />
+  const from = (location.state as { from?: unknown } | null)?.from
+  const redirect = resolvePublicOnlyDemoRoute(session, from)
+  if (redirect) return <Navigate to={redirect.to} replace />
   return children
 }

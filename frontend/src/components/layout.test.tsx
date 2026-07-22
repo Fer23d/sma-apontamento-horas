@@ -4,20 +4,58 @@ import { describe, expect, it, vi } from 'vitest'
 import { ThemeContext } from '../app/themeContext'
 import { demoCollaborator } from '../mocks/demoData'
 import { SessionContext } from '../features/session/sessionContext'
+import { ProtectedRoute } from '../features/session/ProtectedRoute'
+import { PublicOnlyRoute } from '../features/session/PublicOnlyRoute'
+import type { DemoSession } from '../features/session/types'
 import { AppLayout } from './AppLayout'
 import { focusDrawerInitialElement, shouldCloseDrawerForKey } from './drawer'
 import { PageContainer } from './PageContainer'
+
+const collaboratorSession: DemoSession = {
+  id: demoCollaborator.id,
+  name: demoCollaborator.name,
+  role: 'COLLABORATOR',
+  createdAt: '2026-07-21T15:30:00.000Z',
+  explicitLoginAt: '2026-07-21T15:30:00.000Z',
+  isDemo: true,
+  version: 2,
+}
+
+const supervisorSession: DemoSession = {
+  ...collaboratorSession,
+  id: 'demo-supervisor-001',
+  name: 'Supervisor Demonstração',
+  role: 'SUPERVISOR',
+}
 
 function renderLayout() {
   return renderToStaticMarkup(
     <MemoryRouter initialEntries={['/colaborador']}>
       <ThemeContext.Provider value={{ theme: 'light', toggleTheme: vi.fn() }}>
-        <SessionContext.Provider value={{ profile: demoCollaborator, isLoading: false, signIn: vi.fn(), signOut: vi.fn() }}>
+        <SessionContext.Provider value={{ session: collaboratorSession, profile: demoCollaborator, isLoading: false, signIn: vi.fn(), signOut: vi.fn() }}>
           <AppLayout />
         </SessionContext.Provider>
       </ThemeContext.Provider>
     </MemoryRouter>,
   )
+}
+
+function renderGuard(
+  route: React.ReactNode,
+  { session, profile = null }: { session: DemoSession | null; profile?: typeof demoCollaborator | null },
+) {
+  const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+  try {
+    return renderToStaticMarkup(
+      <MemoryRouter initialEntries={['/supervisor?periodo=atual#equipe']}>
+        <SessionContext.Provider value={{ session, profile, isLoading: false, signIn: vi.fn(), signOut: vi.fn() }}>
+          {route}
+        </SessionContext.Provider>
+      </MemoryRouter>,
+    )
+  } finally {
+    warn.mockRestore()
+  }
 }
 
 describe('layout responsivo do colaborador', () => {
@@ -107,5 +145,43 @@ describe('layout responsivo do colaborador', () => {
     expect(markup).toContain('mx-auto')
     expect(markup).toContain('max-w-7xl')
     expect(markup).not.toContain('lg:ml-')
+  })
+})
+
+describe('guardas da sessão demonstrativa', () => {
+  it('autoriza a área pelo papel da sessão mesmo quando não existe perfil de colaborador', () => {
+    const markup = renderGuard(
+      <ProtectedRoute allowedRoles={['SUPERVISOR']}><p>Área da supervisão</p></ProtectedRoute>,
+      { session: supervisorSession },
+    )
+
+    expect(markup).toContain('Área da supervisão')
+  })
+
+  it('não autoriza outra área apenas porque existe perfil de colaborador', () => {
+    const markup = renderGuard(
+      <ProtectedRoute allowedRoles={['SUPERVISOR']}><p>Área da supervisão</p></ProtectedRoute>,
+      { session: collaboratorSession, profile: demoCollaborator },
+    )
+
+    expect(markup).not.toContain('Área da supervisão')
+  })
+
+  it('trata qualquer sessão válida como autenticada em rota pública', () => {
+    const markup = renderGuard(
+      <PublicOnlyRoute><p>Seleção de perfil</p></PublicOnlyRoute>,
+      { session: supervisorSession },
+    )
+
+    expect(markup).not.toContain('Seleção de perfil')
+  })
+
+  it('mantém a seleção de perfil acessível sem sessão', () => {
+    const markup = renderGuard(
+      <PublicOnlyRoute><p>Seleção de perfil</p></PublicOnlyRoute>,
+      { session: null },
+    )
+
+    expect(markup).toContain('Seleção de perfil')
   })
 })

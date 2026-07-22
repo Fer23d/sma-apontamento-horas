@@ -1,22 +1,28 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { demoSessionService } from '../../services/demoSessionService'
-import type { CollaboratorProfile } from '../../shared/types/domain'
+import { demoCollaborator } from '../../mocks/demoData'
 import { SessionContext } from './sessionContext'
+import type { DemoRole, DemoSession } from './types'
 
 export function DemoSessionProvider({ children }: { children: ReactNode }) {
-  const [profile, setProfile] = useState<CollaboratorProfile | null>(null)
+  const [session, setSession] = useState<DemoSession | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    setProfile(demoSessionService.restore())
+    setSession(demoSessionService.restore())
     setIsLoading(false)
   }, [])
 
-  const signIn = () => setProfile(demoSessionService.signIn())
+  const signIn = (role: DemoRole = 'COLLABORATOR') => {
+    const created = demoSessionService.signIn(role)
+    setSession(created)
+    return created
+  }
   const signOut = () => {
     demoSessionService.signOut()
-    setProfile(null)
+    setSession(null)
   }
+  const profile = session?.role === 'COLLABORATOR' ? demoCollaborator : null
 
-  return <SessionContext.Provider value={{ profile, isLoading, signIn, signOut }}>{children}</SessionContext.Provider>
+  return <SessionContext.Provider value={{ session, profile, isLoading, signIn, signOut }}>{children}</SessionContext.Provider>
 }
