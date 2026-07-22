@@ -23,16 +23,16 @@ export function ProfileSummary({ profile, assignment, currentWorkload }: Profile
 
   return (
     <section className="space-y-4" aria-labelledby="profile-summary-title">
-      <h2 id="profile-summary-title" className="text-lg font-extrabold text-sma-navy dark:text-white">Dados profissionais</h2>
+      <h2 id="profile-summary-title" className="text-lg font-extrabold ui-heading">Dados profissionais</h2>
       <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {items.map(([label, value]) => (
-          <div key={label} className="rounded-xl bg-slate-50 p-4 dark:bg-slate-800/70">
-            <dt className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{label}</dt>
-            <dd className="mt-2 break-words font-bold text-sma-navy dark:text-white">{value}</dd>
+          <div key={label} className="rounded-xl ui-surface-subtle p-4">
+            <dt className="text-xs font-bold uppercase tracking-wider ui-text-subtle">{label}</dt>
+            <dd className="mt-2 break-words font-bold ui-heading">{value}</dd>
           </div>
         ))}
       </dl>
-      <p className="rounded-xl border border-sma-green/40 bg-sma-green/10 p-4 text-sm text-slate-700 dark:text-slate-200">
+      <p className="rounded-xl border ui-callout-secondary p-4 text-sm ui-text">
         Localização controlada pela empresa. Nome, e-mail, cargo, status e localização são somente leitura nesta fase.
       </p>
     </section>

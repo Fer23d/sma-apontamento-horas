@@ -27,5 +27,5 @@ export function EntryRevisionBadge({ version }: Pick<RevisionProps, 'version'>) 
 export function EntryRevisionDetails(props: RevisionProps) {
   const details = getRevisionDetails(props)
   if (!details) return null
-  return <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">{details}</p>
+  return <p className="mt-3 text-xs ui-text-subtle">{details}</p>
 }

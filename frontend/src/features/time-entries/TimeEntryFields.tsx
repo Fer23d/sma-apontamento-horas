@@ -2,7 +2,7 @@ import { demoActivities, demoClients } from '../../mocks/demoData'
 import type { TimeEntryValidationErrors } from './types'
 import type { TimeEntryFormValues } from './useTimeEntryForm'
 
-export const fieldClassName = 'mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-sma-green-dark focus:ring-2 focus:ring-sma-green/30 disabled:cursor-not-allowed disabled:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:disabled:bg-slate-900'
+export const fieldClassName = 'mt-2 w-full ui-field rounded-xl px-3 py-2.5 text-sm ui-text shadow-sm outline-none transition focus:ring-2 disabled:cursor-not-allowed disabled:bg-[var(--color-surface-subtle)]'
 
 export function FieldError({ id, message }: { id: string; message?: string | null }) {
   if (!message) return null
@@ -29,13 +29,13 @@ export function TimeEntryFields({ values, errors, maxDate, onChange }: TimeEntry
   return (
     <div className="grid gap-5 md:grid-cols-2">
       <div>
-        <label htmlFor="entry-date" className="text-sm font-bold text-slate-800 dark:text-slate-200">Data</label>
+        <label htmlFor="entry-date" className="text-sm font-bold ui-text">Data</label>
         <input id="entry-date" name="entryDate" type="date" max={maxDate} value={values.entryDate} onChange={(event) => onChange('entryDate', event.target.value)} className={fieldClassName} aria-invalid={Boolean(errors.entryDate)} aria-describedby={errors.entryDate ? 'entry-date-error' : undefined} />
         <FieldError id="entry-date-error" message={errors.entryDate} />
       </div>
 
       <div>
-        <label htmlFor="client" className="text-sm font-bold text-slate-800 dark:text-slate-200">Cliente</label>
+        <label htmlFor="client" className="text-sm font-bold ui-text">Cliente</label>
         <select id="client" name="clientId" value={values.clientId} onChange={(event) => onChange('clientId', event.target.value)} className={fieldClassName} aria-invalid={Boolean(errors.clientId)} aria-describedby={errors.clientId ? 'client-error' : undefined}>
           <option value="">Selecione um cliente</option>
           {demoClients.filter((client) => client.active).map((client) => <option key={client.id} value={client.id}>{client.name}</option>)}
@@ -44,14 +44,14 @@ export function TimeEntryFields({ values, errors, maxDate, onChange }: TimeEntry
       </div>
 
       <div>
-        <label htmlFor="project-code" className="text-sm font-bold text-slate-800 dark:text-slate-200">Número do projeto</label>
+        <label htmlFor="project-code" className="text-sm font-bold ui-text">Número do projeto</label>
         <input id="project-code" name="projectCode" type="text" maxLength={80} value={values.projectCode} onChange={(event) => onChange('projectCode', event.target.value)} autoCapitalize="none" autoCorrect="off" spellCheck={false} className={fieldClassName} aria-invalid={Boolean(errors.projectCode)} aria-describedby={errors.projectCode ? 'project-code-help project-code-error' : 'project-code-help'} />
-        <p id="project-code-help" className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">* Escreva exatamente a numeração do projeto atual, caso já possua.</p>
+        <p id="project-code-help" className="mt-1.5 text-xs ui-text-subtle">* Escreva exatamente a numeração do projeto atual, caso já possua.</p>
         <FieldError id="project-code-error" message={errors.projectCode} />
       </div>
 
       <div>
-        <label htmlFor="activity" className="text-sm font-bold text-slate-800 dark:text-slate-200">Atividade realizada</label>
+        <label htmlFor="activity" className="text-sm font-bold ui-text">Atividade realizada</label>
         <select id="activity" name="activityId" value={values.activityId} onChange={(event) => onChange('activityId', event.target.value)} className={fieldClassName} aria-invalid={Boolean(errors.activityId)} aria-describedby={errors.activityId ? 'activity-error' : undefined}>
           <option value="">Selecione uma atividade</option>
           {demoActivities.filter((activity) => activity.active).map((activity) => <option key={activity.id} value={activity.id}>{activity.name}</option>)}
@@ -60,7 +60,7 @@ export function TimeEntryFields({ values, errors, maxDate, onChange }: TimeEntry
       </div>
 
       <div>
-        <label htmlFor="discipline" className="text-sm font-bold text-slate-800 dark:text-slate-200">Disciplina</label>
+        <label htmlFor="discipline" className="text-sm font-bold ui-text">Disciplina</label>
         <select id="discipline" name="disciplineCode" value={values.disciplineCode} onChange={(event) => onChange('disciplineCode', event.target.value as TimeEntryFormValues['disciplineCode'])} className={fieldClassName} aria-invalid={Boolean(errors.disciplineCode)} aria-describedby={errors.disciplineCode ? 'discipline-error' : undefined}>
           <option value="">Selecione uma disciplina</option>
           <option value="—">— — Não se aplica</option>
@@ -71,7 +71,7 @@ export function TimeEntryFields({ values, errors, maxDate, onChange }: TimeEntry
       </div>
 
       <div>
-        <label htmlFor="document-type" className="text-sm font-bold text-slate-800 dark:text-slate-200">Tipo de documento</label>
+        <label htmlFor="document-type" className="text-sm font-bold ui-text">Tipo de documento</label>
         <select id="document-type" name="documentTypeCode" value={values.documentTypeCode} onChange={(event) => onChange('documentTypeCode', event.target.value as TimeEntryFormValues['documentTypeCode'])} className={fieldClassName} aria-invalid={Boolean(errors.documentTypeCode)} aria-describedby={errors.documentTypeCode ? 'document-type-error' : undefined}>
           <option value="">Selecione um tipo</option>
           {documentTypes.map(([value, label]) => <option key={value} value={value}>{label}</option>)}

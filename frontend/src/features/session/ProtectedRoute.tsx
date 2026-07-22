@@ -17,8 +17,8 @@ export function ProtectedRoute({ children, allowedRoles = COLLABORATOR_ONLY }: P
 
   if (isLoading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-950" aria-busy="true">
-        <p className="font-semibold text-sma-navy dark:text-white">Carregando ambiente de demonstração…</p>
+      <main className="flex min-h-screen items-center justify-center ui-surface-subtle" aria-busy="true">
+        <p className="font-semibold ui-heading">Carregando ambiente de demonstração…</p>
       </main>
     )
   }

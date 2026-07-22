@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import { PageContainer } from '../components/PageContainer'
 import { DailyEntryList } from '../features/collaborator/DailyEntryList'
 import { BalanceSummaryCards } from '../features/collaborator/BalanceSummaryCards'
@@ -55,13 +55,7 @@ export function ColaboradorPage() {
       contained={false}
     >
       <div className="space-y-6">
-        <div className="grid gap-3 sm:grid-cols-3">
-          <Link to="/colaborador/apontamentos/novo" className="rounded-xl bg-sma-navy px-4 py-3 text-center text-sm font-bold text-white dark:bg-sma-green dark:text-sma-navy">Novo apontamento</Link>
-          <Link to="/colaborador/historico" className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-center text-sm font-bold text-sma-navy dark:border-slate-700 dark:bg-slate-900 dark:text-white">Consultar histórico</Link>
-          <Link to="/colaborador/folgas" className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-center text-sm font-bold text-sma-navy dark:border-slate-700 dark:bg-slate-900 dark:text-white">Minhas folgas</Link>
-        </div>
-
-        {dashboard.isLoading && <p className="rounded-2xl bg-white p-8 text-center font-semibold text-slate-600 dark:bg-slate-900 dark:text-slate-300" aria-live="polite">Carregando visão geral…</p>}
+        {dashboard.isLoading && <p className="rounded-2xl ui-surface p-8 text-center font-semibold ui-text-muted" aria-live="polite">Carregando visão geral…</p>}
         {dashboard.error && <div role="alert" className="rounded-2xl border border-red-300 bg-red-50 p-5 text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200"><p>{dashboard.error}</p><button type="button" onClick={() => void dashboard.reload()} className="mt-3 font-bold underline">Tentar novamente</button></div>}
         {rangeError && <p role="alert" className="rounded-xl border border-red-300 bg-red-50 p-4 text-sm font-semibold text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200">{rangeError}</p>}
         {dashboard.data && !dashboard.isLoading && (

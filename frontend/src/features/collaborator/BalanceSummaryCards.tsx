@@ -17,7 +17,7 @@ export function BalanceSummaryCards({ todaySummary, filteredSummary, totalSummar
         <SummaryCard label={periodLabel} value={formatSignedMinutes(filteredSummary.realBalanceMinutes)} helper={`${formatMinutes(filteredSummary.workedMinutes)} apontadas no período.`} tone={filteredSummary.realBalanceMinutes >= 0 ? 'positive' : 'warning'} />
         <SummaryCard label="Saldo total acumulado" value={formatSignedMinutes(totalSummary.realBalanceMinutes)} helper="Acumulado desde a primeira carga demonstrativa vigente." tone={totalSummary.realBalanceMinutes >= 0 ? 'positive' : 'warning'} />
       </div>
-      {filteredSummary.hasFutureDates && <p role="note" className="mt-3 text-xs text-slate-500 dark:text-slate-400">Datas futuras não são consideradas no saldo real.</p>}
+      {filteredSummary.hasFutureDates && <p role="note" className="mt-3 text-xs ui-text-subtle">Datas futuras não são consideradas no saldo real.</p>}
     </section>
   )
 }

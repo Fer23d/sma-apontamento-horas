@@ -3,47 +3,6 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* Compatibilidade temporaria para consumidores fora do shell desta task. */
-@utility text-sma-navy {
-  color: var(--color-navigation-active-text);
-}
-
-@utility text-sma-green {
-  color: var(--color-secondary);
-}
-
-@utility text-sma-green-dark {
-  color: var(--color-secondary);
-}
-
-@utility bg-sma-navy {
-  background-color: var(--color-primary);
-}
-
-@utility bg-sma-navy-dark {
-  background-color: var(--color-primary-active);
-}
-
-@utility bg-sma-green {
-  background-color: var(--color-navigation-active);
-}
-
-@utility border-sma-navy {
-  border-color: var(--color-primary);
-}
-
-@utility border-sma-green {
-  border-color: var(--color-navigation-active);
-}
-
-@utility ring-sma-navy {
-  --tw-ring-color: var(--color-primary);
-}
-
-@utility ring-sma-green {
-  --tw-ring-color: var(--color-navigation-active);
-}
-
 @theme {
   --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
   --color-brand-primary-950: #092E42;
@@ -237,6 +196,57 @@
     color: var(--color-input-placeholder);
   }
 
+  .ui-field:focus {
+    border-color: var(--color-focus-ring);
+    --tw-ring-color: var(--color-focus-ring);
+  }
+
+  .ui-heading {
+    color: var(--color-primary);
+  }
+
+  .ui-text {
+    color: var(--color-text);
+  }
+
+  .ui-text-muted {
+    color: var(--color-text-muted);
+  }
+
+  .ui-text-subtle {
+    color: var(--color-text-subtle);
+  }
+
+  .ui-accent {
+    color: var(--color-secondary);
+  }
+
+  .ui-surface {
+    background: var(--color-surface-raised);
+  }
+
+  .ui-surface-subtle {
+    background: var(--color-surface-subtle);
+  }
+
+  .ui-border {
+    border-color: var(--color-border);
+  }
+
+  .ui-border-primary {
+    border-color: var(--color-primary);
+  }
+
+  .ui-divide > :not(:last-child) {
+    border-color: var(--color-border);
+  }
+
+  .ui-callout-secondary {
+    border-color: var(--color-secondary);
+    background: var(--color-surface-subtle);
+    color: var(--color-text);
+  }
+
   .ui-button-primary,
   .ui-button-secondary,
   .ui-button-danger {
@@ -407,19 +417,5 @@
   .calendar-day--selected:not(:focus-visible) {
     outline: 3px solid var(--calendar-selected-ring);
     outline-offset: 2px;
-  }
-}
-
-@layer utilities {
-  .bg-sma-green\/10 {
-    background-color: color-mix(in srgb, var(--color-navigation-active) 10%, transparent);
-  }
-
-  .border-sma-green\/40 {
-    border-color: color-mix(in srgb, var(--color-navigation-active) 40%, transparent);
-  }
-
-  .focus\:ring-sma-green\/30:focus {
-    --tw-ring-color: color-mix(in srgb, var(--color-navigation-active) 30%, transparent);
   }
 }

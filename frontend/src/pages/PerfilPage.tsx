@@ -61,7 +61,7 @@ export function PerfilPage() {
 
   return (
     <PageContainer title="Meu perfil" description="Informações profissionais, alocação e carga horária da sessão demonstrativa.">
-      {profileState.isLoading && <p aria-live="polite" className="text-sm text-slate-600 dark:text-slate-300">Carregando perfil profissional…</p>}
+      {profileState.isLoading && <p aria-live="polite" className="text-sm ui-text-muted">Carregando perfil profissional…</p>}
       {profileState.error && <div role="alert" className="rounded-xl bg-red-50 p-4 text-sm font-semibold text-red-800 dark:bg-red-950/40 dark:text-red-200"><p>{profileState.error}</p><button type="button" onClick={() => void profileState.reload()} className="mt-2 underline">Tentar novamente</button></div>}
       {operationError && <p role="alert" className="rounded-xl bg-red-50 p-4 text-sm font-semibold text-red-800 dark:bg-red-950/40 dark:text-red-200">{operationError}</p>}
       {feedback && <p aria-live="polite" className="rounded-xl bg-emerald-50 p-4 text-sm font-semibold text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200">{feedback}</p>}

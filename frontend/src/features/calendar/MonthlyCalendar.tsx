@@ -26,22 +26,22 @@ export function MonthlyCalendar({ monthKey, selectedDate, days, onMonthChange, o
   const gridCells = getMonthGridCells(monthKey)
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5 dark:border-slate-800 dark:bg-slate-900" aria-labelledby="calendar-title">
+    <section className="rounded-2xl border ui-border ui-surface p-4 shadow-sm sm:p-5" aria-labelledby="calendar-title">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <button type="button" aria-label="Mês anterior" onClick={() => onMonthChange(shiftMonth(monthKey, -1))} className="rounded-xl border border-slate-300 px-3 py-2 font-bold dark:border-slate-700">‹</button>
+        <button type="button" aria-label="Mês anterior" onClick={() => onMonthChange(shiftMonth(monthKey, -1))} className="rounded-xl border ui-border px-3 py-2 font-bold">‹</button>
         <div className="text-center">
-          <h2 id="calendar-title" className="text-lg font-extrabold text-sma-navy dark:text-white">{monthLabel(monthKey)}</h2>
-          <input type="month" value={monthKey} onChange={(event) => onMonthChange(event.target.value)} aria-label="Selecionar mês do calendário" className="mt-1 rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200" />
+          <h2 id="calendar-title" className="text-lg font-extrabold ui-heading">{monthLabel(monthKey)}</h2>
+          <input type="month" value={monthKey} onChange={(event) => onMonthChange(event.target.value)} aria-label="Selecionar mês do calendário" className="mt-1 rounded-lg border ui-border ui-surface px-2 py-1 text-xs ui-text" />
         </div>
-        <button type="button" aria-label="Próximo mês" onClick={() => onMonthChange(shiftMonth(monthKey, 1))} className="rounded-xl border border-slate-300 px-3 py-2 font-bold dark:border-slate-700">›</button>
+        <button type="button" aria-label="Próximo mês" onClick={() => onMonthChange(shiftMonth(monthKey, 1))} className="rounded-xl border ui-border px-3 py-2 font-bold">›</button>
       </div>
-      <div className="mt-5 grid grid-cols-7 gap-1 text-center text-[11px] font-bold uppercase tracking-wider text-slate-500 sm:gap-2">
+      <div className="mt-5 grid grid-cols-7 gap-1 text-center text-[11px] font-bold uppercase tracking-wider ui-text-subtle sm:gap-2">
         {weekdayLabels.map((label) => <span key={label}>{label}</span>)}
       </div>
       <div className="mt-2 grid grid-cols-7 gap-1 sm:gap-2">
         {gridCells.map((cell) => {
           if (cell.kind === 'placeholder') {
-            return <span key={cell.key} data-calendar-placeholder aria-hidden="true" className="min-h-20 rounded-xl border border-dashed border-slate-100 bg-slate-50/40 sm:min-h-24 dark:border-slate-800 dark:bg-slate-950/20" />
+            return <span key={cell.key} data-calendar-placeholder aria-hidden="true" className="min-h-20 rounded-xl border border-dashed ui-border ui-surface-subtle sm:min-h-24" />
           }
           const { date } = cell
           const summary = summaries.get(date)
@@ -73,7 +73,7 @@ export function MonthlyCalendar({ monthKey, selectedDate, days, onMonthChange, o
         })}
       </div>
       <div className="mt-5"><CalendarLegend /></div>
-      <p role="note" className="mt-3 rounded-lg bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-600 dark:bg-slate-800/70 dark:text-slate-300">Calendário de demonstração: os feriados nacionais, estaduais e municipais ainda não estão integrados a uma fonte oficial.</p>
+      <p role="note" className="mt-3 rounded-lg ui-surface-subtle px-3 py-2 text-xs leading-5 ui-text-muted">Calendário de demonstração: os feriados nacionais, estaduais e municipais ainda não estão integrados a uma fonte oficial.</p>
     </section>
   )
 }
