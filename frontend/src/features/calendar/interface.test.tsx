@@ -5,6 +5,7 @@ import { CalendarLegend } from './CalendarLegend'
 import { MonthlyCalendar } from './MonthlyCalendar'
 import { DayDetails } from './DayDetails'
 import type { DayApproval } from '../approvals/types'
+import { calendarStatePresentation } from './presentation'
 
 function day(date: string, visualState: DailySummary['visualState'], workedMinutes = 0, expectedMinutes = 480): DailySummary {
   return {
@@ -20,12 +21,66 @@ const approval: DayApproval = {
   status: 'AVAILABLE_FOR_APPROVAL', version: 1, updatedAt: '2026-07-20T12:00:00.000Z',
 }
 
+const states: DailySummary['visualState'][] = [
+  'NO_SCHEDULE', 'NO_ENTRY', 'INCOMPLETE', 'COMPLETE', 'EXCEEDED',
+  'VACATION', 'TIME_OFF', 'MEDICAL_LEAVE', 'HOLIDAY',
+]
+
+const expectedPresentation = {
+  NO_SCHEDULE: { label: 'Sem jornada prevista', marker: '○', tone: 'no-schedule' },
+  NO_ENTRY: { label: 'Sem apontamento', marker: '!', tone: 'no-entry' },
+  INCOMPLETE: { label: 'Jornada incompleta', marker: '◷', tone: 'incomplete' },
+  COMPLETE: { label: 'Jornada atingida', marker: '✓', tone: 'complete' },
+  EXCEEDED: { label: 'Jornada excedida', marker: '+', tone: 'exceeded' },
+  VACATION: { label: 'Férias', marker: '▣', tone: 'vacation' },
+  TIME_OFF: { label: 'Folga', marker: '↺', tone: 'time-off' },
+  MEDICAL_LEAVE: { label: 'Afastamento', marker: '✚', tone: 'medical-leave' },
+  HOLIDAY: { label: 'Feriado', marker: '◆', tone: 'holiday' },
+}
+
 describe('calendário acessível', () => {
+  it('mantem o catalogo fechado de nove rotulos, simbolos e tons', () => {
+    expect(calendarStatePresentation).toEqual(expectedPresentation)
+  })
+
   it('renderiza legenda textual para todos os estados sem depender somente de cor', () => {
     const markup = renderToStaticMarkup(<CalendarLegend />)
-    for (const label of ['Sem apontamento', 'Jornada incompleta', 'Jornada atingida', 'Jornada excedida', 'Férias', 'Folga', 'Afastamento', 'Feriado']) {
+    for (const state of states) {
+      const { label, marker, tone } = expectedPresentation[state]
+      expect(markup).toContain(`data-calendar-state="${state}"`)
+      expect(markup).toContain(`calendar-state--${tone}`)
       expect(markup).toContain(label)
+      expect(markup).toContain(marker)
     }
+  })
+
+  it('aplica o mesmo estado semantico no dia, legenda e detalhe', () => {
+    for (const state of states) {
+      const summary = day('2026-07-20', state)
+      const calendar = renderToStaticMarkup(
+        <MonthlyCalendar monthKey="2026-07" selectedDate={summary.date} days={[summary]} onMonthChange={vi.fn()} onSelectDate={vi.fn()} />,
+      )
+      const details = renderToStaticMarkup(<DayDetails summary={summary} events={[]} approval={approval} />)
+      const tone = expectedPresentation[state].tone
+
+      expect(calendar).toContain(`data-calendar-state="${state}"`)
+      expect(calendar).toContain(`calendar-state--${tone}`)
+      expect(details).toContain(`data-calendar-state="${state}"`)
+      expect(details).toContain(`calendar-state--${tone}`)
+    }
+  })
+
+  it('mantem simbolo visivel no mobile, rotulo acessivel e selecao sem sobrescrever o estado', () => {
+    const markup = renderToStaticMarkup(
+      <MonthlyCalendar monthKey="2026-07" selectedDate="2026-07-20" days={[day('2026-07-20', 'EXCEEDED', 540)]} onMonthChange={vi.fn()} onSelectDate={vi.fn()} />,
+    )
+
+    expect(markup).toContain('data-calendar-marker="true"')
+    expect(markup).toContain('aria-hidden="true">+</span>')
+    expect(markup).toContain('sr-only sm:not-sr-only')
+    expect(markup).toContain('calendar-state--exceeded')
+    expect(markup).toContain('calendar-day--selected')
+    expect(markup).not.toContain('ring-sma-')
   })
 
   it('nomeia cada dia com data, situação e totais, sem codificar aprovação como cor', () => {

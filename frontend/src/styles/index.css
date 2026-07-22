@@ -91,6 +91,34 @@
   --color-danger: #B42318;
   --color-danger-hover: #8F1D14;
   --color-danger-contrast: #FFFFFF;
+  --calendar-selected-ring: var(--color-focus-ring);
+  --calendar-state-no-schedule-surface: #F1F5F9;
+  --calendar-state-no-schedule-text: #334155;
+  --calendar-state-no-schedule-border: #64748B;
+  --calendar-state-no-entry-surface: #FFF7E6;
+  --calendar-state-no-entry-text: #6B4F13;
+  --calendar-state-no-entry-border: #A16207;
+  --calendar-state-incomplete-surface: #FFF1E8;
+  --calendar-state-incomplete-text: #8A3F17;
+  --calendar-state-incomplete-border: #C2410C;
+  --calendar-state-complete-surface: #EEF7EF;
+  --calendar-state-complete-text: #275B39;
+  --calendar-state-complete-border: #4D7C0F;
+  --calendar-state-exceeded-surface: #FDF0F4;
+  --calendar-state-exceeded-text: #7A2E45;
+  --calendar-state-exceeded-border: #A23E5A;
+  --calendar-state-vacation-surface: #F5F0FB;
+  --calendar-state-vacation-text: #5B3C88;
+  --calendar-state-vacation-border: #7E5BA6;
+  --calendar-state-time-off-surface: #EDF8FC;
+  --calendar-state-time-off-text: #225E7A;
+  --calendar-state-time-off-border: #2C7DA0;
+  --calendar-state-medical-leave-surface: #FAF0F8;
+  --calendar-state-medical-leave-text: #633A61;
+  --calendar-state-medical-leave-border: #8A5A83;
+  --calendar-state-holiday-surface: #FFF0F0;
+  --calendar-state-holiday-text: #7C2D32;
+  --calendar-state-holiday-border: #B23A48;
 }
 
 .dark {
@@ -128,6 +156,34 @@
   --color-danger: #FCA5A5;
   --color-danger-hover: #FECACA;
   --color-danger-contrast: #0E1720;
+  --calendar-selected-ring: var(--color-focus-ring);
+  --calendar-state-no-schedule-surface: #263545;
+  --calendar-state-no-schedule-text: #E8EEF5;
+  --calendar-state-no-schedule-border: #91A4B8;
+  --calendar-state-no-entry-surface: #44371E;
+  --calendar-state-no-entry-text: #FFE9B0;
+  --calendar-state-no-entry-border: #D5A23A;
+  --calendar-state-incomplete-surface: #4A2A1B;
+  --calendar-state-incomplete-text: #FFD9C4;
+  --calendar-state-incomplete-border: #D27A44;
+  --calendar-state-complete-surface: #253C2A;
+  --calendar-state-complete-text: #DDEFD8;
+  --calendar-state-complete-border: #80A76B;
+  --calendar-state-exceeded-surface: #452532;
+  --calendar-state-exceeded-text: #FFD9E4;
+  --calendar-state-exceeded-border: #D0809A;
+  --calendar-state-vacation-surface: #352944;
+  --calendar-state-vacation-text: #E9DDFF;
+  --calendar-state-vacation-border: #A98AD0;
+  --calendar-state-time-off-surface: #203A48;
+  --calendar-state-time-off-text: #D9F2FF;
+  --calendar-state-time-off-border: #6FB7D1;
+  --calendar-state-medical-leave-surface: #42283F;
+  --calendar-state-medical-leave-text: #F5DDF0;
+  --calendar-state-medical-leave-border: #C28AB8;
+  --calendar-state-holiday-surface: #49282A;
+  --calendar-state-holiday-text: #FFE0E0;
+  --calendar-state-holiday-border: #D68787;
 }
 
 @layer base {
@@ -286,6 +342,71 @@
     font-size: 1rem;
     font-weight: 800;
     letter-spacing: 0.08em;
+  }
+
+  .calendar-state {
+    border-color: var(--calendar-state-border);
+    background: var(--calendar-state-surface);
+    color: var(--calendar-state-text);
+  }
+
+  .calendar-state--no-schedule {
+    --calendar-state-surface: var(--calendar-state-no-schedule-surface);
+    --calendar-state-text: var(--calendar-state-no-schedule-text);
+    --calendar-state-border: var(--calendar-state-no-schedule-border);
+  }
+
+  .calendar-state--no-entry {
+    --calendar-state-surface: var(--calendar-state-no-entry-surface);
+    --calendar-state-text: var(--calendar-state-no-entry-text);
+    --calendar-state-border: var(--calendar-state-no-entry-border);
+  }
+
+  .calendar-state--incomplete {
+    --calendar-state-surface: var(--calendar-state-incomplete-surface);
+    --calendar-state-text: var(--calendar-state-incomplete-text);
+    --calendar-state-border: var(--calendar-state-incomplete-border);
+  }
+
+  .calendar-state--complete {
+    --calendar-state-surface: var(--calendar-state-complete-surface);
+    --calendar-state-text: var(--calendar-state-complete-text);
+    --calendar-state-border: var(--calendar-state-complete-border);
+  }
+
+  .calendar-state--exceeded {
+    --calendar-state-surface: var(--calendar-state-exceeded-surface);
+    --calendar-state-text: var(--calendar-state-exceeded-text);
+    --calendar-state-border: var(--calendar-state-exceeded-border);
+  }
+
+  .calendar-state--vacation {
+    --calendar-state-surface: var(--calendar-state-vacation-surface);
+    --calendar-state-text: var(--calendar-state-vacation-text);
+    --calendar-state-border: var(--calendar-state-vacation-border);
+  }
+
+  .calendar-state--time-off {
+    --calendar-state-surface: var(--calendar-state-time-off-surface);
+    --calendar-state-text: var(--calendar-state-time-off-text);
+    --calendar-state-border: var(--calendar-state-time-off-border);
+  }
+
+  .calendar-state--medical-leave {
+    --calendar-state-surface: var(--calendar-state-medical-leave-surface);
+    --calendar-state-text: var(--calendar-state-medical-leave-text);
+    --calendar-state-border: var(--calendar-state-medical-leave-border);
+  }
+
+  .calendar-state--holiday {
+    --calendar-state-surface: var(--calendar-state-holiday-surface);
+    --calendar-state-text: var(--calendar-state-holiday-text);
+    --calendar-state-border: var(--calendar-state-holiday-border);
+  }
+
+  .calendar-day--selected:not(:focus-visible) {
+    outline: 3px solid var(--calendar-selected-ring);
+    outline-offset: 2px;
   }
 }
 

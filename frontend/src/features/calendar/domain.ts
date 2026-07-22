@@ -4,6 +4,7 @@ import type { TimeOffRequest } from '../time-off/types'
 import { getBaseExpectedMinutes } from '../workloads/domain'
 import type { WorkloadVersion } from '../workloads/types'
 import type { CalendarEvent, CalendarVisualState, DailySummary, PeriodSummary } from './types'
+import { calendarStatePresentation } from './presentation'
 
 type DaySummaryInput = {
   date: string
@@ -114,20 +115,8 @@ export function calculatePeriodSummary(input: PeriodSummaryInput): PeriodSummary
   })
 }
 
-const visualLabels: Record<CalendarVisualState, string> = {
-  NO_SCHEDULE: 'Sem jornada prevista',
-  NO_ENTRY: 'Sem apontamento',
-  INCOMPLETE: 'Jornada incompleta',
-  COMPLETE: 'Jornada atingida',
-  EXCEEDED: 'Jornada excedida',
-  VACATION: 'Férias',
-  TIME_OFF: 'Folga',
-  MEDICAL_LEAVE: 'Afastamento',
-  HOLIDAY: 'Feriado',
-}
-
 export function getCalendarVisualState(summary: DailySummary) {
-  return { state: summary.visualState, label: visualLabels[summary.visualState] }
+  return { state: summary.visualState, label: calendarStatePresentation[summary.visualState].label }
 }
 
 export function shiftMonth(monthKey: string, amount: number) {

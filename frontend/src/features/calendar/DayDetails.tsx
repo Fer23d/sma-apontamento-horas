@@ -3,6 +3,7 @@ import type { CalendarEvent, DailySummary } from './types'
 import { formatDatePtBr } from '../../shared/utils/date'
 import { formatMinutes, formatSignedMinutes } from '../time-entries/domain'
 import type { TimeOffRequest } from '../time-off/types'
+import { CalendarStateBadge } from './CalendarStateBadge'
 
 const approvalLabels: Record<DayApproval['status'], string> = {
   IN_PROGRESS: 'Em andamento', AVAILABLE_FOR_APPROVAL: 'Disponível para aprovação', CORRECTION_REQUESTED: 'Correção solicitada',
@@ -18,7 +19,10 @@ export function DayDetails({ summary, events, approval, timeOffRequests = [] }: 
     <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900" aria-labelledby="day-details-title">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div><p className="text-xs font-bold uppercase tracking-wider text-sma-green-dark dark:text-sma-green">Detalhes do dia</p><h2 id="day-details-title" className="mt-1 text-lg font-extrabold text-sma-navy dark:text-white">{formatDatePtBr(summary.date)}</h2></div>
-        <span className="rounded-full border border-slate-300 px-3 py-1.5 text-xs font-bold text-slate-700 dark:border-slate-700 dark:text-slate-200">{approvalLabels[approval.status]}</span>
+        <div className="flex flex-wrap items-center gap-2">
+          <CalendarStateBadge state={summary.visualState} />
+          <span className="rounded-full border border-slate-300 px-3 py-1.5 text-xs font-bold text-slate-700 dark:border-slate-700 dark:text-slate-200">{approvalLabels[approval.status]}</span>
+        </div>
       </div>
       <dl className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {[

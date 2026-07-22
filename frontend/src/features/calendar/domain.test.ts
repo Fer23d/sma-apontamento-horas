@@ -4,6 +4,7 @@ import type { TimeEntry } from '../time-entries/types'
 import type { TimeOffRequest } from '../time-off/types'
 import type { WorkloadVersion } from '../workloads/types'
 import { calculateDaySummary, calculatePeriodSummary, getCalendarVisualState, getMonthGridCells, shiftMonth } from './domain'
+import { calendarStatePresentation } from './presentation'
 
 const collaboratorId = 'collaborator-1'
 const workloadVersions: WorkloadVersion[] = [{
@@ -179,6 +180,19 @@ describe('saldos por período e calendário', () => {
     })
     expect(getCalendarVisualState(summary)).toEqual({ state: 'EXCEEDED', label: 'Jornada excedida' })
     expect('approvalStatus' in getCalendarVisualState(summary)).toBe(false)
+  })
+
+  it('usa o rotulo do catalogo compartilhado sem alterar o estado derivado', () => {
+    const summary = calculateDaySummary({
+      date: '2026-07-20', today: '2026-07-20', collaboratorId,
+      entries: [], events: [event('HOLIDAY', '2026-07-20')], timeOffRequests: [], workloadVersions,
+    })
+
+    expect(summary.visualState).toBe('HOLIDAY')
+    expect(getCalendarVisualState(summary)).toEqual({
+      state: 'HOLIDAY',
+      label: calendarStatePresentation.HOLIDAY.label,
+    })
   })
 
   it('gera somente os dias de julho e placeholders para o alinhamento semanal', () => {

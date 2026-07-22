@@ -40,6 +40,45 @@ const requiredSemanticTokens = [
   '--color-overlay',
 ] as const
 
+const calendarStates = {
+  'no-schedule': {
+    light: ['#F1F5F9', '#334155', '#64748B'],
+    dark: ['#263545', '#E8EEF5', '#91A4B8'],
+  },
+  'no-entry': {
+    light: ['#FFF7E6', '#6B4F13', '#A16207'],
+    dark: ['#44371E', '#FFE9B0', '#D5A23A'],
+  },
+  incomplete: {
+    light: ['#FFF1E8', '#8A3F17', '#C2410C'],
+    dark: ['#4A2A1B', '#FFD9C4', '#D27A44'],
+  },
+  complete: {
+    light: ['#EEF7EF', '#275B39', '#4D7C0F'],
+    dark: ['#253C2A', '#DDEFD8', '#80A76B'],
+  },
+  exceeded: {
+    light: ['#FDF0F4', '#7A2E45', '#A23E5A'],
+    dark: ['#452532', '#FFD9E4', '#D0809A'],
+  },
+  vacation: {
+    light: ['#F5F0FB', '#5B3C88', '#7E5BA6'],
+    dark: ['#352944', '#E9DDFF', '#A98AD0'],
+  },
+  'time-off': {
+    light: ['#EDF8FC', '#225E7A', '#2C7DA0'],
+    dark: ['#203A48', '#D9F2FF', '#6FB7D1'],
+  },
+  'medical-leave': {
+    light: ['#FAF0F8', '#633A61', '#8A5A83'],
+    dark: ['#42283F', '#F5DDF0', '#C28AB8'],
+  },
+  holiday: {
+    light: ['#FFF0F0', '#7C2D32', '#B23A48'],
+    dark: ['#49282A', '#FFE0E0', '#D68787'],
+  },
+} as const
+
 function declarationsFor(selector: string) {
   const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   const block = stylesheet.match(new RegExp(`${escapedSelector}\\s*\\{([\\s\\S]*?)\\}`))?.[1]
@@ -120,6 +159,44 @@ describe('tokens institucionais e contraste', () => {
       expect(contrastRatio(tokens['--color-border'], tokens['--color-surface'])).toBeGreaterThanOrEqual(3)
       expect(contrastRatio(tokens['--color-focus-ring'], tokens['--color-surface'])).toBeGreaterThanOrEqual(3)
     }
+  })
+
+  it('declara as 54 cores fechadas dos estados e preserva contraste nos dois temas', () => {
+    for (const [selector, theme] of [[':root', 'light'], ['.dark', 'dark']] as const) {
+      const tokens = declarationsFor(selector)
+      const canvas = tokens['--color-background']
+
+      for (const [tone, values] of Object.entries(calendarStates)) {
+        const [surface, text, border] = values[theme]
+        expect(tokens[`--calendar-state-${tone}-surface`]).toBe(surface)
+        expect(tokens[`--calendar-state-${tone}-text`]).toBe(text)
+        expect(tokens[`--calendar-state-${tone}-border`]).toBe(border)
+        expect(contrastRatio(text, surface), `${tone}: texto/fundo em ${theme}`).toBeGreaterThanOrEqual(4.5)
+        expect(contrastRatio(border, canvas), `${tone}: borda/canvas em ${theme}`).toBeGreaterThanOrEqual(3)
+      }
+    }
+
+    expect(declarationsFor(':root')['--calendar-selected-ring']).toBeDefined()
+    expect(declarationsFor('.dark')['--calendar-selected-ring']).toBeDefined()
+  })
+
+  it('faz a classe compartilhada consumir apenas tokens semanticos de calendario', () => {
+    expect(stylesheet).toContain('.calendar-state {')
+    expect(stylesheet).toContain('background: var(--calendar-state-surface)')
+    expect(stylesheet).toContain('color: var(--calendar-state-text)')
+    expect(stylesheet).toContain('border-color: var(--calendar-state-border)')
+
+    for (const tone of Object.keys(calendarStates)) {
+      expect(stylesheet).toContain(`.calendar-state--${tone} {`)
+      expect(stylesheet).toContain(`var(--calendar-state-${tone}-surface)`)
+      expect(stylesheet).toContain(`var(--calendar-state-${tone}-text)`)
+      expect(stylesheet).toContain(`var(--calendar-state-${tone}-border)`)
+    }
+  })
+
+  it('nao deixa o anel de selecao mascarar o foco visivel do teclado', () => {
+    expect(stylesheet).toContain('.calendar-day--selected:not(:focus-visible) {')
+    expect(stylesheet).not.toMatch(/\.calendar-day--selected\s*\{/)
   })
 
   it('mantem a sigla da navegacao ativa acima de 4,5:1', () => {

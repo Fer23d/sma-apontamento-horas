@@ -55,14 +55,18 @@ export function MonthlyCalendar({ monthKey, selectedDate, days, onMonthChange, o
               key={cell.key}
               type="button"
               data-calendar-day={date}
+              data-calendar-state={state}
               onClick={() => onSelectDate(date)}
               aria-label={ariaLabel}
               aria-pressed={selectedDate === date}
               title={ariaLabel}
-              className={`min-h-20 rounded-xl border p-1.5 text-left transition hover:-translate-y-0.5 sm:min-h-24 sm:p-2 ${presentation.classes} ${selectedDate === date ? 'ring-2 ring-sma-navy ring-offset-2 dark:ring-sma-green dark:ring-offset-slate-900' : ''}`}
+              className={`calendar-state calendar-state--${presentation.tone} min-h-20 rounded-xl border p-1.5 text-left transition hover:-translate-y-0.5 sm:min-h-24 sm:p-2 ${selectedDate === date ? 'calendar-day--selected' : ''}`}
             >
               <span className="block text-xs font-extrabold sm:text-sm">{Number(date.slice(-2))}</span>
-              <span className="mt-1 hidden text-[10px] font-bold leading-tight sm:block"><span aria-hidden="true">{presentation.marker} </span>{presentation.label}</span>
+              <span className="mt-1 block text-[10px] font-bold leading-tight">
+                <span data-calendar-marker aria-hidden="true">{presentation.marker}</span>{' '}
+                <span className="sr-only sm:not-sr-only">{presentation.label}</span>
+              </span>
               <span className="mt-1 block text-[9px] font-semibold sm:text-[10px]">{worked}/{expected}</span>
             </button>
           )
