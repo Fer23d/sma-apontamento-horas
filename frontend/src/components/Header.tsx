@@ -19,7 +19,7 @@ export const Header = forwardRef<HTMLButtonElement, HeaderProps>(function Header
           onClick={onMenuToggle}
           className="rounded-lg border border-slate-200 p-2 text-sma-navy lg:hidden dark:border-slate-700 dark:text-slate-100"
           aria-label={isMenuOpen ? 'Fechar navegação lateral' : 'Abrir navegação lateral'}
-          aria-controls="collaborator-navigation"
+          aria-controls="collaborator-mobile-navigation"
           aria-expanded={isMenuOpen}
         >
           <span aria-hidden="true">☰</span>

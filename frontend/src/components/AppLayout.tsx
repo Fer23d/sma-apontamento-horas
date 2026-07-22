@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { Outlet } from 'react-router-dom'
 import { Header } from './Header'
-import { Sidebar } from './Sidebar'
+import { DesktopSidebar, MobileDrawer } from './Sidebar'
 import { focusDrawerInitialElement, shouldCloseDrawerForKey } from './drawer'
 
 const focusableSelector = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
@@ -50,8 +50,11 @@ export function AppLayout() {
     <div className="min-h-screen overflow-x-clip bg-[var(--sma-surface-page)] text-[var(--sma-text-primary)]">
       <a href="#main-content" className="fixed left-3 top-3 z-50 -translate-y-20 rounded-lg bg-white px-4 py-2 font-bold text-sma-navy shadow focus:translate-y-0 dark:bg-slate-900 dark:text-white">Ir para o conteúdo principal</a>
       <Header ref={menuButtonRef} isMenuOpen={isSidebarOpen} onMenuToggle={() => setSidebarOpen((current) => !current)} />
-      <div className="relative grid min-h-[calc(100vh-5rem)] min-w-0 grid-cols-1 lg:grid-cols-[18rem_minmax(0,1fr)]">
-        <Sidebar isOpen={isSidebarOpen} onNavigate={() => closeSidebar()} onKeyDown={trapDrawerFocus} />
+      <div data-layout-body className="relative grid min-h-[calc(100vh-5rem)] min-w-0 grid-cols-1 lg:grid-cols-[16rem_minmax(0,1fr)]">
+        <DesktopSidebar />
+        <main id="main-content" className="w-full min-w-0 overflow-x-hidden" tabIndex={-1}>
+          <Outlet />
+        </main>
         {isSidebarOpen && (
           <button
             type="button"
@@ -60,9 +63,7 @@ export function AppLayout() {
             aria-label="Fechar navegação"
           />
         )}
-        <main id="main-content" className="w-full min-w-0 overflow-x-hidden" tabIndex={-1}>
-          <Outlet />
-        </main>
+        <MobileDrawer isOpen={isSidebarOpen} onNavigate={() => closeSidebar()} onKeyDown={trapDrawerFocus} />
       </div>
     </div>
   )

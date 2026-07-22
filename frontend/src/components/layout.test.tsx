@@ -21,25 +21,44 @@ function renderLayout() {
 }
 
 describe('layout responsivo do colaborador', () => {
+  it('mantém sidebar desktop e drawer mobile como regiões independentes do shell', () => {
+    const markup = renderLayout()
+    const desktopStart = markup.indexOf('data-desktop-sidebar="true"')
+    const desktopMarkup = markup.slice(desktopStart, markup.indexOf('</aside>', desktopStart))
+
+    expect(markup).toContain('data-desktop-sidebar="true"')
+    expect(markup).toContain('data-mobile-drawer="true"')
+    expect(desktopStart).toBeLessThan(markup.indexOf('id="main-content"'))
+    expect(markup.indexOf('id="main-content"')).toBeLessThan(markup.indexOf('data-mobile-drawer="true"'))
+    expect(desktopMarkup).toContain('w-64')
+    expect(desktopMarkup).toContain('lg:flex')
+    expect(desktopMarkup).not.toContain('invisible')
+    expect(desktopMarkup).not.toContain('translate-x')
+  })
+
   it('posiciona o header global antes da navegação lateral e do conteúdo', () => {
     const markup = renderLayout()
-    expect(markup.indexOf('data-layout-region="global-header"')).toBeLessThan(markup.indexOf('id="collaborator-navigation"'))
-    expect(markup.indexOf('id="collaborator-navigation"')).toBeLessThan(markup.indexOf('id="main-content"'))
+    expect(markup.indexOf('data-layout-region="global-header"')).toBeLessThan(markup.indexOf('data-desktop-sidebar="true"'))
+    expect(markup.indexOf('data-desktop-sidebar="true"')).toBeLessThan(markup.indexOf('id="main-content"'))
   })
 
   it('expõe estado e alvo do menu mobile para tecnologias assistivas', () => {
     const markup = renderLayout()
-    expect(markup).toContain('aria-controls="collaborator-navigation"')
+    expect(markup).toContain('aria-controls="collaborator-mobile-navigation"')
     expect(markup).toContain('aria-expanded="false"')
     expect(markup).toContain('Fechar navegação lateral')
   })
 
   it('mantém o drawer abaixo do header sem reservar largura quando fechado', () => {
     const markup = renderLayout()
+    const drawerStart = markup.indexOf('data-mobile-drawer="true"')
+    const drawerMarkup = markup.slice(drawerStart, markup.indexOf('</aside>', drawerStart))
+
     expect(markup).toContain('top-20')
-    expect(markup).toContain('-translate-x-full')
-    expect(markup).toContain('lg:translate-x-0')
-    expect(markup).toContain('lg:grid-cols-[18rem_minmax(0,1fr)]')
+    expect(drawerMarkup).toContain('-translate-x-full')
+    expect(drawerMarkup).toContain('lg:hidden')
+    expect(drawerMarkup).not.toContain('lg:translate-x-0')
+    expect(markup).toContain('lg:grid-cols-[16rem_minmax(0,1fr)]')
     expect(markup).toContain('overflow-x-clip')
   })
 
