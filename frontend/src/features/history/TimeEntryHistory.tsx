@@ -13,11 +13,8 @@ import { getCalendarVisualState } from '../calendar/domain'
 import { HistoryPeriodSummary } from './HistoryPeriodSummary'
 import { getHistoryEntryActions } from './entryActions'
 import { EntryRevisionBadge, EntryRevisionDetails } from '../time-entries/EntryRevisionBadge'
-
-const approvalLabels = {
-  IN_PROGRESS: 'Em andamento', AVAILABLE_FOR_APPROVAL: 'Disponível para aprovação', CORRECTION_REQUESTED: 'Correção solicitada',
-  APPROVED: 'Aprovado', REOPENED: 'Reaberto', NO_SUBMISSION: 'Sem apontamento enviado',
-} as const
+import { StatusBadge } from '../../components/StatusBadge'
+import { approvalStatusPresentation, timeEntryStatusPresentation } from '../status/presentation'
 
 export function TimeEntryHistory() {
   const history = useTimeEntryHistory()
@@ -50,6 +47,7 @@ export function TimeEntryHistory() {
           <p className="text-sm ui-text-muted">{history.total} registro(s) encontrado(s). Exibição paginada de até 10 itens.</p>
           {history.rows.map((row) => {
             const { entry, approval } = row
+            const approvalPresentation = approvalStatusPresentation[approval.status]
             const client = demoClients.find((item) => item.id === entry.clientId)?.name ?? 'Cliente não disponível'
             const activity = demoActivities.find((item) => item.id === entry.activityId)?.name ?? 'Atividade não disponível'
             const actions = getHistoryEntryActions({
@@ -64,8 +62,8 @@ export function TimeEntryHistory() {
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
                       <h2 className="font-extrabold ui-heading">{formatDatePtBr(entry.entryDate)} · Projeto {entry.projectCode}</h2>
-                      {entry.status === 'CANCELLED' && <span className="rounded-full ui-surface-subtle px-2.5 py-1 text-xs font-bold ui-text">Cancelado</span>}
-                      <span className="rounded-full border ui-border px-2.5 py-1 text-xs font-bold ui-text">{approvalLabels[approval.status]}</span>
+                      {entry.status === 'CANCELLED' && <StatusBadge tone={timeEntryStatusPresentation.CANCELLED.tone}>{timeEntryStatusPresentation.CANCELLED.label}</StatusBadge>}
+                      <StatusBadge tone={approvalPresentation.tone}>{approvalPresentation.label}</StatusBadge>
                       <EntryRevisionBadge version={entry.version} />
                     </div>
                     <p className="mt-2 text-sm ui-text-subtle">{client} · {activity} · {formatMinutes(entry.durationMinutes)}</p>

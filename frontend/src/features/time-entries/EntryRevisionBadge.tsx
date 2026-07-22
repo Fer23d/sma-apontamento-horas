@@ -1,4 +1,6 @@
 import { CORPORATE_TIME_ZONE } from '../../config/business'
+import { StatusBadge } from '../../components/StatusBadge'
+import { revisionStatusPresentation } from '../status/presentation'
 
 type RevisionProps = {
   version: number
@@ -21,7 +23,7 @@ function getRevisionDetails({ version, updatedAt }: RevisionProps) {
 
 export function EntryRevisionBadge({ version }: Pick<RevisionProps, 'version'>) {
   if (version <= 1) return null
-  return <span className="rounded-full border border-sky-300 bg-sky-50 px-2.5 py-1 text-xs font-bold text-sky-800 dark:border-sky-700 dark:bg-sky-950/50 dark:text-sky-200">Editado</span>
+  return <StatusBadge tone={revisionStatusPresentation.tone}>{revisionStatusPresentation.label}</StatusBadge>
 }
 
 export function EntryRevisionDetails(props: RevisionProps) {

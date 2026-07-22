@@ -24,4 +24,18 @@ describe('interface de folgas do colaborador', () => {
     expect(markup).not.toContain('Aprovar folga')
     expect(markup).not.toContain('Rejeitar folga')
   })
+
+  it('diferencia visualmente todos os status sem depender apenas do texto', () => {
+    const requests: TimeOffRequest[] = [
+      pending,
+      { ...pending, id: 'request-2', status: 'APPROVED' },
+      { ...pending, id: 'request-3', status: 'REJECTED' },
+      { ...pending, id: 'request-4', status: 'CANCELLED' },
+    ]
+    const markup = renderToStaticMarkup(<TimeOffRequestList requests={requests} today="2026-07-20" onRemovePending={vi.fn()} onCancelApproved={vi.fn()} />)
+
+    for (const tone of ['pending', 'success', 'danger', 'cancelled']) {
+      expect(markup).toContain(`data-status-tone="${tone}"`)
+    }
+  })
 })

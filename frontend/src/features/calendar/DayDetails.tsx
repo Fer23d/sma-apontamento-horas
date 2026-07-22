@@ -4,24 +4,22 @@ import { formatDatePtBr } from '../../shared/utils/date'
 import { formatMinutes, formatSignedMinutes } from '../time-entries/domain'
 import type { TimeOffRequest } from '../time-off/types'
 import { CalendarStateBadge } from './CalendarStateBadge'
-
-const approvalLabels: Record<DayApproval['status'], string> = {
-  IN_PROGRESS: 'Em andamento', AVAILABLE_FOR_APPROVAL: 'Disponível para aprovação', CORRECTION_REQUESTED: 'Correção solicitada',
-  APPROVED: 'Aprovado', REOPENED: 'Reaberto', NO_SUBMISSION: 'Sem apontamento enviado',
-}
+import { StatusBadge } from '../../components/StatusBadge'
+import { approvalStatusPresentation } from '../status/presentation'
 
 const eventLabels: Record<CalendarEvent['type'], string> = {
   HOLIDAY: 'Feriado', VACATION: 'Férias', MEDICAL_LEAVE_FULL: 'Afastamento integral', MEDICAL_LEAVE_PARTIAL: 'Afastamento parcial',
 }
 
 export function DayDetails({ summary, events, approval, timeOffRequests = [] }: { summary: DailySummary; events: CalendarEvent[]; approval: DayApproval; timeOffRequests?: TimeOffRequest[] }) {
+  const approvalPresentation = approvalStatusPresentation[approval.status]
   return (
     <section className="rounded-2xl border ui-border ui-surface p-5 shadow-sm" aria-labelledby="day-details-title">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div><p className="text-xs font-bold uppercase tracking-wider ui-accent">Detalhes do dia</p><h2 id="day-details-title" className="mt-1 text-lg font-extrabold ui-heading">{formatDatePtBr(summary.date)}</h2></div>
         <div className="flex flex-wrap items-center gap-2">
           <CalendarStateBadge state={summary.visualState} />
-          <span className="rounded-full border ui-border px-3 py-1.5 text-xs font-bold ui-text">{approvalLabels[approval.status]}</span>
+          <StatusBadge tone={approvalPresentation.tone} size="regular">{approvalPresentation.label}</StatusBadge>
         </div>
       </div>
       <dl className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

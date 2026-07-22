@@ -67,6 +67,7 @@ describe('calendário acessível', () => {
       expect(calendar).toContain(`calendar-state--${tone}`)
       expect(details).toContain(`data-calendar-state="${state}"`)
       expect(details).toContain(`calendar-state--${tone}`)
+      expect(details).toContain('data-status-tone="pending"')
     }
   })
 

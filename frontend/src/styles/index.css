@@ -50,6 +50,27 @@
   --color-danger: #B42318;
   --color-danger-hover: #8F1D14;
   --color-danger-contrast: #FFFFFF;
+  --status-neutral-surface: #F1F5F7;
+  --status-neutral-text: #3F4F5B;
+  --status-neutral-border: #758798;
+  --status-info-surface: #EDF8FC;
+  --status-info-text: #225E7A;
+  --status-info-border: #2C7DA0;
+  --status-pending-surface: #FFF7E6;
+  --status-pending-text: #6B4F13;
+  --status-pending-border: #A16207;
+  --status-warning-surface: #FFF1E8;
+  --status-warning-text: #8A3F17;
+  --status-warning-border: #C2410C;
+  --status-success-surface: #EEF7EF;
+  --status-success-text: #275B39;
+  --status-success-border: #4D7C0F;
+  --status-danger-surface: #FFF0F0;
+  --status-danger-text: #7C2D32;
+  --status-danger-border: #B23A48;
+  --status-cancelled-surface: #F3F1F4;
+  --status-cancelled-text: #55485E;
+  --status-cancelled-border: #7C6F85;
   --calendar-selected-ring: var(--color-focus-ring);
   --calendar-state-no-schedule-surface: #F1F5F9;
   --calendar-state-no-schedule-text: #334155;
@@ -115,6 +136,27 @@
   --color-danger: #FCA5A5;
   --color-danger-hover: #FECACA;
   --color-danger-contrast: #0E1720;
+  --status-neutral-surface: #263545;
+  --status-neutral-text: #E8EEF5;
+  --status-neutral-border: #91A4B8;
+  --status-info-surface: #203A48;
+  --status-info-text: #D9F2FF;
+  --status-info-border: #6FB7D1;
+  --status-pending-surface: #44371E;
+  --status-pending-text: #FFE9B0;
+  --status-pending-border: #D5A23A;
+  --status-warning-surface: #4A2A1B;
+  --status-warning-text: #FFD9C4;
+  --status-warning-border: #D27A44;
+  --status-success-surface: #253C2A;
+  --status-success-text: #DDEFD8;
+  --status-success-border: #80A76B;
+  --status-danger-surface: #49282A;
+  --status-danger-text: #FFE0E0;
+  --status-danger-border: #D68787;
+  --status-cancelled-surface: #302B36;
+  --status-cancelled-text: #EEE8F2;
+  --status-cancelled-border: #9F91AA;
   --calendar-selected-ring: var(--color-focus-ring);
   --calendar-state-no-schedule-surface: #263545;
   --calendar-state-no-schedule-text: #E8EEF5;
@@ -322,6 +364,54 @@
   .ui-badge-secondary {
     background: var(--color-surface-subtle);
     color: var(--color-secondary);
+  }
+
+  .status-badge {
+    border-color: var(--status-badge-border);
+    background: var(--status-badge-surface);
+    color: var(--status-badge-text);
+  }
+
+  .status-badge--neutral {
+    --status-badge-surface: var(--status-neutral-surface);
+    --status-badge-text: var(--status-neutral-text);
+    --status-badge-border: var(--status-neutral-border);
+  }
+
+  .status-badge--info {
+    --status-badge-surface: var(--status-info-surface);
+    --status-badge-text: var(--status-info-text);
+    --status-badge-border: var(--status-info-border);
+  }
+
+  .status-badge--pending {
+    --status-badge-surface: var(--status-pending-surface);
+    --status-badge-text: var(--status-pending-text);
+    --status-badge-border: var(--status-pending-border);
+  }
+
+  .status-badge--warning {
+    --status-badge-surface: var(--status-warning-surface);
+    --status-badge-text: var(--status-warning-text);
+    --status-badge-border: var(--status-warning-border);
+  }
+
+  .status-badge--success {
+    --status-badge-surface: var(--status-success-surface);
+    --status-badge-text: var(--status-success-text);
+    --status-badge-border: var(--status-success-border);
+  }
+
+  .status-badge--danger {
+    --status-badge-surface: var(--status-danger-surface);
+    --status-badge-text: var(--status-danger-text);
+    --status-badge-border: var(--status-danger-border);
+  }
+
+  .status-badge--cancelled {
+    --status-badge-surface: var(--status-cancelled-surface);
+    --status-badge-text: var(--status-cancelled-text);
+    --status-badge-border: var(--status-cancelled-border);
   }
 
   .brand-mark {

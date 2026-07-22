@@ -95,6 +95,22 @@ Cada célula abaixo registra `fundo / texto / borda`. O primeiro contraste é te
 
 Símbolos preservados: `○`, `!`, `◷`, `✓`, `+`, `▣`, `↺`, `✚`, `◆`. O texto permanece visível na legenda e nos detalhes; nos dias estreitos, o símbolo fica visível e o rótulo continua disponível para leitor de tela, título e nome acessível.
 
+## Badges funcionais de status
+
+Status de aprovação, apontamento, folga e carga reutilizam um único `StatusBadge` e um catálogo tipado. Os sete tons abaixo são independentes das categorias do calendário; cada badge mantém seu texto e usa `fundo / texto / borda` próprios nos dois temas.
+
+| Tom | Tema claro | Tema escuro | Usos atuais |
+|---|---|---|---|
+| Neutro | `#F1F5F7 / #3F4F5B / #758798` | `#263545 / #E8EEF5 / #91A4B8` | sem envio, ativo |
+| Informação | `#EDF8FC / #225E7A / #2C7DA0` | `#203A48 / #D9F2FF / #6FB7D1` | em andamento, reaberto, editado |
+| Pendente | `#FFF7E6 / #6B4F13 / #A16207` | `#44371E / #FFE9B0 / #D5A23A` | disponível ou pendente de aprovação |
+| Atenção | `#FFF1E8 / #8A3F17 / #C2410C` | `#4A2A1B / #FFD9C4 / #D27A44` | correção solicitada |
+| Sucesso | `#EEF7EF / #275B39 / #4D7C0F` | `#253C2A / #DDEFD8 / #80A76B` | aprovado |
+| Perigo | `#FFF0F0 / #7C2D32 / #B23A48` | `#49282A / #FFE0E0 / #D68787` | rejeitado |
+| Cancelado | `#F3F1F4 / #55485E / #7C6F85` | `#302B36 / #EEE8F2 / #9F91AA` | apontamento ou solicitação cancelada |
+
+Os pares texto:fundo permanecem acima de `4,5:1` e borda:canvas acima de `3:1`. Rejeição e cancelamento não compartilham o mesmo tom, e nenhuma regra ou valor de status armazenado é alterado.
+
 ## BrandMark e integração
 
 `BrandMark` usa o asset oficial por padrão e aceita `compact` ou `full`. A variante compacta exibe a imagem completa em tamanho menor, sem recorte. `src=""` e erro de carregamento ativam fallback textual `SM&A`. O texto alternativo padrão é `SM&A — Sistemas Elétricos e Automação`.

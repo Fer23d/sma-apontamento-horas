@@ -4,10 +4,16 @@ import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import appLayoutSource from '../components/AppLayout.tsx?raw'
 import confirmDialogSource from '../components/ConfirmDialog.tsx?raw'
+import statusBadgeSource from '../components/StatusBadge.tsx?raw'
 import headerSource from '../components/Header.tsx?raw'
 import pageContainerSource from '../components/PageContainer.tsx?raw'
 import sidebarSource from '../components/Sidebar.tsx?raw'
 import themeToggleSource from '../components/ThemeToggle.tsx?raw'
+import dayDetailsSource from '../features/calendar/DayDetails.tsx?raw'
+import timeEntryHistorySource from '../features/history/TimeEntryHistory.tsx?raw'
+import entryRevisionBadgeSource from '../features/time-entries/EntryRevisionBadge.tsx?raw'
+import timeOffRequestListSource from '../features/time-off/TimeOffRequestList.tsx?raw'
+import workloadHistorySource from '../features/workloads/WorkloadHistory.tsx?raw'
 
 const hex = (value: string) => `#${value}`
 const stylesheet = readFileSync(new URL('./index.css', import.meta.url), 'utf8')
@@ -82,6 +88,37 @@ const calendarStates = {
   holiday: {
     light: [hex('FFF0F0'), hex('7C2D32'), hex('B23A48')],
     dark: [hex('49282A'), hex('FFE0E0'), hex('D68787')],
+  },
+} as const
+
+const statusTones = {
+  neutral: {
+    light: [hex('F1F5F7'), hex('3F4F5B'), hex('758798')],
+    dark: [hex('263545'), hex('E8EEF5'), hex('91A4B8')],
+  },
+  info: {
+    light: [hex('EDF8FC'), hex('225E7A'), hex('2C7DA0')],
+    dark: [hex('203A48'), hex('D9F2FF'), hex('6FB7D1')],
+  },
+  pending: {
+    light: [hex('FFF7E6'), hex('6B4F13'), hex('A16207')],
+    dark: [hex('44371E'), hex('FFE9B0'), hex('D5A23A')],
+  },
+  warning: {
+    light: [hex('FFF1E8'), hex('8A3F17'), hex('C2410C')],
+    dark: [hex('4A2A1B'), hex('FFD9C4'), hex('D27A44')],
+  },
+  success: {
+    light: [hex('EEF7EF'), hex('275B39'), hex('4D7C0F')],
+    dark: [hex('253C2A'), hex('DDEFD8'), hex('80A76B')],
+  },
+  danger: {
+    light: [hex('FFF0F0'), hex('7C2D32'), hex('B23A48')],
+    dark: [hex('49282A'), hex('FFE0E0'), hex('D68787')],
+  },
+  cancelled: {
+    light: [hex('F3F1F4'), hex('55485E'), hex('7C6F85')],
+    dark: [hex('302B36'), hex('EEE8F2'), hex('9F91AA')],
   },
 } as const
 
@@ -184,6 +221,33 @@ describe('tokens institucionais e contraste', () => {
 
     expect(declarationsFor(':root')['--calendar-selected-ring']).toBeDefined()
     expect(declarationsFor('.dark')['--calendar-selected-ring']).toBeDefined()
+  })
+
+  it('declara tons de status distintos e acessíveis nos dois temas', () => {
+    for (const [selector, theme] of [[':root', 'light'], ['.dark', 'dark']] as const) {
+      const tokens = declarationsFor(selector)
+      const canvas = tokens['--color-background']
+      const combinations: string[] = []
+
+      for (const [tone, values] of Object.entries(statusTones)) {
+        const [surface, text, border] = values[theme]
+        combinations.push(values[theme].join('/'))
+        expect(tokens[`--status-${tone}-surface`]).toBe(surface)
+        expect(tokens[`--status-${tone}-text`]).toBe(text)
+        expect(tokens[`--status-${tone}-border`]).toBe(border)
+        expect(contrastRatio(text, surface), `${tone}: texto/fundo em ${theme}`).toBeGreaterThanOrEqual(4.5)
+        expect(contrastRatio(border, canvas), `${tone}: borda/canvas em ${theme}`).toBeGreaterThanOrEqual(3)
+      }
+
+      expect(new Set(combinations).size).toBe(Object.keys(statusTones).length)
+    }
+  })
+
+  it('faz todos os consumidores funcionais reutilizarem o badge semântico', () => {
+    expect(statusBadgeSource).toContain('data-status-tone')
+    for (const source of [dayDetailsSource, timeEntryHistorySource, entryRevisionBadgeSource, timeOffRequestListSource, workloadHistorySource]) {
+      expect(source).toContain('<StatusBadge')
+    }
   })
 
   it('faz a classe compartilhada consumir apenas tokens semanticos de calendario', () => {
