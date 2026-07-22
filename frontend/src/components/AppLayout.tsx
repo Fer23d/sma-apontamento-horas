@@ -47,8 +47,8 @@ export function AppLayout() {
   }
 
   return (
-    <div className="min-h-screen overflow-x-clip bg-[var(--sma-surface-page)] text-[var(--sma-text-primary)]">
-      <a href="#main-content" className="fixed left-3 top-3 z-50 -translate-y-20 rounded-lg bg-white px-4 py-2 font-bold text-sma-navy shadow focus:translate-y-0 dark:bg-slate-900 dark:text-white">Ir para o conteúdo principal</a>
+    <div className="min-h-screen overflow-x-clip bg-[var(--color-background)] text-[var(--color-text)]">
+      <a href="#main-content" className="ui-card fixed left-3 top-3 z-50 -translate-y-20 rounded-lg px-4 py-2 font-bold text-[var(--color-primary)] focus:translate-y-0">Ir para o conteúdo principal</a>
       <Header ref={menuButtonRef} isMenuOpen={isSidebarOpen} onMenuToggle={() => setSidebarOpen((current) => !current)} />
       <div data-layout-body className="relative grid min-h-[calc(100vh-5rem)] min-w-0 grid-cols-1 lg:grid-cols-[16rem_minmax(0,1fr)]">
         <DesktopSidebar />
@@ -58,7 +58,7 @@ export function AppLayout() {
         {isSidebarOpen && (
           <button
             type="button"
-            className="fixed inset-x-0 bottom-0 top-20 z-20 bg-slate-950/50 lg:hidden"
+            className="fixed inset-x-0 bottom-0 top-20 z-20 bg-[var(--color-overlay)] lg:hidden"
             onClick={() => closeSidebar(true)}
             aria-label="Fechar navegação"
           />
