@@ -10,6 +10,7 @@ type SidebarContentProps = {
 
 type MobileDrawerProps = {
   isOpen: boolean
+  onClose: () => void
   onNavigate: () => void
   onKeyDown: KeyboardEventHandler<HTMLElement>
 }
@@ -95,7 +96,7 @@ export function DesktopSidebar() {
   )
 }
 
-export function MobileDrawer({ isOpen, onNavigate, onKeyDown }: MobileDrawerProps) {
+export function MobileDrawer({ isOpen, onClose, onNavigate, onKeyDown }: MobileDrawerProps) {
   return (
     <aside
       id="collaborator-mobile-navigation"
@@ -107,7 +108,7 @@ export function MobileDrawer({ isOpen, onNavigate, onKeyDown }: MobileDrawerProp
     >
       <div className="flex items-center justify-between border-b border-[var(--color-sidebar-border)] px-4 py-3">
         <p className="font-bold">Navegação</p>
-        <button type="button" onClick={onNavigate} data-drawer-initial-focus className="rounded-lg border border-[var(--color-sidebar-border)] px-3 py-2 text-sm font-bold hover:bg-[var(--color-navigation-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-sidebar-text)]" aria-label="Fechar navegação lateral">Fechar</button>
+        <button type="button" onClick={onClose} data-drawer-initial-focus className="rounded-lg border border-[var(--color-sidebar-border)] px-3 py-2 text-sm font-bold hover:bg-[var(--color-navigation-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-sidebar-text)]" aria-label="Fechar navegação lateral">Fechar</button>
       </div>
       <SidebarContent onNavigate={onNavigate} />
     </aside>

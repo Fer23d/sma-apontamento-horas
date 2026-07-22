@@ -8,7 +8,7 @@ import { ProtectedRoute } from '../features/session/ProtectedRoute'
 import { PublicOnlyRoute } from '../features/session/PublicOnlyRoute'
 import type { DemoSession } from '../features/session/types'
 import { AppLayout } from './AppLayout'
-import { focusDrawerInitialElement, shouldCloseDrawerForKey } from './drawer'
+import { focusDrawerInitialElement, restoreDrawerTriggerFocus, scheduleDrawerTriggerFocus, shouldCloseDrawerForKey } from './drawer'
 import { PageContainer } from './PageContainer'
 
 const collaboratorSession: DemoSession = {
@@ -137,6 +137,27 @@ describe('layout responsivo do colaborador', () => {
     expect(focusDrawerInitialElement(root)).toBe(true)
     expect(root.querySelector).toHaveBeenCalledWith('[data-drawer-initial-focus]')
     expect(focus).toHaveBeenCalledOnce()
+  })
+
+  it('restaura o foco no acionador ao fechar explicitamente o drawer', () => {
+    const focus = vi.fn()
+    const trigger = { focus } as unknown as HTMLButtonElement
+
+    expect(restoreDrawerTriggerFocus(trigger)).toBe(true)
+    expect(focus).toHaveBeenCalledOnce()
+    expect(restoreDrawerTriggerFocus(null)).toBe(false)
+  })
+
+  it('agenda o retorno do foco para depois da remoção do backdrop', () => {
+    const focus = vi.fn()
+    const trigger = { focus } as unknown as HTMLButtonElement
+    const schedule = vi.fn<(callback: () => void) => void>()
+
+    expect(scheduleDrawerTriggerFocus(trigger, schedule)).toBe(true)
+    expect(focus).not.toHaveBeenCalled()
+    schedule.mock.calls[0]?.[0]()
+    expect(focus).toHaveBeenCalledOnce()
+    expect(scheduleDrawerTriggerFocus(null, schedule)).toBe(false)
   })
 
   it('centraliza a página sem aplicar offset lateral manual', () => {
