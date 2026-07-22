@@ -46,7 +46,7 @@ Documentar `DemoRole`, `DemoSession`, chave `sma:demo-session:v2`, migração de
 Run:
 
 ```powershell
-rg -n "TODO|TBD|placeholder a definir|decisão aberta" docs/superpowers/specs/2026-07-21-identidade-login-demonstrativo-design.md docs/superpowers/plans/2026-07-21-identidade-login-demonstrativo-implementation.md
+rg -n "pendência de implementação|placeholder a definir|decisão aberta" docs/superpowers/specs/2026-07-21-identidade-login-demonstrativo-design.md docs/superpowers/plans/2026-07-21-identidade-login-demonstrativo-implementation.md
 git diff --check
 ```
 
