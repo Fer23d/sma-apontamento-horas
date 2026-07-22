@@ -13,7 +13,7 @@ export function DemoSessionProvider({ children }: { children: ReactNode }) {
     setIsLoading(false)
   }, [])
 
-  const signIn = (role: DemoRole = 'COLLABORATOR') => {
+  const signIn = (role: DemoRole) => {
     const created = demoSessionService.signIn(role)
     setSession(created)
     return created
