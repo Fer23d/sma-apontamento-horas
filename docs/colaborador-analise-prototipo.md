@@ -6,8 +6,8 @@ Esta análise cobre exclusivamente a experiência do perfil **Colaborador**. O c
 
 Fontes analisadas integralmente:
 
-- `C:\Users\Padrão\Downloads\apontamento_de_horas.tsx` — 67.591 bytes, 1.329 linhas, SHA-256 `26D6510DDFC939245E2A3951B31A87949FCB4B340986A3F3428E0523B2029907`;
-- `C:\Users\Padrão\Downloads\codigo.txt` — 68.919 bytes, 1.329 linhas, SHA-256 `A9ECBB556C9A00A6505B8577365302A5E04AB14AEB8240027AFDB88DFCDED7D4`.
+- `apontamento_de_horas.tsx` — 67.591 bytes, 1.329 linhas, SHA-256 `26D6510DDFC939245E2A3951B31A87949FCB4B340986A3F3428E0523B2029907`;
+- `codigo.txt` — 68.919 bytes, 1.329 linhas, SHA-256 `A9ECBB556C9A00A6505B8577365302A5E04AB14AEB8240027AFDB88DFCDED7D4`.
 
 Os dois arquivos são UTF-8 válidos, possuem início e encerramento completos do mesmo componente e não estão truncados. Eles não são idênticos em bytes porque usam espaçamento e indentação diferentes. A comparação ignorando whitespace não encontrou diferenças, e o SHA-256 do conteúdo normalizado sem whitespace é o mesmo nos dois arquivos: `C7ECC88E712136AF4ADD0D0AE769B367FB0B88927D31B2F48967B2AD49DA96B6`. Logo, **não existem diferenças funcionais relevantes** entre os anexos.
 

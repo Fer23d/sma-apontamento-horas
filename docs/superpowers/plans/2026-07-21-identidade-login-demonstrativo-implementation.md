@@ -111,8 +111,9 @@ Expected: falhar porque o `BrandMark` ainda usa fallback por padrão e o asset n
 
 ```powershell
 New-Item -ItemType Directory -Force frontend/src/assets/brand
-Copy-Item -LiteralPath 'C:\Users\PADRO~1\AppData\Local\Temp\codex-clipboard-efd3f1d8-e64b-4b62-b6b2-2f337ca89715.jpg' -Destination 'frontend/src/assets/brand/sma-logo.jpg'
-Get-FileHash -Algorithm SHA256 -LiteralPath 'C:\Users\PADRO~1\AppData\Local\Temp\codex-clipboard-efd3f1d8-e64b-4b62-b6b2-2f337ca89715.jpg','frontend/src/assets/brand/sma-logo.jpg'
+$logoAnexada = Join-Path $env:TEMP 'codex-clipboard-efd3f1d8-e64b-4b62-b6b2-2f337ca89715.jpg'
+Copy-Item -LiteralPath $logoAnexada -Destination 'frontend/src/assets/brand/sma-logo.jpg'
+Get-FileHash -Algorithm SHA256 -LiteralPath $logoAnexada,'frontend/src/assets/brand/sma-logo.jpg'
 ```
 
 Expected: os dois hashes idênticos.
