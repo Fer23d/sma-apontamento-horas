@@ -171,9 +171,11 @@ export class LocalStorageTimeEntryService implements TimeEntryService {
         const rawV1 = this.storage.getItem(LEGACY_V1_TIME_ENTRY_STORAGE_KEY)
         if (rawV1 === null) return { data: empty, canWrite: true }
         const v1Migration = migrateV1TimeEntries(rawV1)
-        this.storage.setItem(LEGACY_V2_TIME_ENTRY_STORAGE_KEY, JSON.stringify(v1Migration.data))
+        const serializedV2 = JSON.stringify(v1Migration.data)
+        this.storage.setItem(LEGACY_V2_TIME_ENTRY_STORAGE_KEY, serializedV2)
         rawV2 = this.storage.getItem(LEGACY_V2_TIME_ENTRY_STORAGE_KEY)
         if (rawV2 === null) throw new Error('A v2 não foi encontrada após a migração.')
+        if (rawV2 !== serializedV2) throw new Error('A v2 gravada diverge dos dados convertidos da v1.')
       }
       const migration = migrateV2TimeEntries(rawV2)
       const serialized = JSON.stringify(migration.data)

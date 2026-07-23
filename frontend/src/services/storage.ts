@@ -18,6 +18,7 @@ export function createResilientStorage(
   },
 ): StorageLike {
   const fallback = createMemoryStorage()
+  const pendingWrites = new Set<string>()
   let primary: StorageLike | null = null
   let resolutionAttempted = false
 
@@ -35,6 +36,7 @@ export function createResilientStorage(
   return {
     getItem(key) {
       const fallbackValue = fallback.getItem(key)
+      if (pendingWrites.has(key)) return fallbackValue
       const resolved = getPrimary()
       if (!resolved) return fallbackValue
       try {
@@ -52,7 +54,9 @@ export function createResilientStorage(
       if (!resolved) return
       try {
         resolved.setItem(key, value)
+        pendingWrites.delete(key)
       } catch (error) {
+        pendingWrites.add(key)
         onError('write', error)
       }
     },

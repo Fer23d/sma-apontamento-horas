@@ -37,4 +37,17 @@ describe('storage resiliente', () => {
     expect(storage.getItem('key')).toBe('persisted')
     expect(storage.getItem('key')).toBe('persisted')
   })
+
+  it('prioriza a escrita em memória quando apenas setItem falha no primário', () => {
+    const primary: StorageLike = {
+      getItem: () => 'old-value',
+      setItem: () => { throw new DOMException('Quota excedida', 'QuotaExceededError') },
+    }
+    const storage = createResilientStorage(() => primary)
+
+    expect(storage.getItem('key')).toBe('old-value')
+    storage.setItem('key', 'new-value')
+
+    expect(storage.getItem('key')).toBe('new-value')
+  })
 })

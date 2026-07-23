@@ -30,6 +30,14 @@ class CorruptingV3Storage extends MemoryStorage {
   }
 }
 
+class CorruptingV2Storage extends MemoryStorage {
+  setItem(key: string, value: string) {
+    super.setItem(key, key === LEGACY_V2_TIME_ENTRY_STORAGE_KEY
+      ? JSON.stringify({ version: 2, entriesByCollaborator: {} })
+      : value)
+  }
+}
+
 const collaboratorId = 'demo-collaborator-001'
 const assignment: AssignmentSnapshot = {
   squadId: 'squad-automation',
@@ -146,6 +154,21 @@ describe('migração segura de apontamentos v2 para v3', () => {
     await expect(buildService(storage, { onStorageError }).listByDate(collaboratorId, '2026-07-13')).resolves.toEqual([])
     expect(storage.getItem(LEGACY_V1_TIME_ENTRY_STORAGE_KEY)).toBe(invalidV1)
     expect(storage.getItem(LEGACY_V2_TIME_ENTRY_STORAGE_KEY)).toBeNull()
+    expect(storage.getItem(TIME_ENTRY_STORAGE_KEY)).toBeNull()
+    expect(onStorageError).toHaveBeenCalledOnce()
+  })
+
+  it('não publica v3 quando a v2 relida diverge da conversão de v1', async () => {
+    const storage = new CorruptingV2Storage()
+    const originalV1 = JSON.stringify({
+      version: 1,
+      entriesByCollaborator: { [collaboratorId]: [v1Entry()] },
+    })
+    storage.setItem(LEGACY_V1_TIME_ENTRY_STORAGE_KEY, originalV1)
+    const onStorageError = vi.fn()
+
+    await expect(buildService(storage, { onStorageError }).listByDate(collaboratorId, '2026-07-13')).resolves.toEqual([])
+    expect(storage.getItem(LEGACY_V1_TIME_ENTRY_STORAGE_KEY)).toBe(originalV1)
     expect(storage.getItem(TIME_ENTRY_STORAGE_KEY)).toBeNull()
     expect(onStorageError).toHaveBeenCalledOnce()
   })
