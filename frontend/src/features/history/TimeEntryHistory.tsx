@@ -14,7 +14,7 @@ import { HistoryPeriodSummary } from './HistoryPeriodSummary'
 import { getHistoryEntryActions } from './entryActions'
 import { EntryRevisionBadge, EntryRevisionDetails } from '../time-entries/EntryRevisionBadge'
 import { StatusBadge } from '../../components/StatusBadge'
-import { approvalStatusPresentation, timeEntryStatusPresentation } from '../status/presentation'
+import { approvalStatusPresentation, nonApplicableApprovalPresentation, timeEntryStatusPresentation } from '../status/presentation'
 
 export function TimeEntryHistory() {
   const history = useTimeEntryHistory()
@@ -47,12 +47,12 @@ export function TimeEntryHistory() {
           <p className="text-sm ui-text-muted">{history.total} registro(s) encontrado(s). Exibição paginada de até 10 itens.</p>
           {history.rows.map((row) => {
             const { entry, approval } = row
-            const approvalPresentation = approvalStatusPresentation[approval.status]
+            const approvalPresentation = approval ? approvalStatusPresentation[approval.status] : nonApplicableApprovalPresentation
             const client = demoClients.find((item) => item.id === entry.clientId)?.name ?? 'Cliente não disponível'
             const activity = demoActivities.find((item) => item.id === entry.activityId)?.name ?? 'Atividade não disponível'
             const actions = getHistoryEntryActions({
               entryStatus: entry.status,
-              approvalStatus: approval.status,
+              approvalStatus: approval?.status ?? null,
               canMutate: row.canMutate,
               hasIntegralEventConflict: row.summary.hasIntegralEventConflict,
             })
@@ -77,8 +77,8 @@ export function TimeEntryHistory() {
                     </dl>
                     {(row.events.length > 0 || row.timeOffRequests.length > 0) && <p className="mt-3 text-sm ui-text-muted"><strong>Eventos do dia:</strong> {[...row.events.map((event) => event.title), ...row.timeOffRequests.map((request) => `Folga ${request.status.toLocaleLowerCase('pt-BR')}`)].join(' · ')}</p>}
                     <p className="mt-4 text-sm leading-6 ui-text">{entry.details}</p>
-                    {approval.correctionReason && <p className="mt-3 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100"><strong>Motivo da correção:</strong> {approval.correctionReason}</p>}
-                    {approval.deficitJustification && <p className="mt-3 text-sm ui-text-muted"><strong>Justificativa de aprovação com déficit:</strong> {approval.deficitJustification}</p>}
+                    {approval?.correctionReason && <p className="mt-3 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100"><strong>Motivo da correção:</strong> {approval.correctionReason}</p>}
+                    {approval?.deficitJustification && <p className="mt-3 text-sm ui-text-muted"><strong>Justificativa de aprovação com déficit:</strong> {approval.deficitJustification}</p>}
                     {entry.cancelReason && <p className="mt-3 text-sm ui-text-subtle"><strong>Motivo do cancelamento:</strong> {entry.cancelReason}</p>}
                     {row.summary.hasIntegralEventConflict && <p role="alert" className="mt-3 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100"><strong>Conflito com evento integral:</strong> registro preservado para auditoria e fora do saldo.</p>}
                     <EntryRevisionDetails version={entry.version} updatedAt={entry.updatedAt} />

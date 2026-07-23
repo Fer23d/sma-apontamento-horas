@@ -3,7 +3,7 @@ import type { TimeEntryStatus } from '../time-entries/types'
 
 type HistoryEntryActionContext = {
   entryStatus: TimeEntryStatus
-  approvalStatus: DayApprovalStatus
+  approvalStatus: DayApprovalStatus | null
   canMutate: boolean
   hasIntegralEventConflict: boolean
 }

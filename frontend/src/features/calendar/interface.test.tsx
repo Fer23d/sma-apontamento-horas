@@ -133,4 +133,11 @@ describe('calendário acessível', () => {
     expect(markup).toContain('preservado para auditoria')
     expect(markup).toContain('role="alert"')
   })
+
+  it('explicita quando a aprovação não se aplica ao dia', () => {
+    const markup = renderToStaticMarkup(<DayDetails summary={day('2026-07-19', 'NO_SCHEDULE', 0, 0)} events={[]} approval={null} />)
+
+    expect(markup).toContain('Aprovação não aplicável')
+    expect(markup).toContain('data-status-tone="neutral"')
+  })
 })

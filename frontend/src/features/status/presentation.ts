@@ -18,6 +18,11 @@ export const approvalStatusPresentation = {
   NO_SUBMISSION: { label: 'Sem apontamento enviado', tone: 'neutral' },
 } as const satisfies Readonly<Record<DayApprovalStatus, StatusPresentation>>
 
+export const nonApplicableApprovalPresentation = {
+  label: 'Aprovação não aplicável',
+  tone: 'neutral',
+} as const satisfies StatusPresentation
+
 export const workloadRequestStatusPresentation = {
   PENDING: { label: 'Pendente', tone: 'pending' },
   APPROVED: { label: 'Aprovada', tone: 'success' },

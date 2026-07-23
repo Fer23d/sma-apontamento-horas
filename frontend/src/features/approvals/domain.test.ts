@@ -5,6 +5,7 @@ import {
   canMutateDay,
   completeCorrection,
   deriveDayApprovalStatus,
+  isDayApprovalApplicable,
   reopenCompetency,
   reopenDay,
   requestCorrection,
@@ -30,6 +31,14 @@ function approval(status: DayApproval['status']): DayApproval {
 }
 
 describe('fluxo consolidado do dia', () => {
+  it('distingue dias aplicáveis de futuro, ausência de jornada e evento integral', () => {
+    expect(isDayApprovalApplicable({ isFuture: true, expectedMinutes: 480, workedMinutes: 0, hasIntegralEventConflict: false })).toBe(false)
+    expect(isDayApprovalApplicable({ isFuture: false, expectedMinutes: 0, workedMinutes: 0, hasIntegralEventConflict: false })).toBe(false)
+    expect(isDayApprovalApplicable({ isFuture: false, expectedMinutes: 480, workedMinutes: 60, hasIntegralEventConflict: true })).toBe(false)
+    expect(isDayApprovalApplicable({ isFuture: false, expectedMinutes: 480, workedMinutes: 0, hasIntegralEventConflict: false })).toBe(true)
+    expect(isDayApprovalApplicable({ isFuture: false, expectedMinutes: 0, workedMinutes: 60, hasIntegralEventConflict: false })).toBe(true)
+  })
+
   it('mantém o dia atual em andamento', () => {
     expect(deriveDayApprovalStatus({ date: '2026-07-20', today: '2026-07-20', competencyClosed: false, hasEntries: true })).toBe('IN_PROGRESS')
   })
@@ -58,6 +67,12 @@ describe('fluxo consolidado do dia', () => {
     })
     expect(result.status).toBe('APPROVED')
     expect(result.deficitJustification).toBe('Atividade externa autorizada')
+  })
+
+  it('rejeita aprovação e correção fora dos estados permitidos', () => {
+    expect(() => approveDay(approval('APPROVED'), { today: '2026-07-20', balanceMinutes: 0, justification: '' })).toThrow('disponível')
+    expect(() => approveDay(approval('CORRECTION_REQUESTED'), { today: '2026-07-20', balanceMinutes: 0, justification: '' })).toThrow('disponível')
+    expect(() => requestCorrection(approval('APPROVED'), 'Revisar')).toThrow('disponível')
   })
 
   it('mantém correção solicitada durante múltiplas edições e conclui explicitamente', () => {

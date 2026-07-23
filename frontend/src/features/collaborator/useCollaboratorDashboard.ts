@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { calculateDaySummary, calculatePeriodSummary } from '../calendar/domain'
 import type { CalendarEvent, DailySummary, PeriodSummary } from '../calendar/types'
 import type { DayApproval } from '../approvals/types'
+import { isDayApprovalApplicable } from '../approvals/domain'
 import type { TimeEntry } from '../time-entries/types'
 import { buildAttentionSummary } from './domain'
 import { calendarEventService } from '../../services/calendarEventService'
@@ -26,7 +27,7 @@ type DashboardData = {
   calendarDays: DailySummary[]
   selectedEntries: TimeEntry[]
   selectedEvents: CalendarEvent[]
-  selectedApproval: DayApproval
+  selectedApproval: DayApproval | null
   approvals: DayApproval[]
   selectedTimeOffRequests: TimeOffRequest[]
   pendingTimeOffRequests: number
@@ -96,11 +97,6 @@ export function useCollaboratorDashboard(selectedDate: string, monthKey: string,
           events: [...periodEvents, ...holidaysToEvents(profile.id, periodHolidays)], timeOffRequests: periodTimeOff, workloadVersions,
         })
       }
-      const calendarDates = eachIsoDate(monthRange.startDate, monthRange.endDate)
-      const approvals = await Promise.all(calendarDates.filter((date) => date <= today).map((date) => {
-        const entries = monthEntries.filter((entry) => entry.entryDate === date)
-        return dayApprovalService.getForDate(profile.id, date, entries.some((entry) => entry.status === 'ACTIVE'), entries[0]?.assignmentSnapshot ?? null)
-      }))
       const selectedEntries = monthEntries.filter((entry) => entry.entryDate === selectedDate)
       const selectedEvents = monthAllEvents.filter((event) => event.startDate <= selectedDate && event.endDate >= selectedDate)
       const selectedTimeOffRequests = monthTimeOff.filter((request) => request.date === selectedDate && request.status !== 'CANCELLED')
@@ -111,15 +107,37 @@ export function useCollaboratorDashboard(selectedDate: string, monthKey: string,
       const todaySummary = monthKey === today.slice(0, 7)
         ? monthSummary.days.find((day) => day.date === today) ?? selectedSummary
         : calculateDaySummary({ date: today, today, collaboratorId: profile.id, entries: totalEntries, events: totalAllEvents, timeOffRequests: totalTimeOff, workloadVersions })
-      const selectedApproval = approvals.find((approval) => approval.entryDate === selectedDate)
-        ?? await dayApprovalService.getForDate(profile.id, selectedDate, selectedEntries.some((entry) => entry.status === 'ACTIVE'), selectedEntries[0]?.assignmentSnapshot ?? null)
+      const currentAssignment = profileService.resolveAssignment(profile.id)
+      const calendarDates = eachIsoDate(monthRange.startDate, monthRange.endDate)
+      const approvals = (await Promise.all(calendarDates.flatMap((date) => {
+        const summary = monthSummary.days.find((day) => day.date === date)
+        if (!summary || !isDayApprovalApplicable(summary)) return []
+        const entries = monthEntries.filter((entry) => entry.entryDate === date)
+        return [dayApprovalService.getForDate(
+          profile.id,
+          date,
+          entries.some((entry) => entry.status === 'ACTIVE'),
+          entries[0]?.assignmentSnapshot ?? currentAssignment,
+          true,
+        )]
+      }))).filter((approval): approval is DayApproval => approval !== null)
+      const selectedApproval = isDayApprovalApplicable(selectedSummary)
+        ? approvals.find((approval) => approval.entryDate === selectedDate)
+          ?? await dayApprovalService.getForDate(
+            profile.id,
+            selectedDate,
+            selectedEntries.some((entry) => entry.status === 'ACTIVE'),
+            selectedEntries[0]?.assignmentSnapshot ?? currentAssignment,
+            true,
+          )
+        : null
       setState({
         data: {
           monthSummary, filteredSummary, totalSummary, todaySummary, selectedSummary, calendarDays: monthSummary.days,
           selectedEntries, selectedEvents, selectedTimeOffRequests, selectedApproval, approvals,
           pendingTimeOffRequests: monthTimeOff.filter((request) => request.status === 'PENDING').length,
           pendingWorkloadRequests: workloadRequests.filter((request) => request.status === 'PENDING').length,
-          assignment: profileService.resolveAssignment(profile.id),
+          assignment: currentAssignment,
           currentWorkload: await workloadService.getCurrent(profile.id, today),
           attention: buildAttentionSummary({ today, days: monthSummary.days, approvals }),
         },

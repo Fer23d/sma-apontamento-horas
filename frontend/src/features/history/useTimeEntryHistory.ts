@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { dayApprovalService } from '../../services/dayApprovalService'
 import { timeEntryService } from '../../services/timeEntryService'
 import type { DayApproval } from '../approvals/types'
+import { isDayApprovalApplicable } from '../approvals/domain'
 import type { DisciplineCode, DocumentTypeCode, TimeEntry } from '../time-entries/types'
 import { getCorporateToday, getMonthKey } from '../../shared/utils/date'
 import { useSession } from '../session/useSession'
@@ -37,7 +38,7 @@ export type HistoryFiltersValue = {
 
 export type HistoryRow = {
   entry: TimeEntry
-  approval: DayApproval
+  approval: DayApproval | null
   summary: DailySummary
   events: CalendarEvent[]
   timeOffRequests: TimeOffRequest[]
@@ -113,10 +114,17 @@ export function useTimeEntryHistory() {
         const entriesOfDay = periodEntries.filter((item) => item.entryDate === entry.entryDate)
         const eventsOfDay = allEvents.filter((event) => event.startDate <= entry.entryDate && event.endDate >= entry.entryDate)
         const timeOffOfDay = timeOffRequests.filter((request) => request.date === entry.entryDate && request.status !== 'CANCELLED')
-        const approval = await dayApprovalService.getForDate(profile.id, entry.entryDate, entriesOfDay.some((item) => item.status === 'ACTIVE'), entry.assignmentSnapshot)
+        const daySummary = calculateDaySummary({ date: entry.entryDate, today, collaboratorId: profile.id, entries: entriesOfDay, events: eventsOfDay, timeOffRequests, workloadVersions })
+        const approval = await dayApprovalService.getForDate(
+          profile.id,
+          entry.entryDate,
+          entriesOfDay.some((item) => item.status === 'ACTIVE'),
+          entry.assignmentSnapshot,
+          isDayApprovalApplicable(daySummary),
+        )
         return {
           entry, approval, events: eventsOfDay, timeOffRequests: timeOffOfDay,
-          summary: calculateDaySummary({ date: entry.entryDate, today, collaboratorId: profile.id, entries: entriesOfDay, events: eventsOfDay, timeOffRequests, workloadVersions }),
+          summary: daySummary,
           canMutate: await dayApprovalService.canMutate(profile.id, entry.entryDate),
         }
       }))
@@ -167,8 +175,8 @@ export function useTimeEntryHistory() {
   }
 
   const completeCorrection = async (row: HistoryRow) => {
-    if (!profile) return
-    await dayApprovalService.completeCorrection(profile.id, row.entry.entryDate)
+    if (!profile || !row.approval) return
+    await dayApprovalService.completeCorrection(profile.id, row.entry.entryDate, row.approval.version)
     setFeedback('Correção concluída. O dia voltou a ficar disponível para aprovação.')
     await load()
   }

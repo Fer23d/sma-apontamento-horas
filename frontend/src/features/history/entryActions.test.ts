@@ -19,4 +19,10 @@ describe('ações do apontamento no histórico', () => {
       entryStatus: 'ACTIVE', approvalStatus: 'CORRECTION_REQUESTED', canMutate: true, hasIntegralEventConflict: false,
     }).completeCorrection).toBe(true)
   })
+
+  it('mantém ações regulares quando aprovação não se aplica ao dia', () => {
+    expect(getHistoryEntryActions({
+      entryStatus: 'ACTIVE', approvalStatus: null, canMutate: true, hasIntegralEventConflict: false,
+    }).edit).toBe(true)
+  })
 })

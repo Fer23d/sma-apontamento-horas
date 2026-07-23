@@ -55,21 +55,31 @@ export class LocalDayApprovalService {
     } satisfies CompetencyState
   }
 
-  async getForDate(collaboratorId: string, date: string, hasEntries: boolean, assignmentSnapshot: DayApproval['assignmentSnapshot'] = null) {
+  async getForDate(
+    collaboratorId: string,
+    date: string,
+    hasEntries: boolean,
+    assignmentSnapshot: DayApproval['assignmentSnapshot'] = null,
+    isApplicable = true,
+  ): Promise<DayApproval | null> {
+    if (!isApplicable) return null
     const stored = this.readRecord<DayApproval>(APPROVAL_STORAGE_KEY)[this.approvalKey(collaboratorId, date)]
     if (stored) return stored
     const competency = this.getCompetency(getMonthKey(date))
+    const status = deriveDayApprovalStatus({
+      date,
+      today: this.today(),
+      competencyClosed: competency.status === 'CLOSED',
+      hasEntries,
+      isApplicable,
+    })
+    if (!status) return null
     return {
       id: `day:${collaboratorId}:${date}`,
       collaboratorId,
       entryDate: date,
       assignmentSnapshot,
-      status: deriveDayApprovalStatus({
-        date,
-        today: this.today(),
-        competencyClosed: competency.status === 'CLOSED',
-        hasEntries,
-      }),
+      status,
       version: 1,
       updatedAt: this.now(),
     } satisfies DayApproval
@@ -96,8 +106,17 @@ export class LocalDayApprovalService {
   }
 
   private assertResponsibleSupervisor(approval: DayApproval, supervisorId: string) {
-    if (approval.assignmentSnapshot && approval.assignmentSnapshot.supervisorId !== supervisorId) {
+    if (!approval.assignmentSnapshot) {
+      throw new Error('O conjunto diário não possui supervisor responsável registrado.')
+    }
+    if (approval.assignmentSnapshot.supervisorId !== supervisorId) {
       throw new Error('Somente o supervisor associado ao conjunto diário pode executar esta operação.')
+    }
+  }
+
+  private assertVersion(approval: DayApproval, expectedVersion: number) {
+    if (approval.version !== expectedVersion) {
+      throw new Error('A versão do conjunto diário foi alterada. Recarregue os dados.')
     }
   }
 
@@ -108,9 +127,10 @@ export class LocalDayApprovalService {
     })
   }
 
-  async approveDay(command: { supervisorId: string; collaboratorId: string; date: string; balanceMinutes: number; justification: string }) {
+  async approveDay(command: { supervisorId: string; collaboratorId: string; date: string; balanceMinutes: number; justification: string; expectedVersion: number }) {
     const current = this.getStoredApproval(command.collaboratorId, command.date)
     this.assertResponsibleSupervisor(current, command.supervisorId)
+    this.assertVersion(current, command.expectedVersion)
     const timestamp = this.now()
     const approved = {
       ...approveDayTransition(current, { today: this.today(), balanceMinutes: command.balanceMinutes, justification: command.justification }),
@@ -122,9 +142,10 @@ export class LocalDayApprovalService {
     return approved
   }
 
-  async requestCorrection(supervisorId: string, collaboratorId: string, date: string, reason: string) {
+  async requestCorrection(supervisorId: string, collaboratorId: string, date: string, reason: string, expectedVersion: number) {
     const current = this.getStoredApproval(collaboratorId, date)
     this.assertResponsibleSupervisor(current, supervisorId)
+    this.assertVersion(current, expectedVersion)
     const requested = { ...requestCorrectionTransition(current, reason), updatedAt: this.now() }
     await this.save(requested)
     await this.recordSupervisorAction('CORRECTION_REQUESTED', supervisorId, current, requested, requested.correctionReason)
@@ -139,10 +160,10 @@ export class LocalDayApprovalService {
     return competencies[monthKey]
   }
 
-  async reopenDay(supervisorId: string, collaboratorId: string, date: string, justification: string) {
-    const current = this.readRecord<DayApproval>(APPROVAL_STORAGE_KEY)[this.approvalKey(collaboratorId, date)]
-      ?? await this.getForDate(collaboratorId, date, false)
+  async reopenDay(supervisorId: string, collaboratorId: string, date: string, justification: string, expectedVersion: number) {
+    const current = this.getStoredApproval(collaboratorId, date)
     this.assertResponsibleSupervisor(current, supervisorId)
+    this.assertVersion(current, expectedVersion)
     const reopened = { ...reopenDayTransition(current, justification), updatedAt: this.now() }
     await this.save(reopened)
     await this.recordSupervisorAction('DAY_REOPENED', supervisorId, current, reopened, reopened.reopenJustification)
@@ -167,9 +188,10 @@ export class LocalDayApprovalService {
     return reopened
   }
 
-  async completeCorrection(collaboratorId: string, date: string) {
+  async completeCorrection(collaboratorId: string, date: string, expectedVersion: number) {
     const stored = this.readRecord<DayApproval>(APPROVAL_STORAGE_KEY)[this.approvalKey(collaboratorId, date)]
     if (!stored) throw new Error('Não existe solicitação de correção para esta data.')
+    this.assertVersion(stored, expectedVersion)
     const timestamp = this.now()
     const completed = { ...completeCorrection(stored), correctionCompletedAt: timestamp, updatedAt: timestamp }
     await this.save(completed)
