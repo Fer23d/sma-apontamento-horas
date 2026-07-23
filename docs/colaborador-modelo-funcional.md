@@ -54,13 +54,13 @@ Definir o comportamento esperado da área do Colaborador e registrar as decisõe
 | `progressPercent` | inteiro 0–100 | **Condicional** | Aplicável apenas a atividade/documento mensurável. Sem valor sentinela `-`. |
 | `durationMinutes` | inteiro positivo | **Obrigatório** | Armazenamento canônico; limites e granularidade pendentes de decisão. |
 | `note` | texto | **Opcional** | Informação complementar distinta do detalhamento técnico. |
-| `status` | enum | **Automático, somente leitura nesta etapa** | `ACTIVE` na criação; `CANCELLED` será usado futuramente no cancelamento lógico. |
+| `status` | enum | **Automático, somente leitura** | `ACTIVE` na criação; muda para `CANCELLED` no cancelamento lógico. |
 | `createdAt` | timestamp | **Automático, somente leitura** | Mantido por toda a vida do registro. |
 | `updatedAt` | timestamp | **Automático, somente leitura** | Atualizado em cada mudança. |
-| `editReason` | texto | **Condicional, futuro** | Obrigatório em uma futura edição; não é usado na primeira fatia. |
+| `lastEditReason` | texto | **Condicional** | Obrigatório em cada edição confirmada. |
 | `version` | inteiro | **Automático, somente leitura** | Inicia em 1 e incrementa em mudanças persistidas. |
-| `cancelReason` | texto | **Condicional, futuro** | Obrigatório no futuro cancelamento lógico; não é usado na primeira fatia. |
-| `sourceEntryId` | identificador | **Automático, somente leitura, futuro** | Rastreará a origem de futura duplicação. |
+| `cancelReason` | texto | **Condicional** | Obrigatório no cancelamento lógico. |
+| `sourceEntryId` | identificador | **Automático, somente leitura** | Rastreia a origem de um apontamento duplicado. |
 
 `TimeEntry` não possui `projectId` nem `projectName` nesta fase, porque não existe catálogo oficial ou identificador estável. Quando catálogo e backend existirem, poderá receber uma referência estável `projectId`, e o nome será obtido pelo relacionamento. Um eventual snapshot histórico do nome só deverá ser criado após necessidade explícita e regra de atualização definidas.
 
@@ -72,10 +72,10 @@ Definir o comportamento esperado da área do Colaborador e registrar as decisõe
 | Trabalho em projeto sem documento | Obrigatórios | Condicional | Não aplicáveis | Não aplicável, salvo métrica própria | Obrigatório | Minutos distribuídos pelo `DailySummary`. |
 | Projeto interno SM&A | Cliente pode ser interno; projeto obrigatório | Condicional | Geralmente não aplicáveis | Geralmente não aplicável | Obrigatório | Minutos distribuídos pelo `DailySummary`. |
 | Atividade administrativa | Cliente e projeto podem não se aplicar | Não aplicável | Não aplicáveis | Não aplicável | Condicional | Minutos distribuídos pelo `DailySummary` conforme política futura. |
-| Folga de compensação | Não aplicáveis | Não aplicável | Não aplicáveis | Não aplicável | Opcional/condicional | Futuro `CalendarEvent`; não é `TimeEntry`. |
-| Férias | Não aplicáveis | Não aplicável | Não aplicáveis | Não aplicável | Não exigido | Futuro `CalendarEvent`; não é `TimeEntry`. |
-| Afastamento médico | Não aplicáveis | Não aplicável | Não aplicáveis | Não aplicável | Observação limitada e sem dado médico sensível desnecessário | Futuro `CalendarEvent`; não é `TimeEntry`. |
-| Feriado | Não aplicáveis | Não aplicável | Não aplicáveis | Não aplicável | Não exigido | Futuro `CalendarEvent`; trabalho no feriado é `TimeEntry` separado. |
+| Folga de compensação | Não aplicáveis | Não aplicável | Não aplicáveis | Não aplicável | Opcional/condicional | Representada por solicitação/evento próprio; não é `TimeEntry`. |
+| Férias | Não aplicáveis | Não aplicável | Não aplicáveis | Não aplicável | Não exigido | Representada por `CalendarEvent`; não é `TimeEntry`. |
+| Afastamento médico | Não aplicáveis | Não aplicável | Não aplicáveis | Não aplicável | Observação limitada e sem dado médico sensível desnecessário | Representado por `CalendarEvent`; não é `TimeEntry`. |
+| Feriado | Não aplicáveis | Não aplicável | Não aplicáveis | Não aplicável | Não exigido | Representado por `CalendarEvent`; trabalho no feriado é `TimeEntry` separado. |
 
 Campos não aplicáveis devem ser `null`/ausentes segundo contrato tipado, não strings `-` ou `N/A`. A UI deve explicar por que foram ocultados ou desabilitados.
 
@@ -97,24 +97,21 @@ Um apontamento que cruza o limite diário continua sendo uma unidade. O resultad
 | Status | Significado | Ações do Colaborador nesta fase |
 |---|---|---|
 | `ACTIVE` | Apontamento ativo. | Entra nos totais e resumos. |
-| `CANCELLED` | Apontamento cancelado logicamente. | Não entra nos totais, mas permanece preservado. A interface de cancelamento é futura. |
+| `CANCELLED` | Apontamento cancelado logicamente. | Não entra nos totais, mas permanece preservado e consultável no histórico. |
 
-`Editado` é evento/característica histórica, não status. Uma edição futura usará `version`, `updatedAt`, `editReason` e histórico. Rascunho persistido e homologação são posteriores; homologação será um eixo separado e nenhum status atual simula aprovação.
+`Editado` é evento/característica histórica, não status. A edição usa `version`, `updatedAt` e `lastEditReason`; duplicação cria novo registro com `sourceEntryId`. Rascunho persistido e homologação corporativa permanecem posteriores e separados desse status.
 
-### 6.1 Aprovação futura — não implementada
+### 6.1 Aprovação diária demonstrativa
 
-Em uma próxima etapa, um eixo separado de aprovação deverá permitir ao Colaborador visualizar apenas:
+A implementação atual mantém a aprovação separada de `TimeEntry`, consolidada por colaborador e data em `DayApproval`. Os estados são `IN_PROGRESS`, `AVAILABLE_FOR_APPROVAL`, `CORRECTION_REQUESTED`, `APPROVED`, `REOPENED` e `NO_SUBMISSION`. O dashboard e o histórico apresentam esse eixo; o calendário continua comunicando somente a situação da jornada.
 
-- `PENDING`: Pendente de aprovação;
-- `APPROVED`: Aprovado.
-
-Todo novo apontamento começará futuramente como `PENDING`. Esse estado será exibido no dashboard e histórico, nunca no calendário. O Colaborador não escolherá supervisor; o encaminhamento será determinado pelo setor associado ao cadastro profissional. Recusa, devolução e solicitação de correção não fazem parte desta definição.
+Datas futuras, dias sem jornada e sem trabalho e datas com evento integral não geram conjunto aprovável. Ações de Supervisor verificam o responsável preservado no snapshot, a transição permitida e a versão esperada. A UI funcional de Supervisor e a homologação corporativa permanecem fora do escopo.
 
 ### 6.2 Separação das entidades
 
 - `TimeEntry`: tempo trabalhado em cliente, projeto e atividade; implementado nesta fatia.
 - `DailySummary`: valores derivados de jornada e apontamentos ativos; implementado nesta fatia.
-- `CalendarEvent`: férias, afastamentos, feriados, folgas, compensações e exceções de jornada; previsto, mas não implementado.
+- `CalendarEvent`: férias, afastamentos e feriados demonstrativos; folgas usam solicitação própria e alimentam os resumos quando aprovadas.
 
 ## 7. Jornada e saldo
 
@@ -260,9 +257,9 @@ Colunas podem ser responsivas, mas todos os dados devem permanecer acessíveis p
 
 Filtros devem compor uma consulta, refletir-se na URL quando adequado e poder ser limpos. A exportação individual deve declarar se usa todos os resultados filtrados ou somente a página.
 
-### 10.3 Paginação futura
+### 10.3 Paginação
 
-O contrato do service deverá aceitar `pageSize` e cursor/token, retornando `items`, `nextCursor` e totais/resumo quando disponíveis. Não usar offset profundo nem carregar todos os registros para filtrar no navegador.
+O contrato do service aceita `pageSize` e cursor, retornando `items`, `nextCursor` e total. A implementação local é demonstrativa; a API futura deverá processar filtros e paginação sem carregar todo o histórico no navegador.
 
 ## 11. Edição, duplicação e cancelamento
 
@@ -275,12 +272,12 @@ O contrato do service deverá aceitar `pageSize` e cursor/token, retornando `ite
 - atualizar `updatedAt`;
 - preservar snapshot/alterações anteriores;
 - recalcular totais afetados sem apagar e recriar o registro;
-- lidar futuramente com conflito de versão (concorrência otimista).
+- rejeitar conflito de versão por concorrência otimista.
 
 ### 11.2 Duplicação
 
 - criar novo `id`, `createdAt`, `updatedAt` e `version = 1`;
-- futuramente iniciar como rascunho quando esse conceito for implementado; nesta fatia a duplicação não existe;
+- iniciar com `version = 1` e status ativo; rascunho permanece fora do escopo;
 - copiar apenas campos úteis;
 - permitir ajustar data, duração, projeto e detalhes antes de registrar;
 - preencher `sourceEntryId` para rastreabilidade;
@@ -308,20 +305,20 @@ Enquanto não houver backend:
 - não tratar `localStorage` como segurança ou fonte definitiva;
 - manter cálculos derivados fora do armazenamento sempre que puderem ser reproduzidos.
 
-### 12.1 Decisões da primeira fatia
+### 12.1 Estado persistido atual
 
-- chave atual `sma:time-entries:v2`;
-- migração idempotente da `v1` somente quando ainda não existe uma `v2` válida;
+- chave atual `sma:time-entries:v3`;
+- migração encadeada e idempotente `v1 → v2 → v3`, executada somente quando a versão seguinte ainda não existe validamente;
 - conversão de `projectId` antigo pelo mapa temporário de compatibilidade; quando desconhecido, o próprio valor antigo é preservado como `projectCode`;
-- conclusão da migração somente após gravar, reler e validar a `v2`; falhas retornam coleção vazia controlada e preservam integralmente a `v1`;
-- depois da migração, consultas usam exclusivamente a `v2`; a `v1` não é alterada nem combinada com dados atuais;
+- cada etapa só conclui após gravar, reler e validar integralmente o conteúdo persistido; falhas retornam coleção vazia controlada;
+- `v1` e `v2` permanecem como backups inalterados, enquanto consultas normais usam exclusivamente a `v3` validada;
 - registros agrupados e consultados por `collaboratorId`;
 - sessão demonstrativa restaurada localmente e separada do service de apontamentos;
 - leitura defensiva: JSON inválido gera erro de desenvolvimento e coleção vazia segura;
-- jornada fixa demonstrativa de 480 minutos de segunda a sexta e zero no fim de semana;
+- carga horária demonstrativa versionada, inicialmente de 480 minutos de segunda a sexta e zero no fim de semana;
 - duração máxima provisória de 1.440 minutos;
-- sem feriados, férias, afastamentos, folgas, compensações ou exceções;
-- sem edição, duplicação, cancelamento na interface, rascunho, documentos da LD, avanço, exportação, calendário mensal, agregado de squad ou homologação.
+- feriados, férias, afastamentos e folgas usam fontes/coleções demonstrativas próprias;
+- edição, duplicação, cancelamento lógico, histórico paginado e calendário mensal estão implementados; rascunho, documentos da LD, avanço, exportação, agregado de squad e homologação corporativa permanecem fora do escopo.
 
 ## 13. Privacidade e visão agregada da squad
 

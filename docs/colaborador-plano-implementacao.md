@@ -393,57 +393,61 @@ Decisões bloqueantes devem ser resolvidas antes da etapa correspondente, em esp
 
 Esses pontos são **Fora do escopo da fase do Colaborador** e não devem gerar implementação antecipada.
 
-## 10. Primeira fatia funcional implementada
+## 10. Estado atual consolidado da área do Colaborador
 
 ### Implementado
 
-- sessão demonstrativa de um único perfil fictício, restaurada após recarregar e com opção de sair;
+- sessão demonstrativa por perfil, restaurada após recarregar e com opção de sair;
 - proteção das rotas do Colaborador e redirecionamentos de login;
 - perfil somente leitura com cargo, squad e jornada;
 - jornada semanal de 480 minutos de segunda a sexta e zero no fim de semana;
 - tipos `TimeEntry`, `DailySummary`, perfil, jornada e catálogos;
 - regras puras de conversão, formatação, validação, jornada, soma e resumo diário;
-- dois clientes e cinco atividades simulados; não há catálogo de projetos nesta fase;
+- catálogo demonstrativo de clientes e vinte atividades; não há catálogo oficial de projetos nesta fase;
 - service com interface e adaptador `localStorage`, chave versionada e isolamento por colaborador;
 - formulário com data, cliente, número do projeto, atividade, duração e detalhamento;
-- dashboard diário com jornada, apontado, faltante/excedente, saldo provisório e lista do dia;
+- dashboard com saldos reais locais por dia, mês, intervalo e total, além da lista do dia;
+- calendário mensal demonstrativo, eventos integrais/parciais e solicitações de folga;
+- histórico paginado com filtros, edição, duplicação e cancelamento lógico;
+- perfil com squad ativa e carga horária versionada;
+- contrato demonstrativo de aprovação diária, sem tela funcional de Supervisor;
 - estados de carregamento, vazio, sucesso e erro;
 - navegação responsiva, foco visível e tema claro/escuro preservado;
 - testes unitários de domínio e persistência defensiva com Vitest.
 
 ### Decisões provisórias
 
-- `TimeEntry.status` usa somente `ACTIVE | CANCELLED`; a interface cria apenas `ACTIVE`;
+- `TimeEntry.status` usa somente `ACTIVE | CANCELLED`; novos registros começam `ACTIVE` e o cancelamento é lógico;
 - normal, extra e faltante existem somente em `DailySummary`;
 - duração é inteiro em minutos e limitada provisoriamente a 1.440;
 - `TimeEntry` usa somente `projectCode`; não possui `projectId` ou `projectName` nesta fase;
 - `projectCode` preserva o conteúdo informado e remove somente espaços externos, com limite provisório de 80 caracteres;
-- o storage usa `sma:time-entries:v2`; a migração idempotente converte a `v1`, relê e valida o resultado, mantém a chave antiga intacta e nunca combina as duas versões;
+- o storage atual usa `sma:time-entries:v3`; a migração encadeada `v1 → v2 → v3` relê e valida cada etapa, mantém backups anteriores e nunca combina versões nas consultas;
 - o mapa de projetos antigos existe somente no módulo de migração como compatibilidade temporária, não como catálogo oficial;
 - perfil e catálogos são mocks sem nomes reais;
 - saldo é prévia local e não oficial;
-- `CalendarEvent` está previsto, mas não implementado.
+- `CalendarEvent` representa feriados, férias e afastamentos demonstrativos; folgas possuem coleção própria.
 
 ### Pendências e limitações
 
 - sem backend, autenticação real ou confirmação autoritativa das regras;
-- sem rascunho persistido, histórico avançado, edição, duplicação ou cancelamento na interface;
-- sem calendário mensal, feriados ou eventos de ausência;
-- sem disciplina, documentos da LD, tipo documental ou avanço;
+- sem rascunho persistido ou exportação individual;
+- feriados ainda não possuem fonte oficial completa;
+- disciplina e tipo documental existem como catálogos mínimos; documentos da LD e percentual de avanço permanecem fora do escopo;
 - sem exportação, visão agregada da squad ou homologação;
-- aprovação `PENDING | APPROVED` permanece somente documentada para uma próxima etapa, com exibição futura no dashboard/histórico e encaminhamento pelo setor do perfil, nunca pelo calendário ou escolha de supervisor;
+- aprovação diária possui domínio/service demonstrativos e apresentação no dashboard/histórico; a tela funcional de Supervisor e a homologação corporativa permanecem fora do escopo;
 - storage local é demonstrativo, específico do navegador e não oferece segurança.
 
 ### Próximos passos recomendados
 
 1. revisar a fatia com usuários e consolidar limites de data/duração;
-2. implementar histórico paginado e o ciclo de vida versionado como segunda fatia;
-3. definir `CalendarEvent` e políticas de jornada antes do calendário completo;
-4. manter testes de domínio como contrato para a futura API/backend.
+2. validar com produto as regras ainda provisórias de feriados, compensação e aprovação;
+3. definir exportação individual e fonte oficial de calendário antes da integração;
+4. manter os testes de domínio como contrato para a futura API/backend.
 
 ## 11. Rodada corretiva aprovada em 20/07/2026
 
-A base evoluiu além do retrato da primeira fatia acima. A sequência corretiva atual, detalhada em `docs/superpowers/plans/2026-07-20-rodada-corretiva-colaborador-implementation.md`, é:
+A sequência corretiva que levou ao estado consolidado acima, detalhada em `docs/superpowers/plans/2026-07-20-rodada-corretiva-colaborador-implementation.md`, foi:
 
 1. corrigir shell, sidebar/drawer, foco e marca reutilizável;
 2. substituir datas adjacentes do calendário por placeholders inertes e esclarecer a origem demonstrativa dos feriados;

@@ -287,3 +287,41 @@ Usar o mesmo `BASE_SHA` de `origin/main` e o novo `HEAD_SHA`; exigir classifica�
 - [ ] **Step 4: Push e Pull Request**
 
 Com árvore limpa, gates aprovados e revisão sem bloqueadores, enviar somente `refactor/frontend-colaborador`, verificar PR existente e criar ou atualizar PR pronto para revisão contra `main`, sem merge ou auto-merge.
+
+### Task 7: Resolver bloqueios da segunda revisão
+
+**Files:**
+- Modify: `frontend/src/services/storage.ts`
+- Modify: `frontend/src/services/storage.test.ts`
+- Modify: services com efeitos secundários pós-persistência e seus testes
+- Modify: `frontend/src/services/timeEntryService.ts`
+- Modify: `frontend/src/services/timeEntryService.test.ts`
+- Modify: `frontend/src/features/approvals/domain.ts`
+- Modify: `frontend/src/features/approvals/domain.test.ts`
+- Modify: `frontend/src/services/dayApprovalService.ts`
+- Modify: `frontend/src/services/dayApprovalService.test.ts`
+- Modify: documentação canônica existente
+
+- [ ] **Step 1: Preservar escrita no fallback após falha isolada de `setItem`**
+
+Escrever teste em que a leitura primária funciona, a escrita falha e a leitura seguinte deve retornar a versão nova mantida em memória. Marcar chaves pendentes e só voltar a priorizar o primário depois de uma escrita bem-sucedida.
+
+- [ ] **Step 2: Uniformizar a política de efeitos secundários pós-commit**
+
+Escrever testes de falha de auditoria/notificação para folga, carga, perfil/squad e aprovação. Uma mutação primária já confirmada deve resolver normalmente e sinalizar a falha secundária por callback, sem induzir repetição do comando.
+
+- [ ] **Step 3: Confirmar integralmente a etapa `v1 → v2`**
+
+Adicionar storage de teste que corrompe apenas a escrita `v2`. Depois de gravar e reler, comparar o conteúdo persistido com a serialização convertida antes de publicar `v3`; em caso de divergência, manter `v1`, não publicar `v3` e retornar erro controlado.
+
+- [ ] **Step 4: Bloquear aprovação futura no domínio e no service**
+
+Adicionar testes explícitos de data futura. `deriveDayApprovalStatus` e `getForDate` não produzem conjunto futuro, e `approveDay` rejeita qualquer data igual ou posterior ao dia corporativo atual.
+
+- [ ] **Step 5: Atualizar documentação canônica**
+
+Corrigir somente afirmações que ficaram históricas: ciclo de vida de apontamentos, calendário/eventos, aprovação demonstrativa e migração encadeada `v1 → v2 → v3`. Manter explícitas as limitações de backend e autenticação real.
+
+- [ ] **Step 6: Repetir gates e revisão independente**
+
+Executar suíte completa, lint, typecheck, build e `git diff --check`; repetir auditoria e solicitar nova revisão do range completo. Somente prosseguir ao push/PR sem Critical ou Important.
