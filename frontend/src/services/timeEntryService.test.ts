@@ -3,6 +3,7 @@ import type { AuditEvent } from '../features/audit/types'
 import type { AssignmentSnapshot } from '../features/squads/types'
 import type { CreateTimeEntryData } from '../features/time-entries/types'
 import {
+  LEGACY_V1_TIME_ENTRY_STORAGE_KEY,
   LEGACY_V2_TIME_ENTRY_STORAGE_KEY,
   LocalStorageTimeEntryService,
   TIME_ENTRY_STORAGE_KEY,
@@ -68,6 +69,15 @@ function v2Entry(overrides: Record<string, unknown> = {}) {
   }
 }
 
+function v1Entry(overrides: Record<string, unknown> = {}) {
+  const { projectCode: _projectCode, ...entry } = v2Entry()
+  return {
+    ...entry,
+    projectId: 'project-alpha-automation',
+    ...overrides,
+  }
+}
+
 function v3Entry(overrides: Record<string, unknown> = {}) {
   return {
     ...v2Entry(),
@@ -90,6 +100,56 @@ function buildService(storage: StorageLike, overrides: Record<string, unknown> =
 }
 
 describe('migração segura de apontamentos v2 para v3', () => {
+  it('migra diretamente de v1 para v2 e v3 uma única vez sem alterar o backup', async () => {
+    const storage = new MemoryStorage()
+    const originalV1 = JSON.stringify({
+      version: 1,
+      entriesByCollaborator: { [collaboratorId]: [v1Entry()] },
+    })
+    storage.setItem(LEGACY_V1_TIME_ENTRY_STORAGE_KEY, originalV1)
+
+    const firstRead = await buildService(storage).listByDate(collaboratorId, '2026-07-13')
+    const persistedV2 = storage.getItem(LEGACY_V2_TIME_ENTRY_STORAGE_KEY)
+    const persistedV3 = storage.getItem(TIME_ENTRY_STORAGE_KEY)
+    const secondRead = await buildService(storage).listByDate(collaboratorId, '2026-07-13')
+
+    expect(firstRead).toHaveLength(1)
+    expect(firstRead[0].projectCode).toBe('ALF-001')
+    expect(secondRead).toEqual(firstRead)
+    expect(storage.getItem(LEGACY_V1_TIME_ENTRY_STORAGE_KEY)).toBe(originalV1)
+    expect(storage.getItem(LEGACY_V2_TIME_ENTRY_STORAGE_KEY)).toBe(persistedV2)
+    expect(storage.getItem(TIME_ENTRY_STORAGE_KEY)).toBe(persistedV3)
+    expect(storage.writes.get(LEGACY_V2_TIME_ENTRY_STORAGE_KEY)).toBe(1)
+    expect(storage.writes.get(TIME_ENTRY_STORAGE_KEY)).toBe(1)
+  })
+
+  it('preserva um projectId desconhecido como projectCode na migração de v1', async () => {
+    const storage = new MemoryStorage()
+    storage.setItem(LEGACY_V1_TIME_ENTRY_STORAGE_KEY, JSON.stringify({
+      version: 1,
+      entriesByCollaborator: {
+        [collaboratorId]: [v1Entry({ projectId: '  projeto-legado-42  ' })],
+      },
+    }))
+
+    const [migrated] = await buildService(storage).listByDate(collaboratorId, '2026-07-13')
+
+    expect(migrated.projectCode).toBe('projeto-legado-42')
+  })
+
+  it('trata JSON v1 inválido sem apagar o backup nem publicar versões seguintes', async () => {
+    const storage = new MemoryStorage()
+    const invalidV1 = '{invalid'
+    storage.setItem(LEGACY_V1_TIME_ENTRY_STORAGE_KEY, invalidV1)
+    const onStorageError = vi.fn()
+
+    await expect(buildService(storage, { onStorageError }).listByDate(collaboratorId, '2026-07-13')).resolves.toEqual([])
+    expect(storage.getItem(LEGACY_V1_TIME_ENTRY_STORAGE_KEY)).toBe(invalidV1)
+    expect(storage.getItem(LEGACY_V2_TIME_ENTRY_STORAGE_KEY)).toBeNull()
+    expect(storage.getItem(TIME_ENTRY_STORAGE_KEY)).toBeNull()
+    expect(onStorageError).toHaveBeenCalledOnce()
+  })
+
   it('preserva registro v3 antigo sem updatedAt usando fallback vazio', async () => {
     const storage = new MemoryStorage()
     const legacyWithoutUpdatedAt = v3Entry({ version: 2, updatedAt: undefined })
@@ -173,6 +233,25 @@ describe('migração segura de apontamentos v2 para v3', () => {
 
     expect(entries).toHaveLength(1)
     expect(entries[0].id).toBe('legacy-v2-entry-1')
+  })
+
+  it('descarta individualmente data, duração e versão inválidas sem perder o registro válido', async () => {
+    const storage = new MemoryStorage()
+    storage.setItem(LEGACY_V2_TIME_ENTRY_STORAGE_KEY, JSON.stringify({
+      version: 2,
+      entriesByCollaborator: {
+        [collaboratorId]: [
+          v2Entry(),
+          v2Entry({ id: 'invalid-date', entryDate: '2026-02-30' }),
+          v2Entry({ id: 'invalid-duration', durationMinutes: 1441 }),
+          v2Entry({ id: 'invalid-version', version: 0 }),
+        ],
+      },
+    }))
+
+    const entries = await buildService(storage).listByDate(collaboratorId, '2026-07-13')
+
+    expect(entries.map((entry) => entry.id)).toEqual(['legacy-v2-entry-1'])
   })
 
   it('trata JSON inválido sem quebrar nem alterar a v2', async () => {

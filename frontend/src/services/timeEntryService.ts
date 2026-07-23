@@ -13,12 +13,15 @@ import { profileService } from './profileService'
 import type { EntryDateBlock } from '../features/calendar/entryDatePolicy'
 import { entryDateAvailabilityService } from './entryDateAvailabilityService'
 import {
+  LEGACY_V1_TIME_ENTRY_STORAGE_KEY,
   LEGACY_V2_TIME_ENTRY_STORAGE_KEY,
+  migrateV1TimeEntries,
   migrateV2TimeEntries,
+  normalizeTimeEntry,
   type TimeEntryStorageV3,
 } from './timeEntryMigration'
 
-export { LEGACY_V2_TIME_ENTRY_STORAGE_KEY } from './timeEntryMigration'
+export { LEGACY_V1_TIME_ENTRY_STORAGE_KEY, LEGACY_V2_TIME_ENTRY_STORAGE_KEY } from './timeEntryMigration'
 export type { StorageLike } from './storage'
 
 export const TIME_ENTRY_STORAGE_KEY = 'sma:time-entries:v3'
@@ -92,66 +95,6 @@ const documentTypeCodes: readonly DocumentTypeCode[] = [
   '—', 'RN', 'GR', 'G', 'FD', 'DE', 'LM', 'DI', 'LC', 'LI', 'ET', 'MC', 'MO', 'MD', 'FG', 'LA', 'ES', 'CF',
 ]
 
-function isAssignmentSnapshot(value: unknown): value is AssignmentSnapshot {
-  if (!value || typeof value !== 'object') return false
-  const snapshot = value as Record<string, unknown>
-  return typeof snapshot.squadId === 'string'
-    && typeof snapshot.squadName === 'string'
-    && typeof snapshot.supervisorId === 'string'
-    && typeof snapshot.supervisorName === 'string'
-}
-
-function optionalString(value: unknown) {
-  return typeof value === 'string' && value ? value : undefined
-}
-
-function normalizeStoredEntry(value: unknown, collaboratorId: string): TimeEntry | null {
-  if (!value || typeof value !== 'object') return null
-  const entry = value as Record<string, unknown>
-  if (typeof entry.id !== 'string'
-    || entry.collaboratorId !== collaboratorId
-    || !isIsoDate(String(entry.entryDate))
-    || typeof entry.clientId !== 'string'
-    || typeof entry.projectCode !== 'string'
-    || !entry.projectCode
-    || entry.projectCode !== entry.projectCode.trim()
-    || entry.projectCode.length > MAX_PROJECT_CODE_LENGTH
-    || typeof entry.activityId !== 'string'
-    || !disciplineCodes.includes(entry.disciplineCode as DisciplineCode)
-    || !documentTypeCodes.includes(entry.documentTypeCode as DocumentTypeCode)
-    || !Number.isInteger(entry.durationMinutes)
-    || Number(entry.durationMinutes) <= 0
-    || Number(entry.durationMinutes) > MAX_ENTRY_MINUTES
-    || typeof entry.details !== 'string'
-    || !entry.details.trim()
-    || (entry.assignmentSnapshot !== null && !isAssignmentSnapshot(entry.assignmentSnapshot))
-    || (entry.status !== 'ACTIVE' && entry.status !== 'CANCELLED')
-    || !Number.isInteger(entry.version)
-    || typeof entry.createdAt !== 'string') return null
-
-  return {
-    id: entry.id,
-    collaboratorId,
-    entryDate: String(entry.entryDate),
-    clientId: entry.clientId,
-    projectCode: entry.projectCode,
-    activityId: entry.activityId,
-    disciplineCode: entry.disciplineCode as DisciplineCode,
-    documentTypeCode: entry.documentTypeCode as DocumentTypeCode,
-    durationMinutes: Number(entry.durationMinutes),
-    details: entry.details.trim(),
-    assignmentSnapshot: entry.assignmentSnapshot as AssignmentSnapshot | null,
-    status: entry.status,
-    version: Number(entry.version),
-    createdAt: entry.createdAt,
-    updatedAt: typeof entry.updatedAt === 'string' ? entry.updatedAt : '',
-    lastEditReason: optionalString(entry.lastEditReason),
-    sourceEntryId: optionalString(entry.sourceEntryId),
-    cancelledAt: optionalString(entry.cancelledAt),
-    cancelReason: optionalString(entry.cancelReason),
-  }
-}
-
 function normalizeCreateData(data: CreateTimeEntryData): CreateTimeEntryData {
   const projectCode = data.projectCode.trim()
   const details = data.details.trim()
@@ -205,7 +148,7 @@ export class LocalStorageTimeEntryService implements TimeEntryService {
         collaboratorId,
         Array.isArray(entries)
           ? entries.flatMap((entry) => {
-              const normalized = normalizeStoredEntry(entry, collaboratorId)
+              const normalized = normalizeTimeEntry(entry, collaboratorId)
               return normalized ? [normalized] : []
             })
           : [],
@@ -220,8 +163,15 @@ export class LocalStorageTimeEntryService implements TimeEntryService {
       const rawV3 = this.storage.getItem(TIME_ENTRY_STORAGE_KEY)
       if (rawV3 !== null) return { data: this.parseV3(rawV3), canWrite: true }
 
-      const rawV2 = this.storage.getItem(LEGACY_V2_TIME_ENTRY_STORAGE_KEY)
-      if (rawV2 === null) return { data: empty, canWrite: true }
+      let rawV2 = this.storage.getItem(LEGACY_V2_TIME_ENTRY_STORAGE_KEY)
+      if (rawV2 === null) {
+        const rawV1 = this.storage.getItem(LEGACY_V1_TIME_ENTRY_STORAGE_KEY)
+        if (rawV1 === null) return { data: empty, canWrite: true }
+        const v1Migration = migrateV1TimeEntries(rawV1)
+        this.storage.setItem(LEGACY_V2_TIME_ENTRY_STORAGE_KEY, JSON.stringify(v1Migration.data))
+        rawV2 = this.storage.getItem(LEGACY_V2_TIME_ENTRY_STORAGE_KEY)
+        if (rawV2 === null) throw new Error('A v2 não foi encontrada após a migração.')
+      }
       const migration = migrateV2TimeEntries(rawV2)
       const serialized = JSON.stringify(migration.data)
       this.storage.setItem(TIME_ENTRY_STORAGE_KEY, serialized)
