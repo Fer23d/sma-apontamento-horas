@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import type { AuditEvent, SupervisorNotification } from '../features/audit/types'
 import type { AssignmentSnapshot } from '../features/squads/types'
 import { LocalWorkloadService } from './workloadService'
@@ -73,5 +73,29 @@ describe('carga horária e solicitações', () => {
     expect(rejected).toMatchObject({ status: 'REJECTED', rejectionReason: 'Contrato não alterado' })
     expect(await service.listVersions('collaborator-1')).toHaveLength(1)
     expect(audits.map((event) => event.type)).toContain('WORKLOAD_CHANGE_REJECTED')
+  })
+
+  it('preserva solicitação confirmada quando efeitos secundários falham', async () => {
+    const storage = new MemoryStorage()
+    const onPostCommitError = vi.fn()
+    const service = new LocalWorkloadService({
+      storage,
+      createId: (() => { let id = 0; return () => `failure-${++id}` })(),
+      now: () => '2026-07-20T12:00:00.000Z',
+      today: () => '2026-07-20',
+      resolveAssignment: () => assignment,
+      audit: { record: async () => { throw new Error('audit failure') } },
+      notifications: { record: async () => { throw new Error('notification failure') } },
+      onPostCommitError,
+    })
+    await service.createInitial('collaborator-1', 480, '2026-07-01')
+
+    await expect(service.requestChange('collaborator-1', {
+      requestedDailyMinutes: 360,
+      requestedEffectiveFrom: '2026-08-01',
+      justification: 'Adequação',
+    })).resolves.toMatchObject({ status: 'PENDING' })
+    await expect(service.listRequests('collaborator-1')).resolves.toHaveLength(1)
+    expect(onPostCommitError).toHaveBeenCalledTimes(2)
   })
 })

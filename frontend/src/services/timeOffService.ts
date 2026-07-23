@@ -6,6 +6,7 @@ import { auditService } from './auditService'
 import { notificationService } from './notificationService'
 import { profileService } from './profileService'
 import { createBrowserStorage, type StorageLike } from './storage'
+import { defaultPostCommitErrorHandler, runPostCommitEffect, type PostCommitErrorHandler } from './postCommit'
 
 export const TIME_OFF_STORAGE_KEY = 'sma:time-off-requests:v1'
 
@@ -22,6 +23,7 @@ type TimeOffDependencies = {
   resolveAssignment?: (collaboratorId: string) => AssignmentSnapshot | null
   audit?: { record(event: AuditEvent): Promise<void> }
   notifications?: { record(notification: SupervisorNotification): Promise<void> }
+  onPostCommitError?: PostCommitErrorHandler
 }
 
 function isAssignmentSnapshot(value: unknown): value is AssignmentSnapshot {
@@ -52,8 +54,9 @@ export class LocalTimeOffService {
   private readonly resolveAssignment: (collaboratorId: string) => AssignmentSnapshot | null
   private readonly audit?: { record(event: AuditEvent): Promise<void> }
   private readonly notifications?: { record(notification: SupervisorNotification): Promise<void> }
+  private readonly onPostCommitError: PostCommitErrorHandler
 
-  constructor({ storage, createId, now, today, resolveAssignment, audit, notifications }: TimeOffDependencies) {
+  constructor({ storage, createId, now, today, resolveAssignment, audit, notifications, onPostCommitError }: TimeOffDependencies) {
     this.storage = storage
     this.createId = createId ?? (() => crypto.randomUUID())
     this.now = now ?? (() => new Date().toISOString())
@@ -61,6 +64,7 @@ export class LocalTimeOffService {
     this.resolveAssignment = resolveAssignment ?? (() => null)
     this.audit = audit
     this.notifications = notifications
+    this.onPostCommitError = onPostCommitError ?? defaultPostCommitErrorHandler
   }
 
   private read(): TimeOffStorage {
@@ -85,17 +89,21 @@ export class LocalTimeOffService {
   }
 
   private async recordAudit(type: AuditEvent['type'], collaboratorId: string, request: TimeOffRequest, previousValue?: TimeOffRequest) {
-    await this.audit?.record({
+    if (!this.audit) return
+    await runPostCommitEffect('Não foi possível registrar a auditoria da folga confirmada.', () => this.audit!.record({
       id: crypto.randomUUID(), type, occurredAt: this.now(), actorId: collaboratorId, actorRole: 'COLLABORATOR',
       entityType: 'TimeOffRequest', entityId: request.id, previousValue, newValue: request,
       justification: request.cancellationReason ?? request.reason,
-    })
+    }), this.onPostCommitError)
   }
 
   private async notify(type: SupervisorNotification['type'], request: TimeOffRequest) {
     const supervisorId = request.assignmentSnapshot?.supervisorId
     if (!supervisorId) return
-    await this.notifications?.record({ id: crypto.randomUUID(), supervisorId, type, relatedEntityId: request.id, createdAt: this.now() })
+    if (!this.notifications) return
+    await runPostCommitEffect('Não foi possível registrar a notificação da folga confirmada.', () => this.notifications!.record({
+      id: crypto.randomUUID(), supervisorId, type, relatedEntityId: request.id, createdAt: this.now(),
+    }), this.onPostCommitError)
   }
 
   async listByRange(collaboratorId: string, startDate: string, endDate: string) {
@@ -140,10 +148,10 @@ export class LocalTimeOffService {
     const approved: TimeOffRequest = { ...current, status: 'APPROVED', decidedAt: timestamp, updatedAt: timestamp }
     storage.requests[index] = approved
     this.write(storage)
-    await this.audit?.record({
+    if (this.audit) await runPostCommitEffect('Não foi possível registrar a auditoria da folga confirmada.', () => this.audit!.record({
       id: crypto.randomUUID(), type: 'TIME_OFF_APPROVED', occurredAt: timestamp, actorId: supervisorId, actorRole: 'SUPERVISOR',
       entityType: 'TimeOffRequest', entityId: approved.id, previousValue: current, newValue: approved,
-    })
+    }), this.onPostCommitError)
     return approved
   }
 

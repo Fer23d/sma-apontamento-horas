@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import type { AuditEvent } from '../features/audit/types'
 import { demoCollaborator } from '../mocks/demoData'
 import { LocalProfileService } from './profileService'
@@ -47,5 +47,19 @@ describe('perfil e squad ativa', () => {
     expect(first.assignmentSnapshot?.squadId).toBe('squad-automation')
     expect(second.assignmentSnapshot?.squadId).toBe('squad-electrical')
     expect((await entryService.getById(demoCollaborator.id, first.id))?.assignmentSnapshot?.squadId).toBe('squad-automation')
+  })
+
+  it('preserva troca de squad confirmada quando a auditoria falha', async () => {
+    const storage = new MemoryStorage()
+    const onPostCommitError = vi.fn()
+    const service = new LocalProfileService({
+      storage,
+      audit: { record: async () => { throw new Error('audit failure') } },
+      onPostCommitError,
+    })
+
+    await expect(service.changeActiveSquad(demoCollaborator.id, 'squad-electrical')).resolves.toMatchObject({ activeSquadId: 'squad-electrical' })
+    await expect(service.getById(demoCollaborator.id)).resolves.toMatchObject({ activeSquadId: 'squad-electrical' })
+    expect(onPostCommitError).toHaveBeenCalledOnce()
   })
 })

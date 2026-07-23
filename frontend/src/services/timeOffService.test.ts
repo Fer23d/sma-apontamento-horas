@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import type { AuditEvent, SupervisorNotification } from '../features/audit/types'
 import type { AssignmentSnapshot } from '../features/squads/types'
 import {
@@ -113,5 +113,24 @@ describe('LocalTimeOffService', () => {
     expect(await service.listApprovedByRange('collaborator-1', '2026-07-01', '2026-07-31')).toHaveLength(1)
     await service.cancelApproved('collaborator-1', 'approved-1', 'Planejamento alterado')
     expect(await service.listApprovedByRange('collaborator-1', '2026-07-01', '2026-07-31')).toEqual([])
+  })
+
+  it('preserva solicitação confirmada quando auditoria e notificação falham', async () => {
+    const storage = new MemoryStorage()
+    const onPostCommitError = vi.fn()
+    const service = new LocalTimeOffService({
+      storage,
+      createId: () => 'time-off-failure',
+      now: () => '2026-07-20T12:00:00.000Z',
+      today: () => '2026-07-20',
+      resolveAssignment: () => assignment,
+      audit: { record: async () => { throw new Error('audit failure') } },
+      notifications: { record: async () => { throw new Error('notification failure') } },
+      onPostCommitError,
+    })
+
+    await expect(service.create('collaborator-1', { date: '2026-07-25', reason: 'Compromisso' })).resolves.toMatchObject({ id: 'time-off-failure' })
+    await expect(service.listByRange('collaborator-1', '2026-07-01', '2026-07-31')).resolves.toHaveLength(1)
+    expect(onPostCommitError).toHaveBeenCalledTimes(2)
   })
 })

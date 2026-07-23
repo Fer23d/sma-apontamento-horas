@@ -12,6 +12,7 @@ import type { AuditEvent } from '../features/audit/types'
 import { getCorporateToday, getMonthKey } from '../shared/utils/date'
 import { createBrowserStorage, type StorageLike } from './storage'
 import { auditService } from './auditService'
+import { defaultPostCommitErrorHandler, runPostCommitEffect, type PostCommitErrorHandler } from './postCommit'
 
 const APPROVAL_STORAGE_KEY = 'sma:day-approvals:v1'
 const COMPETENCY_STORAGE_KEY = 'sma:competencies:v1'
@@ -21,12 +22,14 @@ export class LocalDayApprovalService {
   private readonly today: () => string
   private readonly now: () => string
   private readonly audit?: { record(event: AuditEvent): Promise<void> }
+  private readonly onPostCommitError: PostCommitErrorHandler
 
-  constructor(storage: StorageLike, today: () => string = getCorporateToday, audit?: { record(event: AuditEvent): Promise<void> }, now: () => string = () => new Date().toISOString()) {
+  constructor(storage: StorageLike, today: () => string = getCorporateToday, audit?: { record(event: AuditEvent): Promise<void> }, now: () => string = () => new Date().toISOString(), onPostCommitError: PostCommitErrorHandler = defaultPostCommitErrorHandler) {
     this.storage = storage
     this.today = today
     this.audit = audit
     this.now = now
+    this.onPostCommitError = onPostCommitError
   }
 
   private readRecord<T>(key: string): Record<string, T> {
@@ -62,7 +65,7 @@ export class LocalDayApprovalService {
     assignmentSnapshot: DayApproval['assignmentSnapshot'] = null,
     isApplicable = true,
   ): Promise<DayApproval | null> {
-    if (!isApplicable) return null
+    if (!isApplicable || date > this.today()) return null
     const stored = this.readRecord<DayApproval>(APPROVAL_STORAGE_KEY)[this.approvalKey(collaboratorId, date)]
     if (stored) return stored
     const competency = this.getCompetency(getMonthKey(date))
@@ -121,10 +124,11 @@ export class LocalDayApprovalService {
   }
 
   private async recordSupervisorAction(type: AuditEvent['type'], supervisorId: string, previous: DayApproval, next: DayApproval, justification?: string) {
-    await this.audit?.record({
+    if (!this.audit) return
+    await runPostCommitEffect('Não foi possível registrar a auditoria da aprovação confirmada.', () => this.audit!.record({
       id: crypto.randomUUID(), type, occurredAt: next.updatedAt, actorId: supervisorId, actorRole: 'SUPERVISOR',
       entityType: 'DayApproval', entityId: next.id, previousValue: previous, newValue: next, justification,
-    })
+    }), this.onPostCommitError)
   }
 
   async approveDay(command: { supervisorId: string; collaboratorId: string; date: string; balanceMinutes: number; justification: string; expectedVersion: number }) {
@@ -180,11 +184,11 @@ export class LocalDayApprovalService {
     const competencies = this.readRecord<CompetencyState>(COMPETENCY_STORAGE_KEY)
     competencies[monthKey] = reopened
     this.storage.setItem(COMPETENCY_STORAGE_KEY, JSON.stringify(competencies))
-    await this.audit?.record({
+    if (this.audit) await runPostCommitEffect('Não foi possível registrar a auditoria da competência confirmada.', () => this.audit!.record({
       id: crypto.randomUUID(), type: 'COMPETENCY_REOPENED', occurredAt: reopened.reopenedAt,
       actorId: supervisorId, actorRole: 'SUPERVISOR', entityType: 'CompetencyState', entityId: monthKey,
       previousValue: current, newValue: reopened, justification: reopened.reopenJustification,
-    })
+    }), this.onPostCommitError)
     return reopened
   }
 
@@ -195,7 +199,7 @@ export class LocalDayApprovalService {
     const timestamp = this.now()
     const completed = { ...completeCorrection(stored), correctionCompletedAt: timestamp, updatedAt: timestamp }
     await this.save(completed)
-    await this.audit?.record({
+    if (this.audit) await runPostCommitEffect('Não foi possível registrar a auditoria da correção confirmada.', () => this.audit!.record({
       id: crypto.randomUUID(),
       type: 'CORRECTION_COMPLETED',
       occurredAt: completed.updatedAt,
@@ -205,7 +209,7 @@ export class LocalDayApprovalService {
       entityId: completed.id,
       previousValue: stored,
       newValue: completed,
-    })
+    }), this.onPostCommitError)
     return completed
   }
 

@@ -8,6 +8,7 @@ import { auditService } from './auditService'
 import { notificationService } from './notificationService'
 import { profileService } from './profileService'
 import { createBrowserStorage, type StorageLike } from './storage'
+import { defaultPostCommitErrorHandler, runPostCommitEffect, type PostCommitErrorHandler } from './postCommit'
 
 const WORKLOAD_STORAGE_KEY = 'sma:workloads:v1'
 
@@ -26,6 +27,7 @@ type WorkloadDependencies = {
   audit?: { record(event: AuditEvent): Promise<void> }
   notifications?: { record(notification: SupervisorNotification): Promise<void> }
   initialVersions?: WorkloadVersion[]
+  onPostCommitError?: PostCommitErrorHandler
 }
 
 function validMinutes(minutes: number) {
@@ -41,8 +43,9 @@ export class LocalWorkloadService {
   private readonly audit?: { record(event: AuditEvent): Promise<void> }
   private readonly notifications?: { record(notification: SupervisorNotification): Promise<void> }
   private readonly initialVersions: WorkloadVersion[]
+  private readonly onPostCommitError: PostCommitErrorHandler
 
-  constructor({ storage, createId, now, today, resolveAssignment, audit, notifications, initialVersions }: WorkloadDependencies) {
+  constructor({ storage, createId, now, today, resolveAssignment, audit, notifications, initialVersions, onPostCommitError }: WorkloadDependencies) {
     this.storage = storage
     this.createId = createId ?? (() => crypto.randomUUID())
     this.now = now ?? (() => new Date().toISOString())
@@ -51,6 +54,7 @@ export class LocalWorkloadService {
     this.audit = audit
     this.notifications = notifications
     this.initialVersions = initialVersions ?? []
+    this.onPostCommitError = onPostCommitError ?? defaultPostCommitErrorHandler
   }
 
   private read(): WorkloadStorage {
@@ -117,8 +121,8 @@ export class LocalWorkloadService {
     }
     storage.requests.push(request)
     this.write(storage)
-    await this.audit?.record({ id: crypto.randomUUID(), type: 'WORKLOAD_CHANGE_REQUESTED', occurredAt: timestamp, actorId: collaboratorId, actorRole: 'COLLABORATOR', entityType: 'WorkloadChangeRequest', entityId: request.id, newValue: request, justification })
-    await this.notifications?.record({ id: crypto.randomUUID(), supervisorId: assignmentSnapshot.supervisorId, type: 'WORKLOAD_CHANGE_REQUESTED', relatedEntityId: request.id, createdAt: timestamp })
+    if (this.audit) await runPostCommitEffect('Não foi possível registrar a auditoria da carga confirmada.', () => this.audit!.record({ id: crypto.randomUUID(), type: 'WORKLOAD_CHANGE_REQUESTED', occurredAt: timestamp, actorId: collaboratorId, actorRole: 'COLLABORATOR', entityType: 'WorkloadChangeRequest', entityId: request.id, newValue: request, justification }), this.onPostCommitError)
+    if (this.notifications) await runPostCommitEffect('Não foi possível registrar a notificação da carga confirmada.', () => this.notifications!.record({ id: crypto.randomUUID(), supervisorId: assignmentSnapshot.supervisorId, type: 'WORKLOAD_CHANGE_REQUESTED', relatedEntityId: request.id, createdAt: timestamp }), this.onPostCommitError)
     return request
   }
 
@@ -137,7 +141,7 @@ export class LocalWorkloadService {
       effectiveFrom: approvedEffectiveFrom, status: 'APPROVED', createdAt: timestamp, approvedAt: timestamp,
     })
     this.write(storage)
-    await this.audit?.record({ id: crypto.randomUUID(), type: 'WORKLOAD_CHANGE_APPROVED', occurredAt: timestamp, actorId: supervisorId, actorRole: 'SUPERVISOR', entityType: 'WorkloadChangeRequest', entityId: current.id, previousValue: current, newValue: approved })
+    if (this.audit) await runPostCommitEffect('Não foi possível registrar a auditoria da carga confirmada.', () => this.audit!.record({ id: crypto.randomUUID(), type: 'WORKLOAD_CHANGE_APPROVED', occurredAt: timestamp, actorId: supervisorId, actorRole: 'SUPERVISOR', entityType: 'WorkloadChangeRequest', entityId: current.id, previousValue: current, newValue: approved }), this.onPostCommitError)
     return approved
   }
 
@@ -154,10 +158,10 @@ export class LocalWorkloadService {
     const rejected: WorkloadChangeRequest = { ...current, status: 'REJECTED', rejectionReason, decidedAt: timestamp, updatedAt: timestamp }
     storage.requests[index] = rejected
     this.write(storage)
-    await this.audit?.record({
+    if (this.audit) await runPostCommitEffect('Não foi possível registrar a auditoria da carga confirmada.', () => this.audit!.record({
       id: crypto.randomUUID(), type: 'WORKLOAD_CHANGE_REJECTED', occurredAt: timestamp, actorId: supervisorId, actorRole: 'SUPERVISOR',
       entityType: 'WorkloadChangeRequest', entityId: current.id, previousValue: current, newValue: rejected, justification: rejectionReason,
-    })
+    }), this.onPostCommitError)
     return rejected
   }
 }

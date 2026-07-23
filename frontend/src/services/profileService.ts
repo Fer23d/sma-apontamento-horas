@@ -4,6 +4,7 @@ import type { AssignmentSnapshot } from '../features/squads/types'
 import { demoCollaborator, demoSquads, demoSupervisors } from '../mocks/demoData'
 import { auditService } from './auditService'
 import { createBrowserStorage, type StorageLike } from './storage'
+import { defaultPostCommitErrorHandler, runPostCommitEffect, type PostCommitErrorHandler } from './postCommit'
 
 const PROFILE_STORAGE_KEY = 'sma:collaborator-profile:v1'
 
@@ -17,6 +18,7 @@ type ProfileDependencies = {
   storage: StorageLike
   now?: () => string
   audit?: { record(event: AuditEvent): Promise<void> }
+  onPostCommitError?: PostCommitErrorHandler
 }
 
 function isProfile(value: unknown): value is CollaboratorProfile {
@@ -33,11 +35,13 @@ export class LocalProfileService implements ProfileService {
   private readonly storage: StorageLike
   private readonly now: () => string
   private readonly audit?: { record(event: AuditEvent): Promise<void> }
+  private readonly onPostCommitError: PostCommitErrorHandler
 
-  constructor({ storage, now, audit }: ProfileDependencies) {
+  constructor({ storage, now, audit, onPostCommitError }: ProfileDependencies) {
     this.storage = storage
     this.now = now ?? (() => new Date().toISOString())
     this.audit = audit
+    this.onPostCommitError = onPostCommitError ?? defaultPostCommitErrorHandler
   }
 
   private read() {
@@ -75,11 +79,11 @@ export class LocalProfileService implements ProfileService {
     if (current.activeSquadId === squadId) return current
     const updated = { ...current, activeSquadId: squadId }
     this.storage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(updated))
-    await this.audit?.record({
+    if (this.audit) await runPostCommitEffect('Não foi possível registrar a auditoria da troca de squad confirmada.', () => this.audit!.record({
       id: crypto.randomUUID(), type: 'SQUAD_CHANGED', occurredAt: this.now(), actorId: collaboratorId, actorRole: 'COLLABORATOR',
       entityType: 'CollaboratorProfile', entityId: collaboratorId, previousValue: current.activeSquadId, newValue: squadId,
       metadata: { supervisorId: supervisor.id },
-    })
+    }), this.onPostCommitError)
     return updated
   }
 }

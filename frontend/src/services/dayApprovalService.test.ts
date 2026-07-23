@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import type { DayApproval } from '../features/approvals/types'
 import type { AuditEvent } from '../features/audit/types'
 import { LocalDayApprovalService } from './dayApprovalService'
@@ -33,6 +33,12 @@ describe('LocalDayApprovalService', () => {
   it('não cria estado de aprovação para dia não aplicável', async () => {
     const service = new LocalDayApprovalService(new MemoryStorage(), () => '2026-07-20')
     await expect(service.getForDate('collaborator-1', '2026-07-19', false, correction.assignmentSnapshot, false)).resolves.toBeNull()
+  })
+
+  it('não cria estado futuro mesmo quando o chamador omite a aplicabilidade', async () => {
+    const service = new LocalDayApprovalService(new MemoryStorage(), () => '2026-07-20')
+
+    await expect(service.getForDate('collaborator-1', '2026-07-21', true, correction.assignmentSnapshot)).resolves.toBeNull()
   })
 
   it('conclui correção explicitamente e registra auditoria', async () => {
@@ -103,5 +109,25 @@ describe('LocalDayApprovalService', () => {
 
     await service.save({ ...correction, status: 'AVAILABLE_FOR_APPROVAL', assignmentSnapshot: null })
     await expect(service.approveDay({ supervisorId: 'supervisor-1', collaboratorId: 'collaborator-1', date: '2026-07-17', balanceMinutes: 0, justification: '', expectedVersion: 2 })).rejects.toThrow('responsável')
+  })
+
+  it('preserva aprovação confirmada quando a auditoria falha', async () => {
+    const storage = new MemoryStorage()
+    const onPostCommitError = vi.fn()
+    const service = new LocalDayApprovalService(
+      storage,
+      () => '2026-07-20',
+      { record: async () => { throw new Error('audit failure') } },
+      () => '2026-07-20T15:00:00.000Z',
+      onPostCommitError,
+    )
+    await service.save({ ...correction, status: 'AVAILABLE_FOR_APPROVAL' })
+
+    await expect(service.approveDay({
+      supervisorId: 'supervisor-1', collaboratorId: 'collaborator-1', date: '2026-07-17',
+      balanceMinutes: 0, justification: '', expectedVersion: correction.version,
+    })).resolves.toMatchObject({ status: 'APPROVED' })
+    await expect(service.getForDate('collaborator-1', '2026-07-17', true, correction.assignmentSnapshot)).resolves.toMatchObject({ status: 'APPROVED' })
+    expect(onPostCommitError).toHaveBeenCalledOnce()
   })
 })

@@ -43,6 +43,11 @@ describe('fluxo consolidado do dia', () => {
     expect(deriveDayApprovalStatus({ date: '2026-07-20', today: '2026-07-20', competencyClosed: false, hasEntries: true })).toBe('IN_PROGRESS')
   })
 
+  it('não deriva nem aprova conjunto de data futura', () => {
+    expect(deriveDayApprovalStatus({ date: '2026-07-21', today: '2026-07-20', competencyClosed: false, hasEntries: true })).toBeNull()
+    expect(() => approveDay(approval('AVAILABLE_FOR_APPROVAL'), { today: '2026-07-16', balanceMinutes: 0, justification: '' })).toThrow('futuro')
+  })
+
   it('torna dia anterior disponível para aprovação', () => {
     expect(deriveDayApprovalStatus({ date: '2026-07-19', today: '2026-07-20', competencyClosed: false, hasEntries: true })).toBe('AVAILABLE_FOR_APPROVAL')
   })

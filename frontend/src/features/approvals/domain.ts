@@ -20,7 +20,7 @@ export function isDayApprovalApplicable(day: {
 }
 
 export function deriveDayApprovalStatus({ date, today, competencyClosed, hasEntries, isApplicable = true }: DeriveStatusInput): DayApprovalStatus | null {
-  if (!isApplicable) return null
+  if (!isApplicable || date > today) return null
   if (date === today) return 'IN_PROGRESS'
   if (competencyClosed && !hasEntries) return 'NO_SUBMISSION'
   return 'AVAILABLE_FOR_APPROVAL'
@@ -42,6 +42,7 @@ type ApprovalCommand = {
 
 export function approveDay(current: DayApproval, command: ApprovalCommand): DayApproval {
   if (current.entryDate === command.today) throw new Error('O dia atual não pode ser aprovado.')
+  if (current.entryDate > command.today) throw new Error('Um dia futuro não pode ser aprovado.')
   if (current.status !== 'AVAILABLE_FOR_APPROVAL' && current.status !== 'REOPENED') {
     throw new Error('O conjunto diário não está disponível para aprovação.')
   }
