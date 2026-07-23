@@ -23,3 +23,7 @@ export function scheduleDrawerTriggerFocus(
   schedule(() => restoreDrawerTriggerFocus(trigger))
   return true
 }
+
+export function closeDrawerAfterNavigation(close: (returnFocus: boolean) => void) {
+  close(true)
+}

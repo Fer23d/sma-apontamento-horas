@@ -8,7 +8,7 @@ import { ProtectedRoute } from '../features/session/ProtectedRoute'
 import { PublicOnlyRoute } from '../features/session/PublicOnlyRoute'
 import type { DemoSession } from '../features/session/types'
 import { AppLayout } from './AppLayout'
-import { focusDrawerInitialElement, restoreDrawerTriggerFocus, scheduleDrawerTriggerFocus, shouldCloseDrawerForKey } from './drawer'
+import { closeDrawerAfterNavigation, focusDrawerInitialElement, restoreDrawerTriggerFocus, scheduleDrawerTriggerFocus, shouldCloseDrawerForKey } from './drawer'
 import { PageContainer } from './PageContainer'
 
 const collaboratorSession: DemoSession = {
@@ -158,6 +158,14 @@ describe('layout responsivo do colaborador', () => {
     schedule.mock.calls[0]?.[0]()
     expect(focus).toHaveBeenCalledOnce()
     expect(scheduleDrawerTriggerFocus(null, schedule)).toBe(false)
+  })
+
+  it('solicita retorno de foco ao fechar o drawer por navegação', () => {
+    const close = vi.fn()
+
+    closeDrawerAfterNavigation(close)
+
+    expect(close).toHaveBeenCalledWith(true)
   })
 
   it('centraliza a página sem aplicar offset lateral manual', () => {

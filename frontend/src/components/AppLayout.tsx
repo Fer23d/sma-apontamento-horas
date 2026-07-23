@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { Outlet } from 'react-router-dom'
 import { Header } from './Header'
 import { DesktopSidebar, MobileDrawer } from './Sidebar'
-import { focusDrawerInitialElement, scheduleDrawerTriggerFocus, shouldCloseDrawerForKey } from './drawer'
+import { closeDrawerAfterNavigation, focusDrawerInitialElement, scheduleDrawerTriggerFocus, shouldCloseDrawerForKey } from './drawer'
 
 const focusableSelector = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
 
@@ -63,7 +63,7 @@ export function AppLayout() {
             aria-label="Fechar navegação"
           />
         )}
-        <MobileDrawer isOpen={isSidebarOpen} onClose={() => closeSidebar(true)} onNavigate={() => closeSidebar()} onKeyDown={trapDrawerFocus} />
+        <MobileDrawer isOpen={isSidebarOpen} onClose={() => closeSidebar(true)} onNavigate={() => closeDrawerAfterNavigation(closeSidebar)} onKeyDown={trapDrawerFocus} />
       </div>
     </div>
   )
