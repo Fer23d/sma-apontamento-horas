@@ -83,6 +83,7 @@ type ServiceDependencies = {
   dateGuard?: EntryDateGuard
   audit?: AuditRecorder
   onStorageError?: (message: string, error: unknown) => void
+  onAuditError?: (message: string, error: unknown) => void
 }
 
 type ReadResult = {
@@ -124,8 +125,9 @@ export class LocalStorageTimeEntryService implements TimeEntryService {
   private readonly dateGuard: EntryDateGuard
   private readonly audit?: AuditRecorder
   private readonly onStorageError: (message: string, error: unknown) => void
+  private readonly onAuditError: (message: string, error: unknown) => void
 
-  constructor({ storage, createId, now, resolveAssignment, mutationPolicy, dateGuard, audit, onStorageError }: ServiceDependencies) {
+  constructor({ storage, createId, now, resolveAssignment, mutationPolicy, dateGuard, audit, onStorageError, onAuditError }: ServiceDependencies) {
     this.storage = storage
     this.createId = createId ?? (() => crypto.randomUUID())
     this.now = now ?? (() => new Date().toISOString())
@@ -134,6 +136,7 @@ export class LocalStorageTimeEntryService implements TimeEntryService {
     this.dateGuard = dateGuard ?? { getBlock: async () => ({ blocked: false }) }
     this.audit = audit
     this.onStorageError = onStorageError ?? ((message, error) => console.error(message, error))
+    this.onAuditError = onAuditError ?? ((message, error) => console.error(message, error))
   }
 
   private parseV3(raw: string): TimeEntryStorageV3 {
@@ -219,16 +222,20 @@ export class LocalStorageTimeEntryService implements TimeEntryService {
 
   private async record(type: AuditEvent['type'], actorId: string, entry: TimeEntry, options: Partial<AuditEvent> = {}) {
     if (!this.audit) return
-    await this.audit.record({
-      id: crypto.randomUUID(),
-      type,
-      occurredAt: this.now(),
-      actorId,
-      actorRole: 'COLLABORATOR',
-      entityType: 'TimeEntry',
-      entityId: entry.id,
-      ...options,
-    })
+    try {
+      await this.audit.record({
+        id: crypto.randomUUID(),
+        type,
+        occurredAt: this.now(),
+        actorId,
+        actorRole: 'COLLABORATOR',
+        entityType: 'TimeEntry',
+        entityId: entry.id,
+        ...options,
+      })
+    } catch (error) {
+      this.onAuditError('Não foi possível registrar a auditoria da mutação confirmada.', error)
+    }
   }
 
   async list(query: TimeEntryListQuery): Promise<TimeEntryPage> {

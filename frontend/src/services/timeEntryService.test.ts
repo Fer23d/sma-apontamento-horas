@@ -455,4 +455,20 @@ describe('comandos e consultas de apontamento', () => {
       'TIME_ENTRY_CANCELLED',
     ])
   })
+
+  it('preserva a mutação confirmada quando a auditoria falha depois da gravação', async () => {
+    const storage = new MemoryStorage()
+    const auditError = new Error('Auditoria indisponível')
+    const onAuditError = vi.fn()
+    const service = buildService(storage, {
+      audit: { record: async () => { throw auditError } },
+      onAuditError,
+    })
+
+    const created = await service.create(collaboratorId, validData)
+
+    await expect(service.listByDate(collaboratorId, validData.entryDate)).resolves.toHaveLength(1)
+    expect(created.id).toBe('stable-entry-id')
+    expect(onAuditError).toHaveBeenCalledWith('Não foi possível registrar a auditoria da mutação confirmada.', auditError)
+  })
 })
