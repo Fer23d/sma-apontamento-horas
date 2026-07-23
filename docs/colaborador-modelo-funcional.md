@@ -12,15 +12,15 @@ Definir o comportamento esperado da área do Colaborador e registrar as decisõe
 4. Jornada vem do perfil profissional vigente na data, nunca do nome no código.
 5. Saldo é derivado e somente leitura; o Colaborador não o digita nem o altera.
 6. Distribuição normal/extra/faltante é derivada em `DailySummary`, nunca persistida como classificação definitiva do apontamento.
-7. Eventos de calendário (feriado, férias, afastamento, folga, compensação e exceção) pertencem a `CalendarEvent`, separado de `TimeEntry`.
+7. Feriados, férias e afastamentos pertencem a `CalendarEvent`; folgas pertencem a `TimeOffRequest`. Ambas as entidades são separadas de `TimeEntry`.
 8. Edição preserva identidade, criação, versões e histórico.
 9. Exclusão é cancelamento lógico por padrão.
 10. Cálculos centrais ficarão fora dos componentes e serão futuramente confirmados pelo backend.
 
 ## 3. Fluxo do Colaborador
 
-1. Entrar por uma sessão demonstrativa que representa um único perfil.
-2. Consultar o perfil profissional e a jornada vigente, ambos somente leitura nesta fase.
+1. Entrar por uma sessão demonstrativa escolhendo um dos três perfis disponíveis; somente o perfil Colaborador possui área funcional completa nesta branch.
+2. Consultar o perfil profissional, a squad vigente e a carga horária versionada; alterações locais continuam demonstrativas e sem valor corporativo oficial.
 3. Abrir o dashboard individual para ver período, jornada prevista, total apontado e saldo calculado.
 4. Selecionar uma data pelo calendário ou pela rota de novo apontamento.
 5. Escolher o cliente, digitar exatamente o número do projeto atual e escolher a atividade.
@@ -28,56 +28,54 @@ Definir o comportamento esperado da área do Colaborador e registrar as decisõe
 7. Informar duração em horas/minutos; a aplicação converte para minutos.
 8. Visualizar uma prévia do total diário e da situação da jornada.
 9. Registrar o apontamento como `ACTIVE`; rascunho persistido não existe nesta fatia.
-10. Futuramente, consultar histórico paginado e filtrado.
-11. Futuramente, editar com motivo, duplicar ou cancelar logicamente.
+10. Consultar histórico paginado e filtrado.
+11. Editar com motivo, duplicar ou cancelar logicamente, respeitando versão e regras da competência.
 12. Futuramente, exportar apenas os próprios dados do período/filtros escolhidos.
 
 ## 4. Modelo do apontamento
 
-### 4.1 Campos
+### 4.1 Contrato atual
 
 | Campo | Tipo conceitual | Classificação | Regra |
 |---|---|---|---|
 | `id` | UUID/string opaca | **Automático, somente leitura** | Gerado uma vez e preservado em edições. |
 | `collaboratorId` | identificador do perfil | **Automático, somente leitura** | Sempre obtido da sessão; nunca aceito de um seletor. |
-| `collaboratorDisplayName` | texto de apresentação | **Automático, somente leitura** | Snapshot opcional para UI/exportação; identidade canônica é o ID. |
-| `date` | data ISO `YYYY-MM-DD` | **Obrigatório** | Data civil do trabalho/evento; validar janela permitida. |
-| `clientId` | identificador de cliente | **Condicional** | Obrigatório para projeto de cliente; não se aplica a atividades internas/ausências. |
-| `clientName` | texto somente leitura | **Automático, somente leitura** | Resolvido pelo catálogo; snapshot pode ser mantido para histórico. |
+| `entryDate` | data ISO `YYYY-MM-DD` | **Obrigatório** | Data civil do trabalho; datas futuras e datas bloqueadas não aceitam mutação. |
+| `clientId` | identificador de cliente | **Obrigatório** | Deve apontar para um cliente ativo do catálogo demonstrativo. |
 | `projectCode` | texto, máximo provisório de 80 caracteres | **Obrigatório** | Informado pelo Colaborador. Aplicar somente `trim()` externo antes de validar/persistir; preservar capitalização, zeros, pontos, barras, hífens e espaços internos. |
 | `activityId` | identificador da atividade | **Obrigatório** | Atividade tipada define categoria e aplicabilidade dos demais campos. |
-| `activityName` | texto de apresentação | **Automático, somente leitura** | Resolvido pelo catálogo. |
-| `details` | texto | **Condicional** | Obrigatório para trabalho produtivo e conforme regra da atividade; pode ser dispensado em eventos autoexplicativos. |
-| `disciplineId` | identificador de disciplina | **Condicional** | Exigido quando o projeto/atividade tiver disciplina; não se aplica a ausências e parte das atividades administrativas. |
-| `documentTypeId` | identificador de tipo documental | **Condicional** | Exigido quando a atividade se relacionar a documento/entregável. |
-| `projectDocumentId` | identificador do documento da LD | **Condicional** | Exigido quando o projeto usa LD e a atividade trabalha em documento específico. |
-| `progressPercent` | inteiro 0–100 | **Condicional** | Aplicável apenas a atividade/documento mensurável. Sem valor sentinela `-`. |
-| `durationMinutes` | inteiro positivo | **Obrigatório** | Armazenamento canônico; limites e granularidade pendentes de decisão. |
-| `note` | texto | **Opcional** | Informação complementar distinta do detalhamento técnico. |
+| `disciplineCode` | enum `— | A | E` | **Obrigatório** | `—` representa “não aplicável” no contrato atual; não é ausência de valor. |
+| `documentTypeCode` | enum do catálogo mínimo | **Obrigatório** | `—` representa “não aplicável”; os demais códigos identificam o tipo documental selecionado. |
+| `durationMinutes` | inteiro entre 1 e 1.440 | **Obrigatório** | Armazenamento canônico em minutos inteiros. |
+| `details` | texto | **Obrigatório** | Recebe `trim()` externo e não aceita conteúdo vazio. |
+| `assignmentSnapshot` | snapshot de squad/supervisor ou `null` | **Automático, somente leitura** | Preserva a atribuição resolvida no lançamento; `null` é aceito para compatibilidade legada. |
 | `status` | enum | **Automático, somente leitura** | `ACTIVE` na criação; muda para `CANCELLED` no cancelamento lógico. |
 | `createdAt` | timestamp | **Automático, somente leitura** | Mantido por toda a vida do registro. |
 | `updatedAt` | timestamp | **Automático, somente leitura** | Atualizado em cada mudança. |
 | `lastEditReason` | texto | **Condicional** | Obrigatório em cada edição confirmada. |
 | `version` | inteiro | **Automático, somente leitura** | Inicia em 1 e incrementa em mudanças persistidas. |
 | `cancelReason` | texto | **Condicional** | Obrigatório no cancelamento lógico. |
+| `cancelledAt` | timestamp | **Automático, somente leitura, condicional** | Preenchido no cancelamento lógico. |
 | `sourceEntryId` | identificador | **Automático, somente leitura** | Rastreia a origem de um apontamento duplicado. |
 
-`TimeEntry` não possui `projectId` nem `projectName` nesta fase, porque não existe catálogo oficial ou identificador estável. Quando catálogo e backend existirem, poderá receber uma referência estável `projectId`, e o nome será obtido pelo relacionamento. Um eventual snapshot histórico do nome só deverá ser criado após necessidade explícita e regra de atualização definidas.
+Nomes de cliente e atividade são resolvidos pelos catálogos e não são armazenados em `TimeEntry`. O contrato atual também não possui colaborador por nome, documento da LD, percentual de avanço ou observação separada.
+
+`TimeEntry` não possui `projectId` nem `projectName` nesta fase, porque não existe catálogo oficial ou identificador estável. Quando catálogo e backend existirem, poderá receber uma referência estável `projectId`, e o nome será obtido pelo relacionamento. Um eventual snapshot histórico do nome só deverá ser criado após necessidade explícita e regra de atualização definidas. Documento da LD, avanço e observação separada também exigem decisão funcional explícita antes de ampliar o contrato.
 
 ### 4.2 Aplicabilidade por cenário
 
-| Cenário | Cliente/projeto | Disciplina | Tipo/documento LD | Avanço | Detalhamento | Efeito futuro no resumo/eventos |
-|---|---|---|---|---|---|---|
-| Trabalho em projeto de cliente com entregável | Obrigatórios | Condicional/obrigatória | Obrigatórios | Condicional/obrigatório | Obrigatório | Minutos distribuídos pelo `DailySummary`. |
-| Trabalho em projeto sem documento | Obrigatórios | Condicional | Não aplicáveis | Não aplicável, salvo métrica própria | Obrigatório | Minutos distribuídos pelo `DailySummary`. |
-| Projeto interno SM&A | Cliente pode ser interno; projeto obrigatório | Condicional | Geralmente não aplicáveis | Geralmente não aplicável | Obrigatório | Minutos distribuídos pelo `DailySummary`. |
-| Atividade administrativa | Cliente e projeto podem não se aplicar | Não aplicável | Não aplicáveis | Não aplicável | Condicional | Minutos distribuídos pelo `DailySummary` conforme política futura. |
-| Folga de compensação | Não aplicáveis | Não aplicável | Não aplicáveis | Não aplicável | Opcional/condicional | Representada por solicitação/evento próprio; não é `TimeEntry`. |
-| Férias | Não aplicáveis | Não aplicável | Não aplicáveis | Não aplicável | Não exigido | Representada por `CalendarEvent`; não é `TimeEntry`. |
-| Afastamento médico | Não aplicáveis | Não aplicável | Não aplicáveis | Não aplicável | Observação limitada e sem dado médico sensível desnecessário | Representado por `CalendarEvent`; não é `TimeEntry`. |
-| Feriado | Não aplicáveis | Não aplicável | Não aplicáveis | Não aplicável | Não exigido | Representado por `CalendarEvent`; trabalho no feriado é `TimeEntry` separado. |
+| Cenário | Cliente/projeto | Disciplina | Tipo documental | Detalhamento | Entidade/efeito atual |
+|---|---|---|---|---|---|
+| Trabalho em projeto de cliente com entregável | Obrigatórios | Código aplicável | Código aplicável | Obrigatório | `TimeEntry`; minutos entram no `DailySummary`. |
+| Trabalho em projeto sem documento | Obrigatórios | Código aplicável ou `—` | `—` | Obrigatório | `TimeEntry`; minutos entram no `DailySummary`. |
+| Projeto interno SM&A | Cliente interno do catálogo e projeto obrigatórios | Código aplicável ou `—` | Código aplicável ou `—` | Obrigatório | `TimeEntry`; minutos entram no `DailySummary`. |
+| Atividade administrativa | Cliente e projeto continuam obrigatórios no contrato uniforme atual | `—` quando não aplicável | `—` quando não aplicável | Obrigatório | `TimeEntry`; flexibilização futura depende de decisão de produto. |
+| Folga de compensação | Não aplicáveis | Não aplicável | Não aplicável | Motivo próprio da solicitação | `TimeOffRequest`; não é `TimeEntry`. |
+| Férias | Não aplicáveis | Não aplicável | Não aplicável | Não exigido no apontamento | `CalendarEvent`; não é `TimeEntry`. |
+| Afastamento médico | Não aplicáveis | Não aplicável | Não aplicável | Sem dado médico sensível desnecessário | `CalendarEvent`; não é `TimeEntry`. |
+| Feriado | Não aplicáveis | Não aplicável | Não aplicável | Não exigido | `CalendarEvent`; trabalho no feriado, quando permitido, é `TimeEntry` separado. |
 
-Campos não aplicáveis devem ser `null`/ausentes segundo contrato tipado, não strings `-` ou `N/A`. A UI deve explicar por que foram ocultados ou desabilitados.
+Para disciplina e tipo documental, o contrato atual usa explicitamente o código `—` para “não aplicável”. Demais dados que pertencem a outras entidades não devem ser simulados dentro de `TimeEntry`.
 
 ## 5. Distribuição diária das horas
 
