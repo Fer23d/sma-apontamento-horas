@@ -59,13 +59,13 @@ function SidebarContent({ onNavigate }: SidebarContentProps) {
             onClick={onNavigate}
             className={({ isActive }) =>
               `flex items-center gap-3 rounded-xl border-l-4 px-3 py-3 text-sm font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-sidebar-text)] ${
-                isActive ? 'border-[var(--color-sidebar-text)] bg-[var(--color-navigation-active)] text-[var(--color-navigation-active-text)]' : 'border-transparent text-[var(--color-sidebar-text-muted)] hover:bg-[var(--color-navigation-hover)] hover:text-[var(--color-sidebar-text)]'
+                isActive ? 'border-[var(--color-primary)] bg-[var(--color-navigation-active)] text-[var(--color-navigation-active-text)]' : 'border-transparent text-[var(--color-sidebar-text-muted)] hover:bg-[var(--color-navigation-hover)] hover:text-[var(--color-sidebar-text)]'
               }`
             }
           >
             {({ isActive }) => (
               <>
-                <span className={`flex h-8 w-8 items-center justify-center rounded-lg text-xs ${isActive ? 'bg-[var(--color-navigation-active-detail)]' : 'bg-[var(--color-sidebar-surface)]'}`}>{item.shortLabel}</span>
+                <span className={`flex h-8 w-8 items-center justify-center rounded-lg text-xs ${isActive ? 'bg-[var(--color-navigation-active-detail)] text-[var(--color-primary)]' : 'bg-[var(--color-sidebar-surface)]'}`}>{item.shortLabel}</span>
                 <span className="flex-1">{item.label}</span>
                 {isActive && <span className="text-[10px] font-extrabold uppercase" aria-label="Página atual">Atual</span>}
               </>

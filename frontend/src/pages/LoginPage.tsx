@@ -66,7 +66,7 @@ export function LoginPageContent({ from, signIn, navigate }: LoginPageContentPro
 
         <div className="grid gap-5 md:grid-cols-3">
           {DEMO_PROFILE_CARDS.map((profile) => (
-            <article key={profile.role} className="ui-card flex min-h-64 flex-col rounded-2xl p-6">
+            <article key={profile.role} className="profile-card ui-card flex min-h-64 flex-col rounded-2xl p-6 transition-all duration-300 hover:-translate-y-2 hover:shadow-lg">
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-secondary)]">
                 Perfil demonstrativo
               </p>

@@ -49,6 +49,8 @@ describe('calendário acessível', () => {
       const { label, marker, tone } = expectedPresentation[state]
       expect(markup).toContain(`data-calendar-state="${state}"`)
       expect(markup).toContain(`calendar-state--${tone}`)
+      expect(markup).toContain('calendar-state-dot')
+      expect(markup).toContain('calendar-state-marker')
       expect(markup).toContain(label)
       expect(markup).toContain(marker)
     }

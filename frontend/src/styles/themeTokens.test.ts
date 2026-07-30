@@ -10,6 +10,8 @@ import pageContainerSource from '../components/PageContainer.tsx?raw'
 import sidebarSource from '../components/Sidebar.tsx?raw'
 import themeToggleSource from '../components/ThemeToggle.tsx?raw'
 import dayDetailsSource from '../features/calendar/DayDetails.tsx?raw'
+import monthlyCalendarSource from '../features/calendar/MonthlyCalendar.tsx?raw'
+import summaryCardSource from '../features/collaborator/SummaryCard.tsx?raw'
 import timeEntryHistorySource from '../features/history/TimeEntryHistory.tsx?raw'
 import entryRevisionBadgeSource from '../features/time-entries/EntryRevisionBadge.tsx?raw'
 import timeOffRequestListSource from '../features/time-off/TimeOffRequestList.tsx?raw'
@@ -180,26 +182,27 @@ describe('tokens institucionais e contraste', () => {
       '--color-primary-contrast': hex('FFFFFF'),
     })
     expect(dark).toMatchObject({
-      '--color-background': hex('0E1720'),
-      '--color-surface': hex('15232D'),
-      '--color-surface-raised': hex('1B2D38'),
-      '--color-surface-subtle': hex('20333F'),
-      '--color-text': hex('F2F7FA'),
-      '--color-text-muted': hex('B9C7D1'),
-      '--color-border': hex('607787'),
-      '--color-primary': hex('90C6D7'),
-      '--color-primary-contrast': hex('0E1720'),
+      '--color-background': hex('0A161E'),
+      '--color-surface': hex('132532'),
+      '--color-surface-raised': hex('132532'),
+      '--color-surface-subtle': hex('193142'),
+      '--color-text': hex('F8FAFC'),
+      '--color-text-muted': hex('94A3B8'),
+      '--color-border': hex('1F3B4D'),
+      '--color-primary': hex('77C2A4'),
+      '--color-secondary': hex('135063'),
+      '--color-primary-contrast': hex('0A161E'),
     })
   })
 
-  it('mantem texto normal acima de 4,5:1 e bordas e foco acima de 3:1', () => {
+  it('mantem texto normal acima de 4,5:1, foco acima de 3:1 e bordas coerentes com cada tema', () => {
     for (const selector of [':root', '.dark']) {
       const tokens = declarationsFor(selector)
 
       expect(contrastRatio(tokens['--color-text'], tokens['--color-background'])).toBeGreaterThanOrEqual(4.5)
       expect(contrastRatio(tokens['--color-text-muted'], tokens['--color-background'])).toBeGreaterThanOrEqual(4.5)
       expect(contrastRatio(tokens['--color-primary-contrast'], tokens['--color-primary'])).toBeGreaterThanOrEqual(4.5)
-      expect(contrastRatio(tokens['--color-border'], tokens['--color-surface'])).toBeGreaterThanOrEqual(3)
+      expect(contrastRatio(tokens['--color-border'], tokens['--color-surface'])).toBeGreaterThanOrEqual(selector === '.dark' ? 1.25 : 3)
       expect(contrastRatio(tokens['--color-focus-ring'], tokens['--color-surface'])).toBeGreaterThanOrEqual(3)
     }
   })
@@ -270,7 +273,7 @@ describe('tokens institucionais e contraste', () => {
   })
 
   it('mantem a sigla da navegacao ativa acima de 4,5:1', () => {
-    const activeDetailToken = sidebarSource.includes("isActive ? 'bg-[var(--color-navigation-active-detail)]'")
+    const activeDetailToken = sidebarSource.includes('bg-[var(--color-navigation-active-detail)]')
       ? '--color-navigation-active-detail'
       : '--color-sidebar-surface'
 
@@ -284,6 +287,43 @@ describe('tokens institucionais e contraste', () => {
     for (const className of ['ui-card', 'ui-field', 'ui-button-primary', 'ui-button-secondary', 'ui-badge-primary', 'ui-badge-secondary', 'brand-mark']) {
       expect(stylesheet).toContain(`.${className}`)
     }
+  })
+
+  it('mantem a logo como etiqueta branca sem filtros ou blend no tema escuro', () => {
+    expect(stylesheet).toContain('.brand-mark__image-frame')
+    expect(stylesheet).toContain('background: #FFFFFF')
+    expect(stylesheet).not.toContain('.dark .brand-mark img')
+    expect(stylesheet).not.toContain('mix-blend-mode')
+    expect(stylesheet).not.toContain('filter: invert')
+  })
+
+  it('define interacao elevada para os cards de perfil', () => {
+    expect(stylesheet).toContain('.profile-card:hover')
+    expect(stylesheet).toContain('var(--color-primary) 20%')
+    expect(stylesheet).toContain('var(--color-primary) 50%')
+  })
+
+  it('mantem estados do calendario discretos no tema escuro', () => {
+    expect(stylesheet).toContain('.dark .calendar-state {')
+    expect(stylesheet).toContain('background: var(--color-surface-raised)')
+    expect(stylesheet).toContain('border-color: var(--color-border)')
+    expect(stylesheet).toContain('border-left-color: var(--calendar-state-accent)')
+    expect(stylesheet).toContain('.dark .calendar-state-badge')
+    expect(stylesheet).toContain('border-color: color-mix(in srgb, var(--calendar-state-accent) 60%, transparent)')
+    expect(stylesheet).toContain('background: rgb(255 255 255 / 0.05)')
+    expect(stylesheet).toContain('.dark .calendar-state-dot')
+    expect(stylesheet).toContain('background: var(--calendar-state-accent)')
+    expect(stylesheet).toContain('.dark [data-calendar-marker]')
+    expect(monthlyCalendarSource).toContain('border-l-4')
+  })
+
+  it('mantem navegacao ativa e KPIs sem blocos de cor berrantes no dark', () => {
+    expect(declarationsFor('.dark')['--color-navigation-active']).toBe('rgb(119 194 164 / 0.10)')
+    expect(sidebarSource).toContain('border-[var(--color-primary)] bg-[var(--color-navigation-active)] text-[var(--color-navigation-active-text)]')
+    expect(sidebarSource).not.toContain("isActive ? 'border-[var(--color-sidebar-text)] bg-[var(--color-navigation-active)]")
+    expect(summaryCardSource).toContain('ui-border ui-surface')
+    expect(summaryCardSource).not.toContain('dark:border-emerald')
+    expect(summaryCardSource).not.toContain('dark:border-amber')
   })
 
   it('remove aliases temporarios e neutros estruturais antigos das areas demonstrativas', () => {

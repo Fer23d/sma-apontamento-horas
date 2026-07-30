@@ -60,7 +60,7 @@ export function MonthlyCalendar({ monthKey, selectedDate, days, onMonthChange, o
               aria-label={ariaLabel}
               aria-pressed={selectedDate === date}
               title={ariaLabel}
-              className={`calendar-state calendar-state--${presentation.tone} min-h-20 rounded-xl border p-1.5 text-left transition hover:-translate-y-0.5 sm:min-h-24 sm:p-2 ${selectedDate === date ? 'calendar-day--selected' : ''}`}
+              className={`calendar-state calendar-state--${presentation.tone} min-h-20 rounded-xl border border-l-4 p-1.5 text-left transition hover:-translate-y-0.5 sm:min-h-24 sm:p-2 ${selectedDate === date ? 'calendar-day--selected' : ''}`}
             >
               <span className="block text-xs font-extrabold sm:text-sm">{Number(date.slice(-2))}</span>
               <span className="mt-1 block text-[10px] font-bold leading-tight">

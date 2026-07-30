@@ -102,40 +102,40 @@
 }
 
 .dark {
-  --color-background: #0E1720;
-  --color-surface: #15232D;
-  --color-surface-raised: #1B2D38;
-  --color-surface-subtle: #20333F;
-  --color-header: #15232D;
-  --color-sidebar: #092E42;
-  --color-text: #F2F7FA;
-  --color-text-muted: #B9C7D1;
-  --color-text-subtle: #9FB0BC;
-  --color-border: #607787;
-  --color-border-strong: #8399A8;
-  --color-focus-ring: #90C6D7;
-  --color-shadow: rgb(0 0 0 / 0.36);
-  --color-primary: #90C6D7;
-  --color-primary-hover: #B6DBE5;
-  --color-primary-active: #75AC96;
-  --color-primary-contrast: #0E1720;
-  --color-secondary: #9DD0B8;
-  --color-secondary-hover: #B4DAC9;
-  --color-input-background: #1B2D38;
-  --color-input-border: #607787;
-  --color-input-placeholder: #9FB0BC;
-  --color-navigation-active: #75AC96;
-  --color-navigation-active-detail: #E6F2F4;
-  --color-navigation-hover: #0F455F;
+  --color-background: #0A161E;
+  --color-surface: #132532;
+  --color-surface-raised: #132532;
+  --color-surface-subtle: #193142;
+  --color-header: #132532;
+  --color-sidebar: #0A161E;
+  --color-text: #F8FAFC;
+  --color-text-muted: #94A3B8;
+  --color-text-subtle: #CBD5E1;
+  --color-border: #1F3B4D;
+  --color-border-strong: #77C2A4;
+  --color-focus-ring: #77C2A4;
+  --color-shadow: rgb(0 0 0 / 0.42);
+  --color-primary: #77C2A4;
+  --color-primary-hover: #9BD7BE;
+  --color-primary-active: #5EA98C;
+  --color-primary-contrast: #0A161E;
+  --color-secondary: #135063;
+  --color-secondary-hover: #1C6C82;
+  --color-input-background: #0F202B;
+  --color-input-border: #1F3B4D;
+  --color-input-placeholder: #94A3B8;
+  --color-navigation-active: rgb(119 194 164 / 0.10);
+  --color-navigation-active-detail: #132532;
+  --color-navigation-hover: #132532;
   --color-overlay: rgb(0 0 0 / 0.68);
-  --color-sidebar-text: #F2F7FA;
-  --color-sidebar-text-muted: #B9C7D1;
-  --color-sidebar-border: #607787;
-  --color-sidebar-surface: #0F455F;
-  --color-navigation-active-text: #092E42;
+  --color-sidebar-text: #F8FAFC;
+  --color-sidebar-text-muted: #94A3B8;
+  --color-sidebar-border: #1F3B4D;
+  --color-sidebar-surface: #132532;
+  --color-navigation-active-text: #77C2A4;
   --color-danger: #FCA5A5;
   --color-danger-hover: #FECACA;
-  --color-danger-contrast: #0E1720;
+  --color-danger-contrast: #0A161E;
   --status-neutral-surface: #263545;
   --status-neutral-text: #E8EEF5;
   --status-neutral-border: #91A4B8;
@@ -372,6 +372,10 @@
     color: var(--status-badge-text);
   }
 
+  .dark .status-badge {
+    background: transparent;
+  }
+
   .status-badge--neutral {
     --status-badge-surface: var(--status-neutral-surface);
     --status-badge-text: var(--status-neutral-text);
@@ -419,23 +423,35 @@
     flex: none;
     align-items: center;
     justify-content: center;
-    overflow: hidden;
-    border: 1px solid var(--color-border);
-    border-radius: 0.625rem;
-    background: #F7F7F7;
+    border-radius: 0.875rem;
+    background: transparent;
     color: #0F455F;
   }
 
   .brand-mark--compact {
     width: 6.625rem;
     height: 2.5rem;
-    padding: 0.25rem;
   }
 
   .brand-mark--full {
     width: min(15rem, 100%);
     aspect-ratio: 243 / 92;
+  }
+
+  .brand-mark__image-frame {
+    display: flex;
+    height: 100%;
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-radius: 0.75rem;
+    background: #FFFFFF;
     padding: 0.5rem;
+  }
+
+  .brand-mark--compact .brand-mark__image-frame {
+    padding: 0.25rem;
   }
 
   .brand-mark__fallback {
@@ -444,64 +460,124 @@
     letter-spacing: 0.08em;
   }
 
+  .profile-card {
+    transition-property: transform, border-color, box-shadow;
+    transition-duration: 300ms;
+  }
+
+  .profile-card:hover {
+    border-color: color-mix(in srgb, var(--color-primary) 50%, transparent);
+    box-shadow: 0 18px 48px color-mix(in srgb, var(--color-primary) 20%, transparent);
+  }
+
   .calendar-state {
     border-color: var(--calendar-state-border);
     background: var(--calendar-state-surface);
     color: var(--calendar-state-text);
   }
 
+  .dark .calendar-state {
+    border-color: var(--color-border);
+    border-left-color: var(--calendar-state-accent);
+    background: var(--color-surface-raised);
+    color: var(--color-text);
+  }
+
+  .calendar-state-dot {
+    display: inline-block;
+    height: 0.5rem;
+    width: 0.5rem;
+    flex: none;
+    border-radius: 9999px;
+    background: var(--calendar-state-border);
+  }
+
+  .dark .calendar-state-badge {
+    border-color: color-mix(in srgb, var(--calendar-state-accent) 60%, transparent);
+    background: rgb(255 255 255 / 0.05);
+    color: var(--color-text);
+  }
+
+  .dark .calendar-state-dot {
+    background: var(--calendar-state-accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--calendar-state-accent) 18%, transparent);
+  }
+
+  .dark .calendar-state-marker {
+    color: color-mix(in srgb, var(--calendar-state-accent) 78%, var(--color-text));
+  }
+
+  .dark [data-calendar-marker] {
+    display: inline-block;
+    height: 0.45rem;
+    width: 0.45rem;
+    border-radius: 9999px;
+    background: var(--calendar-state-accent);
+    color: transparent;
+    vertical-align: middle;
+  }
+
   .calendar-state--no-schedule {
     --calendar-state-surface: var(--calendar-state-no-schedule-surface);
     --calendar-state-text: var(--calendar-state-no-schedule-text);
     --calendar-state-border: var(--calendar-state-no-schedule-border);
+    --calendar-state-accent: #8FA3B5;
   }
 
   .calendar-state--no-entry {
     --calendar-state-surface: var(--calendar-state-no-entry-surface);
     --calendar-state-text: var(--calendar-state-no-entry-text);
     --calendar-state-border: var(--calendar-state-no-entry-border);
+    --calendar-state-accent: #C9A66B;
   }
 
   .calendar-state--incomplete {
     --calendar-state-surface: var(--calendar-state-incomplete-surface);
     --calendar-state-text: var(--calendar-state-incomplete-text);
     --calendar-state-border: var(--calendar-state-incomplete-border);
+    --calendar-state-accent: #C58F6B;
   }
 
   .calendar-state--complete {
     --calendar-state-surface: var(--calendar-state-complete-surface);
     --calendar-state-text: var(--calendar-state-complete-text);
     --calendar-state-border: var(--calendar-state-complete-border);
+    --calendar-state-accent: #77C2A4;
   }
 
   .calendar-state--exceeded {
     --calendar-state-surface: var(--calendar-state-exceeded-surface);
     --calendar-state-text: var(--calendar-state-exceeded-text);
     --calendar-state-border: var(--calendar-state-exceeded-border);
+    --calendar-state-accent: #C98AA0;
   }
 
   .calendar-state--vacation {
     --calendar-state-surface: var(--calendar-state-vacation-surface);
     --calendar-state-text: var(--calendar-state-vacation-text);
     --calendar-state-border: var(--calendar-state-vacation-border);
+    --calendar-state-accent: #A89BC8;
   }
 
   .calendar-state--time-off {
     --calendar-state-surface: var(--calendar-state-time-off-surface);
     --calendar-state-text: var(--calendar-state-time-off-text);
     --calendar-state-border: var(--calendar-state-time-off-border);
+    --calendar-state-accent: #8AB7C7;
   }
 
   .calendar-state--medical-leave {
     --calendar-state-surface: var(--calendar-state-medical-leave-surface);
     --calendar-state-text: var(--calendar-state-medical-leave-text);
     --calendar-state-border: var(--calendar-state-medical-leave-border);
+    --calendar-state-accent: #B99AB4;
   }
 
   .calendar-state--holiday {
     --calendar-state-surface: var(--calendar-state-holiday-surface);
     --calendar-state-text: var(--calendar-state-holiday-text);
     --calendar-state-border: var(--calendar-state-holiday-border);
+    --calendar-state-accent: #C99393;
   }
 
   .calendar-day--selected:not(:focus-visible) {
