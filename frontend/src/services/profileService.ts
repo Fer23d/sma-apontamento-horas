@@ -7,9 +7,18 @@ import { createBrowserStorage, type StorageLike } from './storage'
 import { defaultPostCommitErrorHandler, runPostCommitEffect, type PostCommitErrorHandler } from './postCommit'
 
 const PROFILE_STORAGE_KEY = 'sma:collaborator-profile:v1'
+export const PROFILE_UPDATED_EVENT = 'sma:profile-updated'
+
+export type UpdateProfileInput = {
+  name: string
+  email: string
+  jobTitle: string
+  activeSquadId: string
+}
 
 export interface ProfileService {
   getById(collaboratorId: string): Promise<CollaboratorProfile | null>
+  updateProfile(collaboratorId: string, input: UpdateProfileInput): Promise<CollaboratorProfile>
   changeActiveSquad(collaboratorId: string, squadId: string): Promise<CollaboratorProfile>
   resolveAssignment(collaboratorId: string): AssignmentSnapshot | null
 }
@@ -29,6 +38,11 @@ function isProfile(value: unknown): value is CollaboratorProfile {
     && typeof profile.jobTitle === 'string' && typeof profile.active === 'boolean' && typeof profile.activeSquadId === 'string'
     && Boolean(location) && location?.countryCode === 'BR' && typeof location.stateCode === 'string'
     && typeof location.city === 'string' && typeof location.timeZone === 'string'
+}
+
+function notifyProfileUpdated() {
+  if (typeof window === 'undefined') return
+  window.dispatchEvent(new CustomEvent(PROFILE_UPDATED_EVENT))
 }
 
 export class LocalProfileService implements ProfileService {
@@ -61,6 +75,23 @@ export class LocalProfileService implements ProfileService {
     return profile.id === collaboratorId ? profile : null
   }
 
+  async updateProfile(collaboratorId: string, input: UpdateProfileInput) {
+    const current = this.read()
+    if (current.id !== collaboratorId) throw new Error('Perfil profissional não encontrado.')
+    const name = input.name.trim()
+    const email = input.email.trim()
+    const jobTitle = input.jobTitle.trim()
+    if (!name) throw new Error('Informe o nome.')
+    if (!email) throw new Error('Informe o e-mail.')
+    if (!jobTitle) throw new Error('Informe o cargo.')
+    const squad = demoSquads.find((item) => item.id === input.activeSquadId && item.active)
+    if (!squad) throw new Error('A squad selecionada não está disponível.')
+    const updated: CollaboratorProfile = { ...current, name, email, jobTitle, activeSquadId: input.activeSquadId }
+    this.storage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(updated))
+    notifyProfileUpdated()
+    return updated
+  }
+
   resolveAssignment(collaboratorId: string) {
     const profile = this.read()
     if (profile.id !== collaboratorId || !profile.active) return null
@@ -79,6 +110,7 @@ export class LocalProfileService implements ProfileService {
     if (current.activeSquadId === squadId) return current
     const updated = { ...current, activeSquadId: squadId }
     this.storage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(updated))
+    notifyProfileUpdated()
     if (this.audit) await runPostCommitEffect('Não foi possível registrar a auditoria da troca de squad confirmada.', () => this.audit!.record({
       id: crypto.randomUUID(), type: 'SQUAD_CHANGED', occurredAt: this.now(), actorId: collaboratorId, actorRole: 'COLLABORATOR',
       entityType: 'CollaboratorProfile', entityId: collaboratorId, previousValue: current.activeSquadId, newValue: squadId,

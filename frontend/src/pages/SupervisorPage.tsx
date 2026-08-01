@@ -19,12 +19,44 @@ type RejectionTarget =
   | { type: 'time-off', item: SupervisorTimeOffRequest }
 
 const SUPERVISOR_DISPLAY_NAME = 'Jeen Carlos E. Azevedo'
+const SUPERVISOR_PROFILE_STORAGE_KEY = 'sma:supervisor-profile:v1'
+type SupervisorProfile = { name: string; email: string; jobTitle: string; squadName: string }
+
+const defaultSupervisorProfile: SupervisorProfile = {
+  name: SUPERVISOR_DISPLAY_NAME,
+  email: 'jeen.azevedo@sma.local',
+  jobTitle: 'Supervisor de Engenharia',
+  squadName: 'Engenharia de Automação',
+}
+
 const supervisorNavigation: Array<{ id: ActiveView, label: string, shortLabel: string }> = [
   { id: 'entries', label: 'Gestão da Equipe', shortLabel: 'GE' },
   { id: 'requests', label: 'Solicitações', shortLabel: 'SO' },
   { id: 'history', label: 'Histórico', shortLabel: 'HI' },
   { id: 'profile', label: 'Meu Perfil', shortLabel: 'MP' },
 ]
+
+function readSupervisorProfile(): SupervisorProfile {
+  if (typeof window === 'undefined') return defaultSupervisorProfile
+  try {
+    const raw = window.localStorage.getItem(SUPERVISOR_PROFILE_STORAGE_KEY)
+    if (!raw) return defaultSupervisorProfile
+    const parsed = JSON.parse(raw) as Partial<SupervisorProfile>
+    return {
+      name: typeof parsed.name === 'string' && parsed.name.trim() ? parsed.name : defaultSupervisorProfile.name,
+      email: typeof parsed.email === 'string' && parsed.email.trim() ? parsed.email : defaultSupervisorProfile.email,
+      jobTitle: typeof parsed.jobTitle === 'string' && parsed.jobTitle.trim() ? parsed.jobTitle : defaultSupervisorProfile.jobTitle,
+      squadName: typeof parsed.squadName === 'string' && parsed.squadName.trim() ? parsed.squadName : defaultSupervisorProfile.squadName,
+    }
+  } catch {
+    return defaultSupervisorProfile
+  }
+}
+
+function saveSupervisorProfile(profile: SupervisorProfile) {
+  if (typeof window === 'undefined') return
+  window.localStorage.setItem(SUPERVISOR_PROFILE_STORAGE_KEY, JSON.stringify(profile))
+}
 
 function SummaryCard({ label, value, helper }: { label: string, value: number, helper: string }) {
   return (
@@ -36,8 +68,9 @@ function SummaryCard({ label, value, helper }: { label: string, value: number, h
   )
 }
 
-function SupervisorSidebar({ activeView, onChange, onSignOut }: {
+function SupervisorSidebar({ activeView, profile, onChange, onSignOut }: {
   activeView: ActiveView
+  profile: SupervisorProfile
   onChange: (view: ActiveView) => void
   onSignOut: () => void
 }) {
@@ -51,14 +84,14 @@ function SupervisorSidebar({ activeView, onChange, onSignOut }: {
         <div className="flex items-center gap-3">
           <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[var(--color-sidebar-border)] bg-[var(--color-sidebar-surface)] text-sm font-extrabold">JA</span>
           <div className="min-w-0">
-            <p className="text-sm font-extrabold leading-tight">{SUPERVISOR_DISPLAY_NAME}</p>
-            <p className="mt-0.5 text-xs leading-tight text-[var(--color-sidebar-text-muted)]">Supervisor de Engenharia</p>
+            <p className="text-sm font-extrabold leading-tight">{profile.name}</p>
+            <p className="mt-0.5 text-xs leading-tight text-[var(--color-sidebar-text-muted)]">{profile.jobTitle}</p>
           </div>
         </div>
         <div className="mt-4 flex items-center gap-2 rounded-xl bg-[var(--color-sidebar-surface)] p-3">
           <div className="min-w-0">
             <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-sidebar-text-muted)]">Squad ativa</p>
-            <p className="text-xs font-bold leading-tight">Engenharia de Automação</p>
+            <p className="text-xs font-bold leading-tight">{profile.squadName}</p>
           </div>
         </div>
       </section>
@@ -122,29 +155,78 @@ function HistoryView({ entries }: { entries: SupervisorPendingEntry[] }) {
   )
 }
 
-function SupervisorProfileView() {
+function SupervisorProfileView({ profile, onSave }: { profile: SupervisorProfile, onSave: (profile: SupervisorProfile) => void }) {
+  const [isEditing, setEditing] = useState(false)
+  const [form, setForm] = useState(profile)
+
+  useEffect(() => {
+    setForm(profile)
+  }, [profile])
+
+  const updateField = (field: keyof SupervisorProfile, value: string) => setForm((current) => ({ ...current, [field]: value }))
+
+  function cancelEdit() {
+    setForm(profile)
+    setEditing(false)
+  }
+
+  function saveProfile() {
+    const updated = {
+      name: form.name.trim(),
+      email: form.email.trim(),
+      jobTitle: form.jobTitle.trim(),
+      squadName: form.squadName.trim(),
+    }
+    if (!updated.name || !updated.email || !updated.jobTitle || !updated.squadName) return
+    onSave(updated)
+    setEditing(false)
+  }
+
   return (
     <section className="ui-card rounded-2xl p-6" aria-labelledby="supervisor-profile-title">
-      <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-secondary)]">Meu Perfil</p>
-      <h2 id="supervisor-profile-title" className="mt-1 text-2xl font-extrabold text-[var(--color-primary)]">{SUPERVISOR_DISPLAY_NAME}</h2>
-      <dl className="mt-6 grid gap-4 md:grid-cols-2">
-        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
-          <dt className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-muted)]">Cargo</dt>
-          <dd className="mt-1 font-bold text-[var(--color-text)]">Supervisor de Engenharia</dd>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-secondary)]">Meu Perfil</p>
+          <h2 id="supervisor-profile-title" className="mt-1 text-2xl font-extrabold text-[var(--color-primary)]">{profile.name}</h2>
         </div>
-        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
-          <dt className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-muted)]">E-mail</dt>
-          <dd className="mt-1 font-bold text-[var(--color-text)]">jeen.azevedo@sma.local</dd>
+        {!isEditing && <button type="button" onClick={() => setEditing(true)} className="ui-button-secondary">Editar Perfil</button>}
+      </div>
+      {isEditing ? (
+        <div className="mt-6">
+          <div className="grid gap-4 md:grid-cols-2">
+            <label className="text-sm font-bold ui-text">Nome<input type="text" value={form.name} onChange={(event) => updateField('name', event.target.value)} className="mt-2 w-full ui-field rounded-xl px-3 py-2.5 ui-text outline-none focus:ring-2" /></label>
+            <label className="text-sm font-bold ui-text">E-mail<input type="text" value={form.email} onChange={(event) => updateField('email', event.target.value)} className="mt-2 w-full ui-field rounded-xl px-3 py-2.5 ui-text outline-none focus:ring-2" /></label>
+            <label className="text-sm font-bold ui-text">Cargo<input type="text" value={form.jobTitle} onChange={(event) => updateField('jobTitle', event.target.value)} className="mt-2 w-full ui-field rounded-xl px-3 py-2.5 ui-text outline-none focus:ring-2" /></label>
+            <label className="text-sm font-bold ui-text">Squad<select value={form.squadName} onChange={(event) => updateField('squadName', event.target.value)} className="mt-2 w-full ui-field rounded-xl px-3 py-2.5 ui-text outline-none focus:ring-2">
+              <option value="Engenharia de Automação">Engenharia de Automação</option>
+              <option value="Engenharia Elétrica">Engenharia Elétrica</option>
+            </select></label>
+          </div>
+          <div className="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <button type="button" onClick={cancelEdit} className="ui-button-secondary">Cancelar</button>
+            <button type="button" onClick={saveProfile} className="ui-button-primary">Salvar</button>
+          </div>
         </div>
-        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
-          <dt className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-muted)]">Squad</dt>
-          <dd className="mt-1 font-bold text-[var(--color-text)]">Engenharia de Automação</dd>
-        </div>
-        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
-          <dt className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-muted)]">Permissões</dt>
-          <dd className="mt-1 font-bold text-[var(--color-text)]">Aprovar apontamentos e folgas</dd>
-        </div>
-      </dl>
+      ) : (
+        <dl className="mt-6 grid gap-4 md:grid-cols-2">
+          <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+            <dt className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-muted)]">Cargo</dt>
+            <dd className="mt-1 font-bold text-[var(--color-text)]">{profile.jobTitle}</dd>
+          </div>
+          <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+            <dt className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-muted)]">E-mail</dt>
+            <dd className="mt-1 font-bold text-[var(--color-text)]">{profile.email}</dd>
+          </div>
+          <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+            <dt className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-muted)]">Squad</dt>
+            <dd className="mt-1 font-bold text-[var(--color-text)]">{profile.squadName}</dd>
+          </div>
+          <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+            <dt className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-muted)]">Permissões</dt>
+            <dd className="mt-1 font-bold text-[var(--color-text)]">Aprovar apontamentos e folgas</dd>
+          </div>
+        </dl>
+      )}
     </section>
   )
 }
@@ -160,6 +242,7 @@ export function SupervisorPage() {
   const [range, setRange] = useState(monthRange)
   const [appliedRange, setAppliedRange] = useState(monthRange)
   const [rangeError, setRangeError] = useState<string | null>(null)
+  const [supervisorProfile, setSupervisorProfile] = useState<SupervisorProfile>(() => readSupervisorProfile())
   const [collaboratorFilter, setCollaboratorFilter] = useState('ALL')
   const [statusFilter, setStatusFilter] = useState<EntryStatusFilter>('ALL')
   const [rejectionTarget, setRejectionTarget] = useState<RejectionTarget | null>(null)
@@ -207,6 +290,11 @@ export function SupervisorPage() {
     setAppliedRange(monthRange)
   }
 
+  function updateSupervisorProfile(profile: SupervisorProfile) {
+    saveSupervisorProfile(profile)
+    setSupervisorProfile(profile)
+  }
+
   const exitDemo = () => {
     signOut()
     navigate('/login', { replace: true })
@@ -242,13 +330,13 @@ export function SupervisorPage() {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <span className="hidden text-right text-xs font-semibold text-[var(--color-text-muted)] md:block">{SUPERVISOR_DISPLAY_NAME}</span>
+            <span className="hidden text-right text-xs font-semibold text-[var(--color-text-muted)] md:block">{supervisorProfile.name}</span>
           <ThemeToggle />
         </div>
       </header>
 
       <section data-layout-body className="relative grid min-h-[calc(100vh-5rem)] min-w-0 grid-cols-1 lg:grid-cols-[16rem_minmax(0,1fr)]">
-        <SupervisorSidebar activeView={activeView} onChange={setActiveView} onSignOut={exitDemo} />
+        <SupervisorSidebar activeView={activeView} profile={supervisorProfile} onChange={setActiveView} onSignOut={exitDemo} />
 
         <div className="mx-auto w-full min-w-0 max-w-7xl p-4 sm:p-6 lg:p-8">
           <div className="mb-6">
@@ -349,7 +437,7 @@ export function SupervisorPage() {
             )}
 
             {activeView === 'history' && <HistoryView entries={dashboard.entries} />}
-            {activeView === 'profile' && <SupervisorProfileView />}
+            {activeView === 'profile' && <SupervisorProfileView profile={supervisorProfile} onSave={updateSupervisorProfile} />}
           </div>
         </div>
       </section>

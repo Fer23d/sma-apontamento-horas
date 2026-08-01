@@ -73,6 +73,7 @@ export function useProfile() {
     ...state,
     isSaving,
     reload: load,
+    updateProfile: (input: { name: string; email: string; jobTitle: string; activeSquadId: string }) => runAndReload((collaboratorId) => profileService.updateProfile(collaboratorId, input)),
     changeSquad: (squadId: string) => runAndReload((collaboratorId) => profileService.changeActiveSquad(collaboratorId, squadId)),
     createInitialWorkload: (dailyMinutes: number, effectiveFrom: string) => runAndReload((collaboratorId) => workloadService.createInitial(collaboratorId, dailyMinutes, effectiveFrom)),
     requestWorkloadChange: (input: { requestedDailyMinutes: number; requestedEffectiveFrom: string; justification: string }) => runAndReload((collaboratorId) => workloadService.requestChange(collaboratorId, input)),
