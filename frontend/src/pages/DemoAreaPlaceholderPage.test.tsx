@@ -110,7 +110,7 @@ describe('DemoAreaPlaceholderPage', () => {
   })
 
   it.each([
-    ['/supervisor', 'SUPERVISOR', 'Gestão da equipe'],
+    ['/supervisor', 'SUPERVISOR', 'Gestão da Equipe'],
     ['/administracao', 'DIRECTOR_ADMIN', 'Diretor/Administração Demonstração'],
   ] as const)('protege a rota %s para o perfil correto', (path, role, expectedName) => {
     expect(renderRoutes(path, role)).toContain(expectedName)

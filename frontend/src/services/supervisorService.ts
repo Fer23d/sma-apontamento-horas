@@ -6,6 +6,8 @@ import type {
   SupervisorTimeOffRequest,
 } from '../features/supervisor/types'
 import { demoAssignmentSnapshot, demoCollaborator } from '../mocks/demoData'
+import { TIME_ENTRY_STORAGE_KEY } from './timeEntryService'
+import { normalizeTimeEntry, type TimeEntryStorageV3 } from './timeEntryMigration'
 import { TIME_OFF_STORAGE_KEY, timeOffService, type TimeOffStorage } from './timeOffService'
 import { createBrowserStorage, type StorageLike } from './storage'
 
@@ -46,6 +48,8 @@ const TEAM_MEMBERS: readonly TeamMember[] = [
   { id: 'demo-collaborator-003', name: 'Rafael Almeida' },
   { id: 'demo-collaborator-004', name: 'Bianca Torres' },
 ]
+
+const COLLABORATOR_NAME_BY_ID = new Map(TEAM_MEMBERS.map((member) => [member.id, member.name]))
 
 const SUPERVISOR_SESSION_ID = 'demo-supervisor-001'
 const COMPATIBLE_SUPERVISOR_IDS = new Set([SUPERVISOR_SESSION_ID, demoAssignmentSnapshot.supervisorId])
@@ -129,6 +133,31 @@ export class LocalStorageSupervisorService implements SupervisorService {
     this.storage.setItem(SUPERVISOR_APPROVAL_STORAGE_KEY, JSON.stringify(data))
   }
 
+  private readTimeEntryStorage(): TimeEntryStorageV3 {
+    try {
+      const raw = this.storage.getItem(TIME_ENTRY_STORAGE_KEY)
+      if (!raw) return { version: 3, entriesByCollaborator: {} }
+      const parsed = JSON.parse(raw) as Partial<TimeEntryStorageV3>
+      if (parsed.version !== 3 || !parsed.entriesByCollaborator || typeof parsed.entriesByCollaborator !== 'object') {
+        return { version: 3, entriesByCollaborator: {} }
+      }
+      const entriesByCollaborator = Object.fromEntries(
+        Object.entries(parsed.entriesByCollaborator).map(([collaboratorId, entries]) => [
+          collaboratorId,
+          Array.isArray(entries)
+            ? entries.flatMap((entry) => {
+                const normalized = normalizeTimeEntry(entry, collaboratorId)
+                return normalized ? [normalized] : []
+              })
+            : [],
+        ]),
+      )
+      return { version: 3, entriesByCollaborator }
+    } catch {
+      return { version: 3, entriesByCollaborator: {} }
+    }
+  }
+
   private readTimeOffStorage(): TimeOffStorage {
     try {
       const raw = this.storage.getItem(TIME_OFF_STORAGE_KEY)
@@ -167,11 +196,22 @@ export class LocalStorageSupervisorService implements SupervisorService {
 
   async listEntries() {
     const stored = this.read().approvalsByEntryId
-    return this.seedEntries
+    const realEntries = Object.values(this.readTimeEntryStorage().entriesByCollaborator).flat().map<Omit<SupervisorPendingEntry, 'status'>>((entry) => ({
+      id: entry.id,
+      collaboratorId: entry.collaboratorId,
+      collaboratorName: COLLABORATOR_NAME_BY_ID.get(entry.collaboratorId) ?? entry.collaboratorId,
+      entryDate: entry.entryDate,
+      projectCode: entry.projectCode,
+      durationMinutes: entry.durationMinutes,
+      activityName: entry.activityId,
+      rejectionReason: entry.status === 'CANCELLED' ? entry.cancelReason ?? 'Apontamento cancelado pelo colaborador.' : undefined,
+    }))
+    const entriesById = new Map([...this.seedEntries, ...realEntries].map((entry) => [entry.id, entry]))
+    return Array.from(entriesById.values())
       .map((entry) => ({
         ...entry,
-        status: stored[entry.id]?.status ?? 'PENDING',
-        rejectionReason: stored[entry.id]?.rejectionReason,
+        status: stored[entry.id]?.status ?? (entry.rejectionReason ? 'REJECTED' : 'PENDING'),
+        rejectionReason: stored[entry.id]?.rejectionReason ?? entry.rejectionReason,
         decidedAt: stored[entry.id]?.decidedAt,
         decidedBy: stored[entry.id]?.decidedBy,
       }))
@@ -179,7 +219,10 @@ export class LocalStorageSupervisorService implements SupervisorService {
   }
 
   async listCollaborators() {
-    return TEAM_MEMBERS.map((member) => ({ ...member }))
+    const dynamicCollaborators = Object.keys(this.readTimeEntryStorage().entriesByCollaborator)
+      .filter((collaboratorId) => !COLLABORATOR_NAME_BY_ID.has(collaboratorId))
+      .map((collaboratorId) => ({ id: collaboratorId, name: collaboratorId }))
+    return [...TEAM_MEMBERS.map((member) => ({ ...member })), ...dynamicCollaborators]
   }
 
   approve(entryId: string, supervisorId: string) {

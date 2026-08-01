@@ -8,7 +8,7 @@ const MIGRATION_DONE = 'done'
 
 const DEMO_IDENTITIES: Record<DemoRole, Pick<DemoSession, 'id' | 'name'>> = {
   COLLABORATOR: { id: demoCollaborator.id, name: demoCollaborator.name },
-  SUPERVISOR: { id: 'demo-supervisor-001', name: 'Supervisor Demonstração' },
+  SUPERVISOR: { id: 'demo-supervisor-001', name: 'Jeen Carlos E. Azevedo' },
   DIRECTOR_ADMIN: { id: 'demo-director-admin-001', name: 'Diretor/Administração Demonstração' },
 }
 

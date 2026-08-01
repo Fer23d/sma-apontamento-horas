@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { LocalStorageSupervisorService } from './supervisorService'
 import type { StorageLike } from './storage'
+import { TIME_ENTRY_STORAGE_KEY } from './timeEntryService'
 
 function createMemoryStorage(): StorageLike {
   const values = new Map<string, string>()
@@ -60,5 +61,40 @@ describe('LocalStorageSupervisorService', () => {
     const service = new LocalStorageSupervisorService(createMemoryStorage(), () => '2026-07-30T12:00:00.000Z', seedEntries)
 
     expect(() => service.reject('entry-001', 'supervisor-001', '   ')).toThrow('Informe o motivo da rejeição.')
+  })
+  it('lista apontamentos reais gravados na mesma chave local do colaborador', async () => {
+    const storage = createMemoryStorage()
+    storage.setItem(TIME_ENTRY_STORAGE_KEY, JSON.stringify({
+      version: 3,
+      entriesByCollaborator: {
+        'collaborator-real-001': [{
+          id: 'real-entry-001',
+          collaboratorId: 'collaborator-real-001',
+          entryDate: '2026-07-31',
+          clientId: 'client-real',
+          projectCode: 'SM&A-REAL-001',
+          activityId: 'activity-real',
+          disciplineCode: '—',
+          documentTypeCode: '—',
+          durationMinutes: 300,
+          details: 'Apontamento real do colaborador',
+          assignmentSnapshot: null,
+          status: 'ACTIVE',
+          version: 1,
+          createdAt: '2026-07-31T12:00:00.000Z',
+          updatedAt: '2026-07-31T12:00:00.000Z',
+        }],
+      },
+    }))
+    const service = new LocalStorageSupervisorService(storage, () => '2026-07-31T12:00:00.000Z', [])
+
+    await expect(service.listEntries()).resolves.toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        id: 'real-entry-001',
+        collaboratorId: 'collaborator-real-001',
+        projectCode: 'SM&A-REAL-001',
+        status: 'PENDING',
+      }),
+    ]))
   })
 })
