@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import * as XLSX from 'xlsx'
 import { BrandMark } from '../components/BrandMark'
 import { StatusBadge } from '../components/StatusBadge'
 import { ThemeToggle } from '../components/ThemeToggle'
@@ -10,6 +11,7 @@ import { SupervisorRequestsTable } from '../features/supervisor/SupervisorReques
 import type { SupervisorPendingEntry, SupervisorTimeOffRequest } from '../features/supervisor/types'
 import { useSupervisorDashboard } from '../features/supervisor/useSupervisorDashboard'
 import { useSession } from '../features/session/useSession'
+import { formatMinutes } from '../features/time-entries/domain'
 import { getCorporateToday, getMonthKey, getMonthRange, isIsoDate } from '../shared/utils/date'
 
 type ActiveView = 'entries' | 'requests' | 'history' | 'profile'
@@ -17,6 +19,12 @@ type EntryStatusFilter = 'ALL' | SupervisorPendingEntry['status']
 type RejectionTarget =
   | { type: 'entry', item: SupervisorPendingEntry }
   | { type: 'time-off', item: SupervisorTimeOffRequest }
+
+const entryStatusLabel: Record<SupervisorPendingEntry['status'], string> = {
+  PENDING: 'Pendente',
+  APPROVED: 'Aprovado',
+  REJECTED: 'Rejeitado',
+}
 
 const SUPERVISOR_DISPLAY_NAME = 'Jeen Carlos E. Azevedo'
 const SUPERVISOR_PROFILE_STORAGE_KEY = 'sma:supervisor-profile:v1'
@@ -295,6 +303,20 @@ export function SupervisorPage() {
     setSupervisorProfile(profile)
   }
 
+  function handleExportToExcel() {
+    const rows = filteredEntries.map((entry) => ({
+      Colaborador: entry.collaboratorName,
+      Data: entry.entryDate,
+      Projeto: entry.projectCode,
+      Horas: formatMinutes(entry.durationMinutes),
+      Status: entryStatusLabel[entry.status],
+    }))
+    const worksheet = XLSX.utils.json_to_sheet(rows)
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Apontamentos')
+    XLSX.writeFile(workbook, `apontamentos_equipe_${getCorporateToday()}.xlsx`)
+  }
+
   const exitDemo = () => {
     signOut()
     navigate('/login', { replace: true })
@@ -372,7 +394,7 @@ export function SupervisorPage() {
                   <SummaryCard label="Rejeitados" value={rangedSummary.rejected} helper="Registros devolvidos com motivo informado." />
                 </section>
 
-                <section className="grid gap-3 rounded-2xl border ui-border ui-surface p-4 sm:grid-cols-2" aria-label="Filtros de apontamentos">
+                <section className="grid gap-3 rounded-2xl border ui-border ui-surface p-4 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_auto]" aria-label="Filtros de apontamentos">
                   <label className="text-sm font-bold ui-text">
                     Colaborador
                     <select value={collaboratorFilter} onChange={(event) => setCollaboratorFilter(event.target.value)} className="mt-1 block w-full ui-field rounded-xl px-3 py-2 font-normal ui-text">
@@ -391,6 +413,9 @@ export function SupervisorPage() {
                       <option value="REJECTED">Rejeitados</option>
                     </select>
                   </label>
+                  <button type="button" onClick={handleExportToExcel} disabled={filteredEntries.length === 0} className="self-end rounded-xl border ui-border px-4 py-2.5 text-sm font-bold text-[var(--color-primary)] transition hover:border-[var(--color-primary)] hover:bg-[var(--color-surface-subtle)] disabled:cursor-not-allowed disabled:opacity-40">
+                    Exportar Excel
+                  </button>
                 </section>
 
                 {dashboard.isLoading ? (
