@@ -1,14 +1,16 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { BrandMark } from '../components/BrandMark'
 import { StatusBadge } from '../components/StatusBadge'
 import { ThemeToggle } from '../components/ThemeToggle'
+import { BalancePeriodFilter } from '../features/calendar/BalancePeriodFilter'
 import { RejectionDialog } from '../features/supervisor/RejectionDialog'
 import { SupervisorEntriesTable } from '../features/supervisor/SupervisorEntriesTable'
 import { SupervisorRequestsTable } from '../features/supervisor/SupervisorRequestsTable'
 import type { SupervisorPendingEntry, SupervisorTimeOffRequest } from '../features/supervisor/types'
 import { useSupervisorDashboard } from '../features/supervisor/useSupervisorDashboard'
 import { useSession } from '../features/session/useSession'
+import { getCorporateToday, getMonthKey, getMonthRange, isIsoDate } from '../shared/utils/date'
 
 type ActiveView = 'entries' | 'requests' | 'history' | 'profile'
 type EntryStatusFilter = 'ALL' | SupervisorPendingEntry['status']
@@ -24,11 +26,12 @@ const supervisorNavigation: Array<{ id: ActiveView, label: string, shortLabel: s
   { id: 'profile', label: 'Meu Perfil', shortLabel: 'MP' },
 ]
 
-function SummaryCard({ label, value, accent }: { label: string, value: number, accent: string }) {
+function SummaryCard({ label, value, helper }: { label: string, value: number, helper: string }) {
   return (
-    <article className="rounded-2xl border border-l-4 border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-sm" style={{ borderLeftColor: accent }}>
-      <p className="text-sm font-bold text-[var(--color-text-muted)]">{label}</p>
-      <p className="mt-2 text-3xl font-extrabold text-[var(--color-text)]">{value}</p>
+    <article className="rounded-2xl border ui-border ui-surface p-5 shadow-sm">
+      <p className="text-xs font-bold uppercase tracking-wider ui-text-subtle">{label}</p>
+      <p className="mt-3 text-3xl font-extrabold ui-heading">{value}</p>
+      <p className="mt-2 text-sm ui-text-muted">{helper}</p>
     </article>
   )
 }
@@ -39,7 +42,11 @@ function SupervisorSidebar({ activeView, onChange, onSignOut }: {
   onSignOut: () => void
 }) {
   return (
-    <aside className="rounded-2xl border border-[var(--color-sidebar-border)] bg-[var(--color-sidebar)] text-[var(--color-sidebar-text)] lg:sticky lg:top-24 lg:self-start" aria-label="Menu lateral do supervisor">
+    <aside
+      data-desktop-sidebar
+      className="hidden h-[calc(100vh-5rem)] w-64 min-w-0 flex-col overflow-y-auto bg-[var(--color-sidebar)] text-[var(--color-sidebar-text)] lg:sticky lg:top-20 lg:flex lg:self-start"
+      aria-label="Menu lateral do supervisor"
+    >
       <section className="border-b border-[var(--color-sidebar-border)] p-4" aria-label="Perfil atual do supervisor">
         <div className="flex items-center gap-3">
           <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[var(--color-sidebar-border)] bg-[var(--color-sidebar-surface)] text-sm font-extrabold">JA</span>
@@ -48,13 +55,15 @@ function SupervisorSidebar({ activeView, onChange, onSignOut }: {
             <p className="mt-0.5 text-xs leading-tight text-[var(--color-sidebar-text-muted)]">Supervisor de Engenharia</p>
           </div>
         </div>
-        <div className="mt-4 rounded-xl bg-[var(--color-sidebar-surface)] p-3">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-sidebar-text-muted)]">Equipe ativa</p>
-          <p className="text-xs font-bold leading-tight">Engenharia de Automação</p>
+        <div className="mt-4 flex items-center gap-2 rounded-xl bg-[var(--color-sidebar-surface)] p-3">
+          <div className="min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-sidebar-text-muted)]">Squad ativa</p>
+            <p className="text-xs font-bold leading-tight">Engenharia de Automação</p>
+          </div>
         </div>
       </section>
 
-      <nav className="space-y-2 p-4" aria-label="Navegação do supervisor">
+      <nav className="flex-1 space-y-2 p-4" aria-label="Navegação do supervisor">
         {supervisorNavigation.map((item) => {
           const isActive = activeView === item.id
           return (
@@ -144,17 +153,59 @@ export function SupervisorPage() {
   const { session, signOut } = useSession()
   const navigate = useNavigate()
   const dashboard = useSupervisorDashboard(session?.id)
+  const today = getCorporateToday()
+  const monthKey = getMonthKey(today)
+  const monthRange = useMemo(() => getMonthRange(monthKey), [monthKey])
   const [activeView, setActiveView] = useState<ActiveView>('entries')
+  const [range, setRange] = useState(monthRange)
+  const [appliedRange, setAppliedRange] = useState(monthRange)
+  const [rangeError, setRangeError] = useState<string | null>(null)
   const [collaboratorFilter, setCollaboratorFilter] = useState('ALL')
   const [statusFilter, setStatusFilter] = useState<EntryStatusFilter>('ALL')
   const [rejectionTarget, setRejectionTarget] = useState<RejectionTarget | null>(null)
   const [rejectionError, setRejectionError] = useState<string | null>(null)
 
+  useEffect(() => {
+    setRange(monthRange)
+    setAppliedRange(monthRange)
+  }, [monthRange])
+
+  const hasCustomRange = appliedRange.startDate !== monthRange.startDate || appliedRange.endDate !== monthRange.endDate
+
   const filteredEntries = useMemo(() => dashboard.entries.filter((entry) => {
     const matchesCollaborator = collaboratorFilter === 'ALL' || entry.collaboratorId === collaboratorFilter
     const matchesStatus = statusFilter === 'ALL' || entry.status === statusFilter
-    return matchesCollaborator && matchesStatus
-  }), [collaboratorFilter, dashboard.entries, statusFilter])
+    const matchesDate = entry.entryDate >= appliedRange.startDate && entry.entryDate <= appliedRange.endDate
+    return matchesCollaborator && matchesStatus && matchesDate
+  }), [appliedRange.endDate, appliedRange.startDate, collaboratorFilter, dashboard.entries, statusFilter])
+
+  const rangedEntries = useMemo(() => dashboard.entries.filter((entry) => (
+    entry.entryDate >= appliedRange.startDate && entry.entryDate <= appliedRange.endDate
+  )), [appliedRange.endDate, appliedRange.startDate, dashboard.entries])
+
+  const rangedSummary = useMemo(() => rangedEntries.reduce(
+    (summary, entry) => ({
+      pending: summary.pending + (entry.status === 'PENDING' ? 1 : 0),
+      approved: summary.approved + (entry.status === 'APPROVED' ? 1 : 0),
+      rejected: summary.rejected + (entry.status === 'REJECTED' ? 1 : 0),
+    }),
+    { pending: 0, approved: 0, rejected: 0 },
+  ), [rangedEntries])
+
+  function applyRange() {
+    if (!isIsoDate(range.startDate) || !isIsoDate(range.endDate) || range.startDate > range.endDate) {
+      setRangeError('Informe um intervalo válido, com a data inicial anterior à data final.')
+      return
+    }
+    setRangeError(null)
+    setAppliedRange(range)
+  }
+
+  function useCalendarMonth() {
+    setRangeError(null)
+    setRange(monthRange)
+    setAppliedRange(monthRange)
+  }
 
   const exitDemo = () => {
     signOut()
@@ -182,7 +233,7 @@ export function SupervisorPage() {
 
   return (
     <main className="min-h-screen bg-[var(--color-background)] text-[var(--color-text)]">
-      <header className="sticky top-0 z-40 border-b border-[var(--color-border)] bg-[var(--color-header)] px-4 py-4 shadow-sm sm:px-6 lg:px-8">
+      <header data-layout-region="global-header" className="sticky top-0 z-40 flex h-20 w-full items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-header)] px-4 shadow-sm sm:px-6 lg:px-8">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
           <div className="flex min-w-0 items-center gap-3">
             <BrandMark variant="compact" />
@@ -198,10 +249,10 @@ export function SupervisorPage() {
         </div>
       </header>
 
-      <section className="mx-auto grid w-full max-w-7xl gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[16rem_minmax(0,1fr)] lg:px-8">
+      <section data-layout-body className="relative grid min-h-[calc(100vh-5rem)] min-w-0 grid-cols-1 lg:grid-cols-[16rem_minmax(0,1fr)]">
         <SupervisorSidebar activeView={activeView} onChange={setActiveView} onSignOut={exitDemo} />
 
-        <div className="min-w-0">
+        <div className="mx-auto w-full min-w-0 max-w-7xl p-4 sm:p-6 lg:p-8">
           <div className="mb-6">
             <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-[var(--color-secondary)]">SM&A</p>
             <h1 className="text-2xl font-extrabold text-[var(--color-primary)] sm:text-3xl">{supervisorNavigation.find((item) => item.id === activeView)?.label}</h1>
@@ -216,36 +267,44 @@ export function SupervisorPage() {
                 {dashboard.error}
               </div>
             )}
+            {rangeError && <p role="alert" className="rounded-xl border border-red-300 bg-red-50 p-4 text-sm font-semibold text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200">{rangeError}</p>}
 
             {activeView === 'entries' && (
               <>
+                <BalancePeriodFilter
+                  startDate={range.startDate}
+                  endDate={range.endDate}
+                  isCustomRange={hasCustomRange}
+                  onChange={(field, value) => setRange((current) => ({ ...current, [field]: value }))}
+                  onApply={applyRange}
+                  onClear={useCalendarMonth}
+                />
+
                 <section className="grid gap-4 md:grid-cols-3" aria-label="Resumo dos apontamentos">
-                  <SummaryCard label="Pendentes" value={dashboard.summary.pending} accent="#C9A66B" />
-                  <SummaryCard label="Aprovados" value={dashboard.summary.approved} accent="var(--color-primary)" />
-                  <SummaryCard label="Rejeitados" value={dashboard.summary.rejected} accent="#C99393" />
+                  <SummaryCard label="Pendentes" value={rangedSummary.pending} helper="Apontamentos aguardando validação no período." />
+                  <SummaryCard label="Aprovados" value={rangedSummary.approved} helper="Registros já aprovados pela supervisão." />
+                  <SummaryCard label="Rejeitados" value={rangedSummary.rejected} helper="Registros devolvidos com motivo informado." />
                 </section>
 
-                <section className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4" aria-label="Filtros de apontamentos">
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <label className="text-sm font-bold text-[var(--color-text)]">
-                      Colaborador
-                      <select value={collaboratorFilter} onChange={(event) => setCollaboratorFilter(event.target.value)} className="ui-field mt-2 w-full rounded-xl px-3 py-3 text-sm">
-                        <option value="ALL">Todos da Equipe</option>
-                        {dashboard.collaborators.map((collaborator) => (
-                          <option key={collaborator.id} value={collaborator.id}>{collaborator.name}</option>
-                        ))}
-                      </select>
-                    </label>
-                    <label className="text-sm font-bold text-[var(--color-text)]">
-                      Status
-                      <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as EntryStatusFilter)} className="ui-field mt-2 w-full rounded-xl px-3 py-3 text-sm">
-                        <option value="ALL">Todos</option>
-                        <option value="PENDING">Pendentes</option>
-                        <option value="APPROVED">Aprovados</option>
-                        <option value="REJECTED">Rejeitados</option>
-                      </select>
-                    </label>
-                  </div>
+                <section className="grid gap-3 rounded-2xl border ui-border ui-surface p-4 sm:grid-cols-2" aria-label="Filtros de apontamentos">
+                  <label className="text-sm font-bold ui-text">
+                    Colaborador
+                    <select value={collaboratorFilter} onChange={(event) => setCollaboratorFilter(event.target.value)} className="mt-1 block w-full ui-field rounded-xl px-3 py-2 font-normal ui-text">
+                      <option value="ALL">Todos da Equipe</option>
+                      {dashboard.collaborators.map((collaborator) => (
+                        <option key={collaborator.id} value={collaborator.id}>{collaborator.name}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="text-sm font-bold ui-text">
+                    Status
+                    <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as EntryStatusFilter)} className="mt-1 block w-full ui-field rounded-xl px-3 py-2 font-normal ui-text">
+                      <option value="ALL">Todos</option>
+                      <option value="PENDING">Pendentes</option>
+                      <option value="APPROVED">Aprovados</option>
+                      <option value="REJECTED">Rejeitados</option>
+                    </select>
+                  </label>
                 </section>
 
                 {dashboard.isLoading ? (
@@ -269,9 +328,9 @@ export function SupervisorPage() {
             {activeView === 'requests' && (
               <>
                 <section className="grid gap-4 md:grid-cols-3" aria-label="Resumo das solicitações">
-                  <SummaryCard label="Folgas pendentes" value={dashboard.requestSummary.pending} accent="#C9A66B" />
-                  <SummaryCard label="Folgas aprovadas" value={dashboard.requestSummary.approved} accent="var(--color-primary)" />
-                  <SummaryCard label="Folgas rejeitadas" value={dashboard.requestSummary.rejected} accent="#C99393" />
+                  <SummaryCard label="Folgas pendentes" value={dashboard.requestSummary.pending} helper="Solicitações aguardando decisão." />
+                  <SummaryCard label="Folgas aprovadas" value={dashboard.requestSummary.approved} helper="Folgas liberadas pela supervisão." />
+                  <SummaryCard label="Folgas rejeitadas" value={dashboard.requestSummary.rejected} helper="Solicitações recusadas com justificativa." />
                 </section>
                 {dashboard.isLoading ? (
                   <p className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-8 text-center font-semibold text-[var(--color-text-muted)]" aria-live="polite">
