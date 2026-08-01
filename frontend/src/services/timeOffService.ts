@@ -155,6 +155,28 @@ export class LocalTimeOffService {
     return approved
   }
 
+  async reject(supervisorId: string, id: string, reason: string) {
+    const rejectionReason = reason.trim()
+    if (!rejectionReason) throw new Error('Informe o motivo da rejeição da folga.')
+    const storage = this.read()
+    const index = storage.requests.findIndex((request) => request.id === id)
+    if (index < 0) throw new Error('Solicitação de folga não encontrada.')
+    const current = storage.requests[index]
+    if (current.status !== 'PENDING') throw new Error('A solicitação de folga não está pendente.')
+    if (!current.assignmentSnapshot || current.assignmentSnapshot.supervisorId !== supervisorId) {
+      throw new Error('Somente o supervisor associado à solicitação pode rejeitar a folga.')
+    }
+    const timestamp = this.now()
+    const rejected: TimeOffRequest = { ...current, status: 'REJECTED', rejectionReason, decidedAt: timestamp, updatedAt: timestamp }
+    storage.requests[index] = rejected
+    this.write(storage)
+    if (this.audit) await runPostCommitEffect('Não foi possível registrar a auditoria da folga confirmada.', () => this.audit!.record({
+      id: crypto.randomUUID(), type: 'TIME_OFF_REJECTED', occurredAt: timestamp, actorId: supervisorId, actorRole: 'SUPERVISOR',
+      entityType: 'TimeOffRequest', entityId: rejected.id, previousValue: current, newValue: rejected, justification: rejectionReason,
+    }), this.onPostCommitError)
+    return rejected
+  }
+
   async removePending(collaboratorId: string, id: string) {
     const storage = this.read()
     const index = storage.requests.findIndex((request) => request.id === id && request.collaboratorId === collaboratorId)

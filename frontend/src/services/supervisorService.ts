@@ -1,6 +1,13 @@
-import { demoCollaborator } from '../mocks/demoData'
+import type { TimeOffRequest } from '../features/time-off/types'
+import type {
+  SupervisorDashboardSummary,
+  SupervisorPendingEntry,
+  SupervisorRequestSummary,
+  SupervisorTimeOffRequest,
+} from '../features/supervisor/types'
+import { demoAssignmentSnapshot, demoCollaborator } from '../mocks/demoData'
+import { TIME_OFF_STORAGE_KEY, timeOffService, type TimeOffStorage } from './timeOffService'
 import { createBrowserStorage, type StorageLike } from './storage'
-import type { SupervisorDashboardSummary, SupervisorPendingEntry } from '../features/supervisor/types'
 
 export const SUPERVISOR_APPROVAL_STORAGE_KEY = 'sma:supervisor-approvals:v1'
 
@@ -16,41 +23,57 @@ type SupervisorApprovalStorage = {
   approvalsByEntryId: Record<string, StoredApproval>
 }
 
-export interface SupervisorService {
-  listEntries(): Promise<SupervisorPendingEntry[]>
-  approve(entryId: string, supervisorId: string): Promise<SupervisorPendingEntry>
-  reject(entryId: string, supervisorId: string, reason: string): Promise<SupervisorPendingEntry>
-  getSummary(): Promise<SupervisorDashboardSummary>
+type TeamMember = {
+  id: string
+  name: string
 }
 
+export interface SupervisorService {
+  listEntries(): Promise<SupervisorPendingEntry[]>
+  listCollaborators(): Promise<TeamMember[]>
+  approve(entryId: string, supervisorId: string): Promise<SupervisorPendingEntry>
+  reject(entryId: string, supervisorId: string, reason: string): Promise<SupervisorPendingEntry>
+  listTimeOffRequests(supervisorId: string): Promise<SupervisorTimeOffRequest[]>
+  approveTimeOffRequest(requestId: string, supervisorId: string): Promise<SupervisorTimeOffRequest>
+  rejectTimeOffRequest(requestId: string, supervisorId: string, reason: string): Promise<SupervisorTimeOffRequest>
+  getSummary(): Promise<SupervisorDashboardSummary>
+  getRequestSummary(supervisorId: string): Promise<SupervisorRequestSummary>
+}
+
+const TEAM_MEMBERS: readonly TeamMember[] = [
+  { id: demoCollaborator.id, name: demoCollaborator.name },
+  { id: 'demo-collaborator-002', name: 'Marina Costa' },
+  { id: 'demo-collaborator-003', name: 'Rafael Almeida' },
+  { id: 'demo-collaborator-004', name: 'Bianca Torres' },
+]
+
+const SUPERVISOR_SESSION_ID = 'demo-supervisor-001'
+const COMPATIBLE_SUPERVISOR_IDS = new Set([SUPERVISOR_SESSION_ID, demoAssignmentSnapshot.supervisorId])
+
 const MOCK_TEAM_ENTRIES: readonly Omit<SupervisorPendingEntry, 'status'>[] = [
-  {
-    id: 'supervisor-demo-entry-001',
-    collaboratorId: demoCollaborator.id,
-    collaboratorName: demoCollaborator.name,
-    entryDate: '2026-07-27',
-    projectCode: 'SM&A-ENG-142',
-    durationMinutes: 480,
-    activityName: 'Elaboração de projeto',
-  },
-  {
-    id: 'supervisor-demo-entry-002',
-    collaboratorId: 'demo-collaborator-002',
-    collaboratorName: 'Marina Costa',
-    entryDate: '2026-07-28',
-    projectCode: 'SM&A-AUT-087',
-    durationMinutes: 360,
-    activityName: 'Modelo 3D',
-  },
-  {
-    id: 'supervisor-demo-entry-003',
-    collaboratorId: 'demo-collaborator-003',
-    collaboratorName: 'Rafael Almeida',
-    entryDate: '2026-07-29',
-    projectCode: 'SM&A-ELE-211',
-    durationMinutes: 420,
-    activityName: 'Verificação de documento',
-  },
+  { id: 'supervisor-demo-entry-001', collaboratorId: demoCollaborator.id, collaboratorName: demoCollaborator.name, entryDate: '2026-07-21', projectCode: 'SM&A-ENG-142', durationMinutes: 480, activityName: 'Elaboração de projeto' },
+  { id: 'supervisor-demo-entry-002', collaboratorId: 'demo-collaborator-002', collaboratorName: 'Marina Costa', entryDate: '2026-07-21', projectCode: 'SM&A-AUT-087', durationMinutes: 360, activityName: 'Modelo 3D' },
+  { id: 'supervisor-demo-entry-003', collaboratorId: 'demo-collaborator-003', collaboratorName: 'Rafael Almeida', entryDate: '2026-07-22', projectCode: 'SM&A-ELE-211', durationMinutes: 420, activityName: 'Verificação de documento' },
+  { id: 'supervisor-demo-entry-004', collaboratorId: 'demo-collaborator-004', collaboratorName: 'Bianca Torres', entryDate: '2026-07-23', projectCode: 'SM&A-ENG-155', durationMinutes: 300, activityName: 'Reunião com cliente' },
+  { id: 'supervisor-demo-entry-005', collaboratorId: demoCollaborator.id, collaboratorName: demoCollaborator.name, entryDate: '2026-07-24', projectCode: 'SM&A-ENG-142', durationMinutes: 390, activityName: 'Atendimento de comentários internos' },
+  { id: 'supervisor-demo-entry-006', collaboratorId: 'demo-collaborator-002', collaboratorName: 'Marina Costa', entryDate: '2026-07-24', projectCode: 'SM&A-AUT-087', durationMinutes: 480, activityName: 'Emissão de documento' },
+  { id: 'supervisor-demo-entry-007', collaboratorId: 'demo-collaborator-003', collaboratorName: 'Rafael Almeida', entryDate: '2026-07-27', projectCode: 'SM&A-ELE-211', durationMinutes: 450, activityName: 'Levantamento de campo' },
+  { id: 'supervisor-demo-entry-008', collaboratorId: 'demo-collaborator-004', collaboratorName: 'Bianca Torres', entryDate: '2026-07-28', projectCode: 'SM&A-ADM-044', durationMinutes: 240, activityName: 'Apoio propostas' },
+  { id: 'supervisor-demo-entry-009', collaboratorId: demoCollaborator.id, collaboratorName: demoCollaborator.name, entryDate: '2026-07-29', projectCode: 'SM&A-ENG-161', durationMinutes: 480, activityName: 'Análise de documento' },
+  { id: 'supervisor-demo-entry-010', collaboratorId: 'demo-collaborator-002', collaboratorName: 'Marina Costa', entryDate: '2026-07-30', projectCode: 'SM&A-AUT-090', durationMinutes: 420, activityName: 'Gerenciamento e cronograma' },
+]
+
+const DEFAULT_APPROVALS: Record<string, StoredApproval> = {
+  'supervisor-demo-entry-001': { status: 'APPROVED', decidedAt: '2026-07-22T12:00:00.000Z', decidedBy: 'demo-supervisor-001' },
+  'supervisor-demo-entry-003': { status: 'REJECTED', rejectionReason: 'Detalhar melhor a verificação realizada.', decidedAt: '2026-07-23T12:00:00.000Z', decidedBy: 'demo-supervisor-001' },
+  'supervisor-demo-entry-006': { status: 'APPROVED', decidedAt: '2026-07-25T12:00:00.000Z', decidedBy: 'demo-supervisor-001' },
+}
+
+const SEED_TIME_OFF_REQUESTS: readonly TimeOffRequest[] = [
+  { id: 'supervisor-demo-time-off-001', collaboratorId: demoCollaborator.id, date: '2026-08-05', reason: 'Compromisso familiar previamente agendado.', status: 'PENDING', assignmentSnapshot: demoAssignmentSnapshot, createdAt: '2026-07-29T12:00:00.000Z', updatedAt: '2026-07-29T12:00:00.000Z' },
+  { id: 'supervisor-demo-time-off-002', collaboratorId: 'demo-collaborator-002', date: '2026-08-07', reason: 'Banco de horas para resolver documentação pessoal.', status: 'PENDING', assignmentSnapshot: demoAssignmentSnapshot, createdAt: '2026-07-30T12:00:00.000Z', updatedAt: '2026-07-30T12:00:00.000Z' },
+  { id: 'supervisor-demo-time-off-003', collaboratorId: 'demo-collaborator-003', date: '2026-08-10', reason: 'Consulta médica.', status: 'APPROVED', assignmentSnapshot: demoAssignmentSnapshot, createdAt: '2026-07-26T12:00:00.000Z', updatedAt: '2026-07-27T12:00:00.000Z', decidedAt: '2026-07-27T12:00:00.000Z' },
+  { id: 'supervisor-demo-time-off-004', collaboratorId: 'demo-collaborator-004', date: '2026-08-12', reason: 'Viagem curta.', status: 'REJECTED', assignmentSnapshot: demoAssignmentSnapshot, createdAt: '2026-07-25T12:00:00.000Z', updatedAt: '2026-07-26T12:00:00.000Z', decidedAt: '2026-07-26T12:00:00.000Z', rejectionReason: 'Conflito com entrega crítica da equipe.' },
 ]
 
 function emptyStorage(): SupervisorApprovalStorage {
@@ -78,29 +101,58 @@ export class LocalStorageSupervisorService implements SupervisorService {
   private readonly storage: StorageLike
   private readonly now: () => string
   private readonly seedEntries: readonly Omit<SupervisorPendingEntry, 'status'>[]
+  private readonly seedTimeOffRequests: readonly TimeOffRequest[]
 
   constructor(
     storage: StorageLike,
     now = () => new Date().toISOString(),
     seedEntries: readonly Omit<SupervisorPendingEntry, 'status'>[] = MOCK_TEAM_ENTRIES,
+    seedTimeOffRequests: readonly TimeOffRequest[] = SEED_TIME_OFF_REQUESTS,
   ) {
     this.storage = storage
     this.now = now
     this.seedEntries = seedEntries
+    this.seedTimeOffRequests = seedTimeOffRequests
   }
 
   private read(): SupervisorApprovalStorage {
     try {
       const raw = this.storage.getItem(SUPERVISOR_APPROVAL_STORAGE_KEY)
-      if (!raw) return emptyStorage()
+      if (!raw) return { version: 1, approvalsByEntryId: { ...DEFAULT_APPROVALS } }
       return normalizeStorage(JSON.parse(raw))
     } catch {
-      return emptyStorage()
+      return { version: 1, approvalsByEntryId: { ...DEFAULT_APPROVALS } }
     }
   }
 
   private write(data: SupervisorApprovalStorage) {
     this.storage.setItem(SUPERVISOR_APPROVAL_STORAGE_KEY, JSON.stringify(data))
+  }
+
+  private readTimeOffStorage(): TimeOffStorage {
+    try {
+      const raw = this.storage.getItem(TIME_OFF_STORAGE_KEY)
+      if (!raw) return { version: 1, requests: [] }
+      const parsed = JSON.parse(raw) as Partial<TimeOffStorage>
+      if (parsed.version !== 1 || !Array.isArray(parsed.requests)) return { version: 1, requests: [] }
+      return { version: 1, requests: parsed.requests as TimeOffRequest[] }
+    } catch {
+      return { version: 1, requests: [] }
+    }
+  }
+
+  private writeTimeOffStorage(data: TimeOffStorage) {
+    this.storage.setItem(TIME_OFF_STORAGE_KEY, JSON.stringify(data))
+  }
+
+  private ensureSeedTimeOffRequests() {
+    const storage = this.readTimeOffStorage()
+    const existingIds = new Set(storage.requests.map((request) => request.id))
+    const missing = this.seedTimeOffRequests.filter((request) => !existingIds.has(request.id))
+    if (missing.length === 0) return storage
+    const nextStorage = { ...storage, requests: [...storage.requests, ...missing] }
+    this.writeTimeOffStorage(nextStorage)
+    return nextStorage
   }
 
   private async update(entryId: string, approval: StoredApproval) {
@@ -123,26 +175,55 @@ export class LocalStorageSupervisorService implements SupervisorService {
         decidedAt: stored[entry.id]?.decidedAt,
         decidedBy: stored[entry.id]?.decidedBy,
       }))
-      .sort((left, right) => left.entryDate.localeCompare(right.entryDate) || left.collaboratorName.localeCompare(right.collaboratorName))
+      .sort((left, right) => right.entryDate.localeCompare(left.entryDate) || left.collaboratorName.localeCompare(right.collaboratorName))
+  }
+
+  async listCollaborators() {
+    return TEAM_MEMBERS.map((member) => ({ ...member }))
   }
 
   approve(entryId: string, supervisorId: string) {
-    return this.update(entryId, {
-      status: 'APPROVED',
-      decidedAt: this.now(),
-      decidedBy: supervisorId,
-    })
+    return this.update(entryId, { status: 'APPROVED', decidedAt: this.now(), decidedBy: supervisorId })
   }
 
   reject(entryId: string, supervisorId: string, reason: string) {
     const rejectionReason = reason.trim()
     if (!rejectionReason) throw new Error('Informe o motivo da rejeição.')
-    return this.update(entryId, {
-      status: 'REJECTED',
-      rejectionReason,
-      decidedAt: this.now(),
-      decidedBy: supervisorId,
-    })
+    return this.update(entryId, { status: 'REJECTED', rejectionReason, decidedAt: this.now(), decidedBy: supervisorId })
+  }
+
+  async listTimeOffRequests(supervisorId: string) {
+    const storage = this.ensureSeedTimeOffRequests()
+    const collaborators = new Map(TEAM_MEMBERS.map((member) => [member.id, member.name]))
+    return storage.requests
+      .filter((request) => request.assignmentSnapshot?.supervisorId === supervisorId || (supervisorId === SUPERVISOR_SESSION_ID && COMPATIBLE_SUPERVISOR_IDS.has(request.assignmentSnapshot?.supervisorId ?? '')))
+      .map<SupervisorTimeOffRequest>((request) => ({
+        id: request.id,
+        collaboratorId: request.collaboratorId,
+        collaboratorName: collaborators.get(request.collaboratorId) ?? request.collaboratorId,
+        date: request.date,
+        reason: request.reason,
+        status: request.status,
+        rejectionReason: request.rejectionReason,
+        decidedAt: request.decidedAt,
+      }))
+      .sort((left, right) => right.date.localeCompare(left.date) || left.collaboratorName.localeCompare(right.collaboratorName))
+  }
+
+  async approveTimeOffRequest(requestId: string, supervisorId: string) {
+    const effectiveSupervisorId = this.readTimeOffStorage().requests.find((request) => request.id === requestId)?.assignmentSnapshot?.supervisorId ?? supervisorId
+    await timeOffService.approve(effectiveSupervisorId, requestId)
+    const updated = (await this.listTimeOffRequests(supervisorId)).find((request) => request.id === requestId)
+    if (!updated) throw new Error('Solicitação de folga não encontrada.')
+    return updated
+  }
+
+  async rejectTimeOffRequest(requestId: string, supervisorId: string, reason: string) {
+    const effectiveSupervisorId = this.readTimeOffStorage().requests.find((request) => request.id === requestId)?.assignmentSnapshot?.supervisorId ?? supervisorId
+    await timeOffService.reject(effectiveSupervisorId, requestId, reason)
+    const updated = (await this.listTimeOffRequests(supervisorId)).find((request) => request.id === requestId)
+    if (!updated) throw new Error('Solicitação de folga não encontrada.')
+    return updated
   }
 
   async getSummary() {
@@ -152,6 +233,18 @@ export class LocalStorageSupervisorService implements SupervisorService {
         pending: summary.pending + (entry.status === 'PENDING' ? 1 : 0),
         approved: summary.approved + (entry.status === 'APPROVED' ? 1 : 0),
         rejected: summary.rejected + (entry.status === 'REJECTED' ? 1 : 0),
+      }),
+      { pending: 0, approved: 0, rejected: 0 },
+    )
+  }
+
+  async getRequestSummary(supervisorId: string) {
+    const requests = await this.listTimeOffRequests(supervisorId)
+    return requests.reduce<SupervisorRequestSummary>(
+      (summary, request) => ({
+        pending: summary.pending + (request.status === 'PENDING' ? 1 : 0),
+        approved: summary.approved + (request.status === 'APPROVED' ? 1 : 0),
+        rejected: summary.rejected + (request.status === 'REJECTED' ? 1 : 0),
       }),
       { pending: 0, approved: 0, rejected: 0 },
     )

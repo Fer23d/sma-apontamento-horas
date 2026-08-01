@@ -1,15 +1,29 @@
 import { useEffect, useId, useState } from 'react'
-import type { SupervisorPendingEntry } from './types'
+
+type RejectableItem = {
+  id: string
+  collaboratorName: string
+}
 
 type RejectionDialogProps = {
-  entry: SupervisorPendingEntry | null
+  entry: RejectableItem | null
   error: string | null
   isSubmitting: boolean
+  title?: string
+  description?: string
   onClose: () => void
   onConfirm: (reason: string) => void
 }
 
-export function RejectionDialog({ entry, error, isSubmitting, onClose, onConfirm }: RejectionDialogProps) {
+export function RejectionDialog({
+  entry,
+  error,
+  isSubmitting,
+  title = 'Rejeitar apontamento',
+  description,
+  onClose,
+  onConfirm,
+}: RejectionDialogProps) {
   const [reason, setReason] = useState('')
   const fieldId = useId()
 
@@ -30,10 +44,10 @@ export function RejectionDialog({ entry, error, isSubmitting, onClose, onConfirm
       >
         <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-secondary)]">Validação do supervisor</p>
         <h2 id="rejection-dialog-title" className="mt-2 text-xl font-extrabold text-[var(--color-text)]">
-          Rejeitar apontamento
+          {title}
         </h2>
         <p className="mt-2 text-sm leading-6 text-[var(--color-text-muted)]">
-          Informe o motivo para {entry.collaboratorName}. Esse texto fica registrado na simulação local.
+          {description ?? `Informe o motivo para ${entry.collaboratorName}. Esse texto fica registrado na simulação local.`}
         </p>
 
         <label htmlFor={fieldId} className="mt-5 block text-sm font-bold text-[var(--color-text)]">

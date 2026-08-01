@@ -36,10 +36,10 @@ describe('LocalStorageSupervisorService', () => {
     const service = new LocalStorageSupervisorService(createMemoryStorage(), () => '2026-07-30T12:00:00.000Z', seedEntries)
 
     await expect(service.getSummary()).resolves.toEqual({ pending: 2, approved: 0, rejected: 0 })
-    await expect(service.listEntries()).resolves.toMatchObject([
-      { id: 'entry-001', status: 'PENDING' },
-      { id: 'entry-002', status: 'PENDING' },
-    ])
+    await expect(service.listEntries()).resolves.toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'entry-001', status: 'PENDING' }),
+      expect.objectContaining({ id: 'entry-002', status: 'PENDING' }),
+    ]))
   })
 
   it('persiste aprovação e rejeição no storage local', async () => {
@@ -50,10 +50,10 @@ describe('LocalStorageSupervisorService', () => {
     await service.reject('entry-002', 'supervisor-001', 'Ajustar projeto informado.')
 
     await expect(service.getSummary()).resolves.toEqual({ pending: 0, approved: 1, rejected: 1 })
-    await expect(service.listEntries()).resolves.toMatchObject([
-      { id: 'entry-001', status: 'APPROVED', decidedBy: 'supervisor-001' },
-      { id: 'entry-002', status: 'REJECTED', rejectionReason: 'Ajustar projeto informado.' },
-    ])
+    await expect(service.listEntries()).resolves.toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'entry-001', status: 'APPROVED', decidedBy: 'supervisor-001' }),
+      expect.objectContaining({ id: 'entry-002', status: 'REJECTED', rejectionReason: 'Ajustar projeto informado.' }),
+    ]))
   })
 
   it('exige motivo para rejeitar', async () => {

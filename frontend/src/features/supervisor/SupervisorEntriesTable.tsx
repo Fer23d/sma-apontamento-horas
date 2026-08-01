@@ -24,24 +24,24 @@ export function SupervisorEntriesTable({ entries, isMutating, onApprove, onRejec
     return (
       <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-8 text-center">
         <p className="font-bold text-[var(--color-text)]">Nenhum apontamento encontrado.</p>
-        <p className="mt-2 text-sm text-[var(--color-text-muted)]">As validações da equipe aparecerão aqui.</p>
+        <p className="mt-2 text-sm text-[var(--color-text-muted)]">Ajuste os filtros para consultar o histórico da equipe.</p>
       </div>
     )
   }
 
   return (
-    <section className="ui-card overflow-hidden rounded-2xl" aria-labelledby="supervisor-pending-title">
+    <section className="ui-card overflow-hidden rounded-2xl" aria-labelledby="supervisor-entries-title">
       <div className="flex flex-col gap-2 border-b border-[var(--color-border)] p-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-secondary)]">Fila de aprovação</p>
-          <h2 id="supervisor-pending-title" className="mt-1 text-xl font-extrabold text-[var(--color-text)]">Apontamentos da equipe</h2>
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-secondary)]">Histórico completo</p>
+          <h2 id="supervisor-entries-title" className="mt-1 text-xl font-extrabold text-[var(--color-text)]">Apontamentos da equipe</h2>
         </div>
-        <p className="text-sm text-[var(--color-text-muted)]">{entries.length} registro(s) na simulação local</p>
+        <p className="text-sm text-[var(--color-text-muted)]">{entries.length} registro(s)</p>
       </div>
 
-      <div className="hidden overflow-x-auto md:block">
+      <div className="hidden max-h-[600px] overflow-auto md:block">
         <table className="w-full min-w-[760px] text-left text-sm">
-          <thead className="bg-[var(--color-surface-subtle)] text-xs uppercase tracking-[0.12em] text-[var(--color-text-muted)]">
+          <thead className="sticky top-0 z-10 bg-[var(--color-surface-subtle)] text-xs uppercase tracking-[0.12em] text-[var(--color-text-muted)]">
             <tr>
               <th scope="col" className="px-5 py-4">Colaborador</th>
               <th scope="col" className="px-5 py-4">Data</th>
@@ -66,17 +66,21 @@ export function SupervisorEntriesTable({ entries, isMutating, onApprove, onRejec
                   <td className="px-5 py-4 text-[var(--color-text-muted)]">{formatMinutes(entry.durationMinutes)}</td>
                   <td className="px-5 py-4">
                     <StatusBadge tone={status.tone}>{status.label}</StatusBadge>
-                    {entry.rejectionReason && <p className="mt-2 max-w-48 text-xs text-[var(--color-text-muted)]">{entry.rejectionReason}</p>}
+                    {entry.rejectionReason && <p className="mt-2 max-w-52 text-xs text-[var(--color-text-muted)]">{entry.rejectionReason}</p>}
                   </td>
                   <td className="px-5 py-4">
-                    <div className="flex justify-end gap-2">
-                      <button type="button" className="ui-button-secondary px-3 py-2" onClick={() => onReject(entry)} disabled={!isPending || isMutating}>
-                        Rejeitar
-                      </button>
-                      <button type="button" className="ui-button-primary px-3 py-2" onClick={() => onApprove(entry)} disabled={!isPending || isMutating}>
-                        Aprovar
-                      </button>
-                    </div>
+                    {isPending ? (
+                      <div className="flex justify-end gap-2">
+                        <button type="button" className="ui-button-secondary px-3 py-2" onClick={() => onReject(entry)} disabled={isMutating}>
+                          Rejeitar
+                        </button>
+                        <button type="button" className="ui-button-primary px-3 py-2" onClick={() => onApprove(entry)} disabled={isMutating}>
+                          Aprovar
+                        </button>
+                      </div>
+                    ) : (
+                      <p className="text-right text-xs font-bold text-[var(--color-text-muted)]">Concluído</p>
+                    )}
                   </td>
                 </tr>
               )
@@ -85,7 +89,7 @@ export function SupervisorEntriesTable({ entries, isMutating, onApprove, onRejec
         </table>
       </div>
 
-      <div className="divide-y ui-divide md:hidden">
+      <div className="max-h-[600px] divide-y overflow-y-auto ui-divide md:hidden">
         {entries.map((entry) => {
           const status = statusView[entry.status]
           const isPending = entry.status === 'PENDING'
@@ -109,14 +113,16 @@ export function SupervisorEntriesTable({ entries, isMutating, onApprove, onRejec
                 </div>
               </dl>
               {entry.rejectionReason && <p className="mt-3 text-sm text-[var(--color-text-muted)]">{entry.rejectionReason}</p>}
-              <div className="mt-4 grid grid-cols-2 gap-2">
-                <button type="button" className="ui-button-secondary" onClick={() => onReject(entry)} disabled={!isPending || isMutating}>
-                  Rejeitar
-                </button>
-                <button type="button" className="ui-button-primary" onClick={() => onApprove(entry)} disabled={!isPending || isMutating}>
-                  Aprovar
-                </button>
-              </div>
+              {isPending && (
+                <div className="mt-4 grid grid-cols-2 gap-2">
+                  <button type="button" className="ui-button-secondary" onClick={() => onReject(entry)} disabled={isMutating}>
+                    Rejeitar
+                  </button>
+                  <button type="button" className="ui-button-primary" onClick={() => onApprove(entry)} disabled={isMutating}>
+                    Aprovar
+                  </button>
+                </div>
+              )}
             </article>
           )
         })}

@@ -14,7 +14,24 @@ export type SupervisorPendingEntry = {
   decidedBy?: string
 }
 
+export type SupervisorTimeOffRequest = {
+  id: string
+  collaboratorId: string
+  collaboratorName: string
+  date: string
+  reason: string
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED'
+  rejectionReason?: string
+  decidedAt?: string
+}
+
 export type SupervisorDashboardSummary = {
+  pending: number
+  approved: number
+  rejected: number
+}
+
+export type SupervisorRequestSummary = {
   pending: number
   approved: number
   rejected: number
