@@ -1,0 +1,126 @@
+import { StatusBadge } from '../../components/StatusBadge'
+import { formatMinutes } from '../time-entries/domain'
+import type { SupervisorPendingEntry } from './types'
+
+type SupervisorEntriesTableProps = {
+  entries: SupervisorPendingEntry[]
+  isMutating: boolean
+  onApprove: (entry: SupervisorPendingEntry) => void
+  onReject: (entry: SupervisorPendingEntry) => void
+}
+
+const statusView = {
+  PENDING: { label: 'Pendente', tone: 'pending' },
+  APPROVED: { label: 'Aprovado', tone: 'success' },
+  REJECTED: { label: 'Rejeitado', tone: 'danger' },
+} as const
+
+function formatDate(date: string) {
+  return new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC' }).format(new Date(`${date}T00:00:00.000Z`))
+}
+
+export function SupervisorEntriesTable({ entries, isMutating, onApprove, onReject }: SupervisorEntriesTableProps) {
+  if (entries.length === 0) {
+    return (
+      <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-8 text-center">
+        <p className="font-bold text-[var(--color-text)]">Nenhum apontamento encontrado.</p>
+        <p className="mt-2 text-sm text-[var(--color-text-muted)]">As validações da equipe aparecerão aqui.</p>
+      </div>
+    )
+  }
+
+  return (
+    <section className="ui-card overflow-hidden rounded-2xl" aria-labelledby="supervisor-pending-title">
+      <div className="flex flex-col gap-2 border-b border-[var(--color-border)] p-5 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-secondary)]">Fila de aprovação</p>
+          <h2 id="supervisor-pending-title" className="mt-1 text-xl font-extrabold text-[var(--color-text)]">Apontamentos da equipe</h2>
+        </div>
+        <p className="text-sm text-[var(--color-text-muted)]">{entries.length} registro(s) na simulação local</p>
+      </div>
+
+      <div className="hidden overflow-x-auto md:block">
+        <table className="w-full min-w-[760px] text-left text-sm">
+          <thead className="bg-[var(--color-surface-subtle)] text-xs uppercase tracking-[0.12em] text-[var(--color-text-muted)]">
+            <tr>
+              <th scope="col" className="px-5 py-4">Colaborador</th>
+              <th scope="col" className="px-5 py-4">Data</th>
+              <th scope="col" className="px-5 py-4">Projeto</th>
+              <th scope="col" className="px-5 py-4">Horas</th>
+              <th scope="col" className="px-5 py-4">Status</th>
+              <th scope="col" className="px-5 py-4 text-right">Ações</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y ui-divide">
+            {entries.map((entry) => {
+              const status = statusView[entry.status]
+              const isPending = entry.status === 'PENDING'
+              return (
+                <tr key={entry.id} className="transition hover:bg-[var(--color-surface-subtle)]">
+                  <td className="px-5 py-4">
+                    <p className="font-bold text-[var(--color-text)]">{entry.collaboratorName}</p>
+                    <p className="mt-1 text-xs text-[var(--color-text-muted)]">{entry.activityName}</p>
+                  </td>
+                  <td className="px-5 py-4 text-[var(--color-text-muted)]">{formatDate(entry.entryDate)}</td>
+                  <td className="px-5 py-4 font-semibold text-[var(--color-text)]">{entry.projectCode}</td>
+                  <td className="px-5 py-4 text-[var(--color-text-muted)]">{formatMinutes(entry.durationMinutes)}</td>
+                  <td className="px-5 py-4">
+                    <StatusBadge tone={status.tone}>{status.label}</StatusBadge>
+                    {entry.rejectionReason && <p className="mt-2 max-w-48 text-xs text-[var(--color-text-muted)]">{entry.rejectionReason}</p>}
+                  </td>
+                  <td className="px-5 py-4">
+                    <div className="flex justify-end gap-2">
+                      <button type="button" className="ui-button-secondary px-3 py-2" onClick={() => onReject(entry)} disabled={!isPending || isMutating}>
+                        Rejeitar
+                      </button>
+                      <button type="button" className="ui-button-primary px-3 py-2" onClick={() => onApprove(entry)} disabled={!isPending || isMutating}>
+                        Aprovar
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="divide-y ui-divide md:hidden">
+        {entries.map((entry) => {
+          const status = statusView[entry.status]
+          const isPending = entry.status === 'PENDING'
+          return (
+            <article key={entry.id} className="p-5">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="font-extrabold text-[var(--color-text)]">{entry.collaboratorName}</h3>
+                  <p className="mt-1 text-sm text-[var(--color-text-muted)]">{entry.projectCode} · {formatDate(entry.entryDate)}</p>
+                </div>
+                <StatusBadge tone={status.tone}>{status.label}</StatusBadge>
+              </div>
+              <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <dt className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-muted)]">Horas</dt>
+                  <dd className="mt-1 font-bold text-[var(--color-text)]">{formatMinutes(entry.durationMinutes)}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-muted)]">Atividade</dt>
+                  <dd className="mt-1 font-bold text-[var(--color-text)]">{entry.activityName}</dd>
+                </div>
+              </dl>
+              {entry.rejectionReason && <p className="mt-3 text-sm text-[var(--color-text-muted)]">{entry.rejectionReason}</p>}
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                <button type="button" className="ui-button-secondary" onClick={() => onReject(entry)} disabled={!isPending || isMutating}>
+                  Rejeitar
+                </button>
+                <button type="button" className="ui-button-primary" onClick={() => onApprove(entry)} disabled={!isPending || isMutating}>
+                  Aprovar
+                </button>
+              </div>
+            </article>
+          )
+        })}
+      </div>
+    </section>
+  )
+}

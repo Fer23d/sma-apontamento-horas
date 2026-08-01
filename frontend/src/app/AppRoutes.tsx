@@ -9,6 +9,7 @@ import { FolgasPage } from '../pages/FolgasPage'
 import { ProtectedRoute } from '../features/session/ProtectedRoute'
 import { PublicOnlyRoute } from '../features/session/PublicOnlyRoute'
 import { DemoAreaPlaceholderPage } from '../pages/DemoAreaPlaceholderPage'
+import { SupervisorPage } from '../pages/SupervisorPage'
 
 export function AppRoutes() {
   return (
@@ -23,7 +24,7 @@ export function AppRoutes() {
         <Route path="folgas" element={<FolgasPage />} />
         <Route path="perfil" element={<PerfilPage />} />
       </Route>
-      <Route path="/supervisor" element={<ProtectedRoute allowedRoles={['SUPERVISOR']}><DemoAreaPlaceholderPage role="SUPERVISOR" /></ProtectedRoute>} />
+      <Route path="/supervisor" element={<ProtectedRoute allowedRoles={['SUPERVISOR']}><SupervisorPage /></ProtectedRoute>} />
       <Route path="/administracao" element={<ProtectedRoute allowedRoles={['DIRECTOR_ADMIN']}><DemoAreaPlaceholderPage role="DIRECTOR_ADMIN" /></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>

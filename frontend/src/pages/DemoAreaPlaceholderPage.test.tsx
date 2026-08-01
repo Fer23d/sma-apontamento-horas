@@ -2,8 +2,8 @@ import { isValidElement, type ButtonHTMLAttributes, type ReactElement, type Reac
 import { renderToStaticMarkup } from 'react-dom/server'
 import { MemoryRouter, type NavigateFunction } from 'react-router-dom'
 import { describe, expect, it, vi } from 'vitest'
-import { ThemeContext } from '../app/themeContext'
 import { AppRoutes } from '../app/AppRoutes'
+import { ThemeContext } from '../app/themeContext'
 import { SessionContext, type SessionContextValue } from '../features/session/sessionContext'
 import type { DemoRole, DemoSession } from '../features/session/types'
 import { DemoAreaPlaceholderContent, DemoAreaPlaceholderPage } from './DemoAreaPlaceholderPage'
@@ -37,12 +37,12 @@ function contextFor(role: DemoRole): SessionContextValue {
   }
 }
 
-function renderPage(role: 'SUPERVISOR' | 'DIRECTOR_ADMIN') {
+function renderPlaceholderPage() {
   return renderToStaticMarkup(
-    <MemoryRouter initialEntries={[role === 'SUPERVISOR' ? '/supervisor' : '/administracao']}>
+    <MemoryRouter initialEntries={['/administracao']}>
       <ThemeContext.Provider value={{ theme: 'light', toggleTheme: vi.fn() }}>
-        <SessionContext.Provider value={contextFor(role)}>
-          <DemoAreaPlaceholderPage role={role} />
+        <SessionContext.Provider value={contextFor('DIRECTOR_ADMIN')}>
+          <DemoAreaPlaceholderPage role="DIRECTOR_ADMIN" />
         </SessionContext.Provider>
       </ThemeContext.Provider>
     </MemoryRouter>,
@@ -82,14 +82,11 @@ function findLogoutButton(node: ReactNode): ReactElement<ButtonHTMLAttributes<HT
 }
 
 describe('DemoAreaPlaceholderPage', () => {
-  it.each([
-    ['SUPERVISOR', 'Supervisor', 'Supervisor Demonstração'],
-    ['DIRECTOR_ADMIN', 'Diretor/Administração', 'Diretor/Administração Demonstração'],
-  ] as const)('identifica %s com conteúdo honesto', (role, label, sessionName) => {
-    const markup = renderPage(role)
+  it('mantem Diretor/Administração como placeholder honesto', () => {
+    const markup = renderPlaceholderPage()
 
-    expect(markup).toContain(label)
-    expect(markup).toContain(sessionName)
+    expect(markup).toContain('Diretor/Administração')
+    expect(markup).toContain('Diretor/Administração Demonstração')
     expect(markup).toMatch(/em desenvolvimento/i)
     expect(markup).toContain('Sair da demonstração')
     expect(markup).not.toMatch(/aprovar|indicadores|equipe ativa|solicitações pendentes/i)
@@ -99,8 +96,8 @@ describe('DemoAreaPlaceholderPage', () => {
     const signOut = vi.fn()
     const navigate = vi.fn()
     const content = DemoAreaPlaceholderContent({
-      role: 'SUPERVISOR',
-      sessionName: 'Supervisor Demonstração',
+      role: 'DIRECTOR_ADMIN',
+      sessionName: 'Diretor/Administração Demonstração',
       signOut,
       navigate: navigate as NavigateFunction,
     })
@@ -113,7 +110,7 @@ describe('DemoAreaPlaceholderPage', () => {
   })
 
   it.each([
-    ['/supervisor', 'SUPERVISOR', 'Supervisor Demonstração'],
+    ['/supervisor', 'SUPERVISOR', 'Gestão de apontamentos'],
     ['/administracao', 'DIRECTOR_ADMIN', 'Diretor/Administração Demonstração'],
   ] as const)('protege a rota %s para o perfil correto', (path, role, expectedName) => {
     expect(renderRoutes(path, role)).toContain(expectedName)
