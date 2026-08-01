@@ -234,18 +234,16 @@ export function SupervisorPage() {
   return (
     <main className="min-h-screen bg-[var(--color-background)] text-[var(--color-text)]">
       <header data-layout-region="global-header" className="sticky top-0 z-40 flex h-20 w-full items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-header)] px-4 shadow-sm sm:px-6 lg:px-8">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
-          <div className="flex min-w-0 items-center gap-3">
-            <BrandMark variant="compact" />
-            <div className="hidden min-w-0 sm:block">
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--color-secondary)]">Área do supervisor</p>
-              <p className="truncate text-sm text-[var(--color-text-muted)]">Validação de apontamentos e solicitações da equipe</p>
-            </div>
+        <div className="flex min-w-0 items-center gap-3">
+          <BrandMark variant="compact" />
+          <div className="hidden min-w-0 sm:block">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--color-secondary)]">Área do supervisor</p>
+            <p className="truncate text-sm text-[var(--color-text-muted)]">Validação de apontamentos e solicitações da equipe</p>
           </div>
-          <div className="flex items-center gap-3">
-            <span className="hidden text-right text-xs font-semibold text-[var(--color-text-muted)] md:block">{SUPERVISOR_DISPLAY_NAME}</span>
-            <ThemeToggle />
-          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="hidden text-right text-xs font-semibold text-[var(--color-text-muted)] md:block">{SUPERVISOR_DISPLAY_NAME}</span>
+          <ThemeToggle />
         </div>
       </header>
 
