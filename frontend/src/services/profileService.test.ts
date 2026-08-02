@@ -14,7 +14,7 @@ class MemoryStorage implements StorageLike {
 const entryData = {
   entryDate: '2026-07-20', clientId: 'client-industrial-alpha', projectCode: 'SMA-001',
   activityId: 'activity-project-design', disciplineCode: '—' as const, documentTypeCode: '—' as const,
-  startTime: '08:00', endTime: '09:00', durationMinutes: 60, details: 'Atividade executada',
+  durationMinutes: 60, details: 'Atividade executada',
 }
 
 describe('perfil e squad ativa', () => {
@@ -42,7 +42,7 @@ describe('perfil e squad ativa', () => {
     })
     const first = await entryService.create(demoCollaborator.id, entryData)
     await profileService.changeActiveSquad(demoCollaborator.id, 'squad-electrical')
-    const second = await entryService.create(demoCollaborator.id, { ...entryData, projectCode: 'SMA-002', startTime: '09:00', endTime: '10:00' })
+    const second = await entryService.create(demoCollaborator.id, { ...entryData, projectCode: 'SMA-002' })
 
     expect(first.assignmentSnapshot?.squadId).toBe('squad-automation')
     expect(second.assignmentSnapshot?.squadId).toBe('squad-electrical')

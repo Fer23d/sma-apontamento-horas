@@ -8,7 +8,7 @@ import type { TimeEntryFormValues } from './useTimeEntryForm'
 
 const values: TimeEntryFormValues = {
   entryDate: '2026-07-20', clientId: '', projectCode: '', activityId: '', disciplineCode: '', documentTypeCode: '',
-  startTime: '', endTime: '', hours: '', minutes: '', details: '', editReason: '',
+  hours: '', minutes: '', details: '', editReason: '',
 }
 
 const filters: HistoryFiltersValue = {

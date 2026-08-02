@@ -6,8 +6,6 @@ import {
   formatMinutes,
   formatSignedMinutes,
   isValidDuration,
-  periodsOverlap,
-  timeToMinutes,
   validateTimeEntry,
 } from './domain'
 
@@ -62,8 +60,6 @@ describe('validações e formatação', () => {
     activityId: 'activity-project-design',
     disciplineCode: '—',
     documentTypeCode: '—',
-    startTime: '08:00',
-    endTime: '09:00',
     durationMinutes: 60,
     details: 'Atividade demonstrativa',
   } as CreateTimeEntryData
@@ -128,22 +124,6 @@ describe('validações e formatação', () => {
 
   it('exige detalhamento não vazio', () => {
     expect(validateTimeEntry({ ...validData, details: '   ' }, demoClients, demoActivities).details).toBe('Descreva o trabalho realizado.')
-  })
-
-  it('converte horário HH:MM para minutos e rejeita horário inválido', () => {
-    expect(timeToMinutes('08:30')).toBe(510)
-    expect(timeToMinutes('24:00')).toBeNull()
-    expect(timeToMinutes('8:30')).toBeNull()
-  })
-
-  it('detecta interseção real entre períodos e permite intervalos encostados', () => {
-    expect(periodsOverlap(8 * 60, 10 * 60, 9 * 60, 11 * 60)).toBe(true)
-    expect(periodsOverlap(8 * 60, 10 * 60, 10 * 60, 11 * 60)).toBe(false)
-  })
-
-  it('exige período válido no apontamento', () => {
-    expect(validateTimeEntry({ ...validData, startTime: '' }, demoClients, demoActivities).startTime).toBe('Informe o horário inicial.')
-    expect(validateTimeEntry({ ...validData, endTime: '08:00' }, demoClients, demoActivities).endTime).toBe('O horário final deve ser posterior ao inicial.')
   })
 
   it('formata minutos positivos em HH:MM', () => expect(formatMinutes(125)).toBe('02:05'))

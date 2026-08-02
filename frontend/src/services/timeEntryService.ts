@@ -4,7 +4,6 @@ import type { DailySummary } from '../features/calendar/types'
 import type { AuditEvent } from '../features/audit/types'
 import type { AssignmentSnapshot } from '../features/squads/types'
 import type { CreateTimeEntryData, DisciplineCode, DocumentTypeCode, TimeEntry } from '../features/time-entries/types'
-import { timeToMinutes } from '../features/time-entries/domain'
 import type { WorkloadVersion } from '../features/workloads/types'
 import { isIsoDate } from '../shared/utils/date'
 import { createBrowserStorage, type StorageLike } from './storage'
@@ -100,16 +99,12 @@ const documentTypeCodes: readonly DocumentTypeCode[] = [
 function normalizeCreateData(data: CreateTimeEntryData): CreateTimeEntryData {
   const projectCode = data.projectCode.trim()
   const details = data.details.trim()
-  const startMinutes = data.startTime ? timeToMinutes(data.startTime) : null
-  const endMinutes = data.endTime ? timeToMinutes(data.endTime) : null
   if (!isIsoDate(data.entryDate)) throw new Error('Informe uma data válida.')
   if (!data.clientId) throw new Error('Informe o cliente.')
   if (!projectCode || projectCode.length > MAX_PROJECT_CODE_LENGTH) throw new Error('Informe um código de projeto válido.')
   if (!data.activityId) throw new Error('Informe a atividade.')
   if (!disciplineCodes.includes(data.disciplineCode)) throw new Error('Informe a disciplina.')
   if (!documentTypeCodes.includes(data.documentTypeCode)) throw new Error('Informe o tipo de documento.')
-  if (!data.startTime || startMinutes === null) throw new Error('Informe o horário inicial.')
-  if (!data.endTime || endMinutes === null || endMinutes <= startMinutes) throw new Error('Informe um horário final válido.')
   if (!Number.isInteger(data.durationMinutes) || data.durationMinutes <= 0 || data.durationMinutes > MAX_ENTRY_MINUTES) {
     throw new Error('Informe uma duração válida.')
   }
@@ -343,8 +338,6 @@ export class LocalStorageTimeEntryService implements TimeEntryService {
       activityId: overrides.activityId ?? entry.activityId,
       disciplineCode: overrides.disciplineCode ?? entry.disciplineCode,
       documentTypeCode: overrides.documentTypeCode ?? entry.documentTypeCode,
-      startTime: overrides.startTime ?? entry.startTime,
-      endTime: overrides.endTime ?? entry.endTime,
       durationMinutes: overrides.durationMinutes ?? entry.durationMinutes,
       details: overrides.details ?? entry.details,
     })

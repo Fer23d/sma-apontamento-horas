@@ -92,10 +92,6 @@ function optionalString(value: unknown) {
   return typeof value === 'string' && value ? value : undefined
 }
 
-function optionalTime(value: unknown) {
-  return typeof value === 'string' && /^\d{2}:\d{2}$/.test(value) ? value : undefined
-}
-
 function migrateV2Entry(entry: V2TimeEntry, collaboratorId: string): TimeEntry | null {
   return normalizeTimeEntry({
     id: entry.id,
@@ -110,8 +106,6 @@ function migrateV2Entry(entry: V2TimeEntry, collaboratorId: string): TimeEntry |
     documentTypeCode: documentTypeCodes.includes(entry.documentTypeCode as DocumentTypeCode)
       ? entry.documentTypeCode as DocumentTypeCode
       : '—',
-    startTime: optionalTime(entry.startTime),
-    endTime: optionalTime(entry.endTime),
     durationMinutes: entry.durationMinutes,
     details: entry.details.trim(),
     assignmentSnapshot: safeLegacyAssignmentByCollaboratorId[collaboratorId] ?? null,
@@ -160,8 +154,6 @@ export function normalizeTimeEntry(value: unknown, collaboratorId: string): Time
     activityId: entry.activityId,
     disciplineCode: entry.disciplineCode as DisciplineCode,
     documentTypeCode: entry.documentTypeCode as DocumentTypeCode,
-    startTime: optionalTime(entry.startTime),
-    endTime: optionalTime(entry.endTime),
     durationMinutes: Number(entry.durationMinutes),
     details: entry.details.trim(),
     assignmentSnapshot: entry.assignmentSnapshot as AssignmentSnapshot | null,

@@ -6,7 +6,7 @@ import { timeEntryService } from '../../services/timeEntryService'
 import type { CreateTimeEntryData, TimeEntry, TimeEntryValidationErrors } from './types'
 import { getCorporateToday, isIsoDate } from '../../shared/utils/date'
 import { useSession } from '../session/useSession'
-import { areValidDurationParts, hoursAndMinutesToMinutes, periodsOverlap, timeToMinutes, validateTimeEntry } from './domain'
+import { areValidDurationParts, hoursAndMinutesToMinutes, validateTimeEntry } from './domain'
 
 export type TimeEntryFormValues = {
   entryDate: string
@@ -15,8 +15,6 @@ export type TimeEntryFormValues = {
   activityId: string
   disciplineCode: CreateTimeEntryData['disciplineCode'] | ''
   documentTypeCode: CreateTimeEntryData['documentTypeCode'] | ''
-  startTime: string
-  endTime: string
   hours: string
   minutes: string
   details: string
@@ -30,8 +28,6 @@ const emptyValues = (entryDate: string): TimeEntryFormValues => ({
   activityId: '',
   disciplineCode: '',
   documentTypeCode: '',
-  startTime: '',
-  endTime: '',
   hours: '',
   minutes: '',
   details: '',
@@ -46,8 +42,6 @@ function valuesFromEntry(entry: TimeEntry): TimeEntryFormValues {
     activityId: entry.activityId,
     disciplineCode: entry.disciplineCode,
     documentTypeCode: entry.documentTypeCode,
-    startTime: entry.startTime ?? '',
-    endTime: entry.endTime ?? '',
     hours: String(Math.floor(entry.durationMinutes / 60)),
     minutes: String(entry.durationMinutes % 60),
     details: entry.details,
@@ -90,19 +84,7 @@ export function useTimeEntryForm({ initialDate, entryId, duplicateId }: { initia
   }, [profile, sourceId])
 
   const setField = useCallback(<Key extends keyof TimeEntryFormValues>(field: Key, value: TimeEntryFormValues[Key]) => {
-    setValues((current) => {
-      const next = { ...current, [field]: value }
-      if (field === 'startTime' || field === 'endTime') {
-        const start = timeToMinutes(next.startTime)
-        const end = timeToMinutes(next.endTime)
-        if (start !== null && end !== null && end > start) {
-          const duration = end - start
-          next.hours = String(Math.floor(duration / 60))
-          next.minutes = String(duration % 60)
-        }
-      }
-      return next
-    })
+    setValues((current) => ({ ...current, [field]: value }))
     if (field === 'editReason') setEditReasonError(null)
     else setErrors((current) => ({ ...current, [field]: undefined }))
   }, [])
@@ -120,8 +102,6 @@ export function useTimeEntryForm({ initialDate, entryId, duplicateId }: { initia
       activityId: values.activityId,
       disciplineCode: values.disciplineCode as CreateTimeEntryData['disciplineCode'],
       documentTypeCode: values.documentTypeCode as CreateTimeEntryData['documentTypeCode'],
-      startTime: values.startTime,
-      endTime: values.endTime,
       durationMinutes: hoursAndMinutesToMinutes(durationHours, durationRemainderMinutes),
       details: values.details,
     }
@@ -147,26 +127,6 @@ export function useTimeEntryForm({ initialDate, entryId, duplicateId }: { initia
     setErrors(validationErrors)
     setEditReasonError(reasonError)
     if (Object.keys(validationErrors).length > 0 || reasonError) return false
-    const newStart = timeToMinutes(data.startTime ?? '')
-    const newEnd = timeToMinutes(data.endTime ?? '')
-    if (newStart === null || newEnd === null) return false
-    try {
-      const existingEntries = await timeEntryService.listByDate(profile.id, data.entryDate)
-      const hasCollision = existingEntries
-        .filter((entry) => entry.status !== 'CANCELLED' && entry.id !== source?.id && entry.startTime && entry.endTime)
-        .some((entry) => {
-          const existingStart = timeToMinutes(entry.startTime!)
-          const existingEnd = timeToMinutes(entry.endTime!)
-          return existingStart !== null && existingEnd !== null && periodsOverlap(newStart, newEnd, existingStart, existingEnd)
-        })
-      if (hasCollision) {
-        setSubmitError('Conflito de horários: Você já possui horas registradas neste período.')
-        return false
-      }
-    } catch {
-      setSubmitError('Não foi possível validar conflitos de horário. Tente novamente.')
-      return false
-    }
     if ((mode === 'EDIT' || mode === 'DUPLICATE') && !source) {
       setSubmitError('O apontamento de origem não está disponível.')
       return false

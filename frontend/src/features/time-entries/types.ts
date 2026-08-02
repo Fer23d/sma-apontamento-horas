@@ -31,8 +31,6 @@ export interface TimeEntry {
   activityId: string
   disciplineCode: DisciplineCode
   documentTypeCode: DocumentTypeCode
-  startTime?: string
-  endTime?: string
   durationMinutes: number
   details: string
   assignmentSnapshot: AssignmentSnapshot | null
@@ -54,8 +52,6 @@ export type CreateTimeEntryData = Pick<
   | 'activityId'
   | 'disciplineCode'
   | 'documentTypeCode'
-  | 'startTime'
-  | 'endTime'
   | 'durationMinutes'
   | 'details'
 >
