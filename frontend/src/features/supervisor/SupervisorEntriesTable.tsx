@@ -5,6 +5,9 @@ import type { SupervisorPendingEntry } from './types'
 type SupervisorEntriesTableProps = {
   entries: SupervisorPendingEntry[]
   isMutating: boolean
+  selectedIds: string[]
+  onToggleAll: (checked: boolean) => void
+  onToggleEntry: (entryId: string, checked: boolean) => void
   onApprove: (entry: SupervisorPendingEntry) => void
   onReject: (entry: SupervisorPendingEntry) => void
 }
@@ -19,7 +22,7 @@ function formatDate(date: string) {
   return new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC' }).format(new Date(`${date}T00:00:00.000Z`))
 }
 
-export function SupervisorEntriesTable({ entries, isMutating, onApprove, onReject }: SupervisorEntriesTableProps) {
+export function SupervisorEntriesTable({ entries, isMutating, selectedIds, onToggleAll, onToggleEntry, onApprove, onReject }: SupervisorEntriesTableProps) {
   if (entries.length === 0) {
     return (
       <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-8 text-center">
@@ -28,6 +31,7 @@ export function SupervisorEntriesTable({ entries, isMutating, onApprove, onRejec
       </div>
     )
   }
+  const allVisibleSelected = entries.length > 0 && entries.every((entry) => selectedIds.includes(entry.id))
 
   return (
     <section className="ui-card overflow-hidden rounded-2xl" aria-labelledby="supervisor-entries-title">
@@ -43,6 +47,15 @@ export function SupervisorEntriesTable({ entries, isMutating, onApprove, onRejec
         <table className="w-full min-w-[760px] text-left text-sm">
           <thead className="sticky top-0 z-10 bg-[var(--color-surface-subtle)] text-xs uppercase tracking-[0.12em] text-[var(--color-text-muted)]">
             <tr>
+              <th scope="col" className="px-5 py-4">
+                <input
+                  type="checkbox"
+                  checked={allVisibleSelected}
+                  onChange={(event) => onToggleAll(event.target.checked)}
+                  className="h-4 w-4 rounded border-[var(--color-border)] bg-[var(--color-surface)] accent-[var(--color-primary)]"
+                  aria-label="Selecionar todos os apontamentos visíveis"
+                />
+              </th>
               <th scope="col" className="px-5 py-4">Colaborador</th>
               <th scope="col" className="px-5 py-4">Data</th>
               <th scope="col" className="px-5 py-4">Projeto</th>
@@ -57,6 +70,15 @@ export function SupervisorEntriesTable({ entries, isMutating, onApprove, onRejec
               const isPending = entry.status === 'PENDING'
               return (
                 <tr key={entry.id} className="transition hover:bg-[var(--color-surface-subtle)]">
+                  <td className="px-5 py-4">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.includes(entry.id)}
+                      onChange={(event) => onToggleEntry(entry.id, event.target.checked)}
+                      className="h-4 w-4 rounded border-[var(--color-border)] bg-[var(--color-surface)] accent-[var(--color-primary)]"
+                      aria-label={`Selecionar apontamento de ${entry.collaboratorName}`}
+                    />
+                  </td>
                   <td className="px-5 py-4">
                     <p className="font-bold text-[var(--color-text)]">{entry.collaboratorName}</p>
                     <p className="mt-1 text-xs text-[var(--color-text-muted)]">{entry.activityName}</p>
@@ -96,6 +118,13 @@ export function SupervisorEntriesTable({ entries, isMutating, onApprove, onRejec
           return (
             <article key={entry.id} className="p-5">
               <div className="flex items-start justify-between gap-3">
+                <input
+                  type="checkbox"
+                  checked={selectedIds.includes(entry.id)}
+                  onChange={(event) => onToggleEntry(entry.id, event.target.checked)}
+                  className="mt-1 h-4 w-4 rounded border-[var(--color-border)] bg-[var(--color-surface)] accent-[var(--color-primary)]"
+                  aria-label={`Selecionar apontamento de ${entry.collaboratorName}`}
+                />
                 <div>
                   <h3 className="font-extrabold text-[var(--color-text)]">{entry.collaboratorName}</h3>
                   <p className="mt-1 text-sm text-[var(--color-text-muted)]">{entry.projectCode} · {formatDate(entry.entryDate)}</p>

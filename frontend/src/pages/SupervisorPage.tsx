@@ -259,6 +259,7 @@ export function SupervisorPage() {
   const [supervisorProfile, setSupervisorProfile] = useState<SupervisorProfile>(() => readSupervisorProfile())
   const [collaboratorFilter, setCollaboratorFilter] = useState('ALL')
   const [statusFilter, setStatusFilter] = useState<EntryStatusFilter>('ALL')
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [rejectionTarget, setRejectionTarget] = useState<RejectionTarget | null>(null)
   const [rejectionError, setRejectionError] = useState<string | null>(null)
 
@@ -302,6 +303,16 @@ export function SupervisorPage() {
       .sort((left, right) => right.horas - left.horas)
   }, [filteredEntries])
 
+  const selectedEntries = useMemo(() => {
+    const selected = new Set(selectedIds)
+    return filteredEntries.filter((entry) => selected.has(entry.id))
+  }, [filteredEntries, selectedIds])
+
+  useEffect(() => {
+    const visibleIds = new Set(filteredEntries.map((entry) => entry.id))
+    setSelectedIds((current) => current.filter((id) => visibleIds.has(id)))
+  }, [filteredEntries])
+
   function applyRange() {
     if (!isIsoDate(range.startDate) || !isIsoDate(range.endDate) || range.startDate > range.endDate) {
       setRangeError('Informe um intervalo válido, com a data inicial anterior à data final.')
@@ -334,6 +345,31 @@ export function SupervisorPage() {
     const workbook = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Apontamentos')
     XLSX.writeFile(workbook, `apontamentos_equipe_${getCorporateToday()}.xlsx`)
+  }
+
+  function toggleAllVisibleEntries(checked: boolean) {
+    const visibleIds = filteredEntries.map((entry) => entry.id)
+    setSelectedIds((current) => {
+      if (!checked) return current.filter((id) => !visibleIds.includes(id))
+      return Array.from(new Set([...current, ...visibleIds]))
+    })
+  }
+
+  function toggleSelectedEntry(entryId: string, checked: boolean) {
+    setSelectedIds((current) => {
+      if (checked) return current.includes(entryId) ? current : [...current, entryId]
+      return current.filter((id) => id !== entryId)
+    })
+  }
+
+  async function handleBulkApprove() {
+    for (const entry of selectedEntries) await dashboard.approve(entry)
+    setSelectedIds([])
+  }
+
+  async function handleBulkReject() {
+    for (const entry of selectedEntries) await dashboard.reject(entry, 'Rejeitado em lote pela supervisão.')
+    setSelectedIds([])
   }
 
   const exitDemo = () => {
@@ -462,6 +498,20 @@ export function SupervisorPage() {
                   </button>
                 </section>
 
+                {selectedIds.length > 0 && (
+                  <section className="flex flex-col gap-3 rounded-2xl border ui-border ui-surface p-4 sm:flex-row sm:items-center sm:justify-between" aria-label="Ações em lote">
+                    <p className="text-sm font-bold ui-text">{selectedIds.length} apontamento(s) selecionado(s)</p>
+                    <div className="flex flex-col gap-2 sm:flex-row">
+                      <button type="button" onClick={() => void handleBulkReject()} disabled={dashboard.isMutating} className="rounded-xl border border-[var(--color-danger)] px-4 py-2.5 text-sm font-bold text-[var(--color-danger)] transition hover:bg-[var(--color-surface-subtle)] disabled:cursor-not-allowed disabled:opacity-50">
+                        Rejeitar Selecionados
+                      </button>
+                      <button type="button" onClick={() => void handleBulkApprove()} disabled={dashboard.isMutating} className="ui-button-primary">
+                        Aprovar Selecionados
+                      </button>
+                    </div>
+                  </section>
+                )}
+
                 {dashboard.isLoading ? (
                   <p className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-8 text-center font-semibold text-[var(--color-text-muted)]" aria-live="polite">
                     Carregando apontamentos da equipe...
@@ -470,6 +520,9 @@ export function SupervisorPage() {
                   <SupervisorEntriesTable
                     entries={filteredEntries}
                     isMutating={dashboard.isMutating}
+                    selectedIds={selectedIds}
+                    onToggleAll={toggleAllVisibleEntries}
+                    onToggleEntry={toggleSelectedEntry}
                     onApprove={(entry) => void dashboard.approve(entry)}
                     onReject={(entry) => {
                       setRejectionError(null)
