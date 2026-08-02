@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
-import * as XLSX from 'xlsx'
+import ExcelJS from 'exceljs'
+import { saveAs } from 'file-saver'
 import { BrandMark } from '../components/BrandMark'
 import { StatusBadge } from '../components/StatusBadge'
 import { ThemeToggle } from '../components/ThemeToggle'
@@ -339,18 +340,70 @@ export function SupervisorPage() {
     setSupervisorProfile(profile)
   }
 
-  function handleExportToExcel() {
-    const rows = filteredEntries.map((entry) => ({
-      Colaborador: entry.collaboratorName,
-      Data: entry.entryDate,
-      Projeto: entry.projectCode,
-      Horas: formatMinutes(entry.durationMinutes),
-      Status: entryStatusLabel[entry.status],
-    }))
-    const worksheet = XLSX.utils.json_to_sheet(rows)
-    const workbook = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Apontamentos')
-    XLSX.writeFile(workbook, `apontamentos_equipe_${getCorporateToday()}.xlsx`)
+  async function handleExportToExcel() {
+    const workbook = new ExcelJS.Workbook()
+    workbook.creator = 'SM&A Apontamento de Horas'
+    workbook.created = new Date()
+
+    const worksheet = workbook.addWorksheet('Apontamentos')
+    worksheet.columns = [
+      { header: 'Colaborador', key: 'colaborador', width: 30 },
+      { header: 'Data', key: 'data', width: 15 },
+      { header: 'Projeto', key: 'projeto', width: 35 },
+      { header: 'Horas', key: 'horas', width: 15 },
+      { header: 'Status', key: 'status', width: 20 },
+    ]
+
+    worksheet.getRow(1).eachCell((cell) => {
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F3A52' } }
+      cell.font = { bold: true, color: { argb: 'FFFFFFFF' } }
+      cell.alignment = { vertical: 'middle', horizontal: 'center' }
+      cell.border = {
+        top: { style: 'thin', color: { argb: 'FF1F3A52' } },
+        left: { style: 'thin', color: { argb: 'FF1F3A52' } },
+        bottom: { style: 'thin', color: { argb: 'FF1F3A52' } },
+        right: { style: 'thin', color: { argb: 'FF1F3A52' } },
+      }
+    })
+    worksheet.getRow(1).height = 24
+
+    filteredEntries.forEach((entry) => {
+      const row = worksheet.addRow({
+        colaborador: entry.collaboratorName,
+        data: entry.entryDate,
+        projeto: entry.projectCode,
+        horas: formatMinutes(entry.durationMinutes),
+        status: entryStatusLabel[entry.status],
+      })
+      const statusCell = row.getCell('status')
+      const statusStyles: Record<SupervisorPendingEntry['status'], { fill: string, font: string }> = {
+        APPROVED: { fill: 'FFE2F0D9', font: 'FF166534' },
+        REJECTED: { fill: 'FFFCE4D6', font: 'FF991B1B' },
+        PENDING: { fill: 'FFFFF2CC', font: 'FF92400E' },
+      }
+      const style = statusStyles[entry.status]
+      statusCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: style.fill } }
+      statusCell.font = { bold: true, color: { argb: style.font } }
+      statusCell.alignment = { vertical: 'middle', horizontal: 'center' }
+    })
+
+    worksheet.eachRow((row, rowNumber) => {
+      if (rowNumber > 1) row.height = 22
+      row.eachCell((cell, colNumber) => {
+        cell.border = {
+          top: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+          left: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+          bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+          right: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+        }
+        cell.alignment = { vertical: 'middle', horizontal: colNumber === 4 ? 'center' : 'left' }
+      })
+    })
+    worksheet.autoFilter = 'A1:E1'
+    worksheet.views = [{ state: 'frozen', ySplit: 1 }]
+
+    const buffer = await workbook.xlsx.writeBuffer()
+    saveAs(new Blob([buffer]), 'Relatorio_Horas_SMA.xlsx')
   }
 
   function toggleAllVisibleEntries(checked: boolean) {
