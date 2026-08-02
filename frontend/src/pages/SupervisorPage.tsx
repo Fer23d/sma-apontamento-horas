@@ -259,6 +259,7 @@ export function SupervisorPage() {
   const [supervisorProfile, setSupervisorProfile] = useState<SupervisorProfile>(() => readSupervisorProfile())
   const [collaboratorFilter, setCollaboratorFilter] = useState('ALL')
   const [statusFilter, setStatusFilter] = useState<EntryStatusFilter>('ALL')
+  const [filtroProjeto, setFiltroProjeto] = useState('Todos')
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [rejectionTarget, setRejectionTarget] = useState<RejectionTarget | null>(null)
   const [rejectionError, setRejectionError] = useState<string | null>(null)
@@ -273,9 +274,14 @@ export function SupervisorPage() {
   const filteredEntries = useMemo(() => dashboard.entries.filter((entry) => {
     const matchesCollaborator = collaboratorFilter === 'ALL' || entry.collaboratorId === collaboratorFilter
     const matchesStatus = statusFilter === 'ALL' || entry.status === statusFilter
+    const matchesProject = filtroProjeto === 'Todos' || entry.projectCode === filtroProjeto
     const matchesDate = entry.entryDate >= appliedRange.startDate && entry.entryDate <= appliedRange.endDate
-    return matchesCollaborator && matchesStatus && matchesDate
-  }), [appliedRange.endDate, appliedRange.startDate, collaboratorFilter, dashboard.entries, statusFilter])
+    return matchesCollaborator && matchesStatus && matchesProject && matchesDate
+  }), [appliedRange.endDate, appliedRange.startDate, collaboratorFilter, dashboard.entries, filtroProjeto, statusFilter])
+
+  const projectOptions = useMemo(() => (
+    ['Todos', ...Array.from(new Set(dashboard.entries.map((entry) => entry.projectCode))).sort()]
+  ), [dashboard.entries])
 
   const rangedEntries = useMemo(() => dashboard.entries.filter((entry) => (
     entry.entryDate >= appliedRange.startDate && entry.entryDate <= appliedRange.endDate
@@ -474,7 +480,7 @@ export function SupervisorPage() {
                   )}
                 </section>
 
-                <section className="grid gap-3 rounded-2xl border ui-border ui-surface p-4 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_auto]" aria-label="Filtros de apontamentos">
+                <section className="grid gap-3 rounded-2xl border ui-border ui-surface p-4 sm:grid-cols-2 xl:grid-cols-[1fr_1fr_1fr_auto]" aria-label="Filtros de apontamentos">
                   <label className="text-sm font-bold ui-text">
                     Colaborador
                     <select value={collaboratorFilter} onChange={(event) => setCollaboratorFilter(event.target.value)} className="mt-1 block w-full ui-field rounded-xl px-3 py-2 font-normal ui-text">
@@ -491,6 +497,14 @@ export function SupervisorPage() {
                       <option value="PENDING">Pendentes</option>
                       <option value="APPROVED">Aprovados</option>
                       <option value="REJECTED">Rejeitados</option>
+                    </select>
+                  </label>
+                  <label className="text-sm font-bold ui-text">
+                    Projeto
+                    <select value={filtroProjeto} onChange={(event) => setFiltroProjeto(event.target.value)} className="mt-1 block w-full ui-field rounded-xl px-3 py-2 font-normal ui-text">
+                      {projectOptions.map((project) => (
+                        <option key={project} value={project}>{project === 'Todos' ? 'Todos os Projetos' : project}</option>
+                      ))}
                     </select>
                   </label>
                   <button type="button" onClick={handleExportToExcel} disabled={filteredEntries.length === 0} className="self-end rounded-xl border ui-border px-4 py-2.5 text-sm font-bold text-[var(--color-primary)] transition hover:border-[var(--color-primary)] hover:bg-[var(--color-surface-subtle)] disabled:cursor-not-allowed disabled:opacity-40">
