@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import * as XLSX from 'xlsx'
 import { BrandMark } from '../components/BrandMark'
 import { StatusBadge } from '../components/StatusBadge'
@@ -19,6 +20,11 @@ type EntryStatusFilter = 'ALL' | SupervisorPendingEntry['status']
 type RejectionTarget =
   | { type: 'entry', item: SupervisorPendingEntry }
   | { type: 'time-off', item: SupervisorTimeOffRequest }
+
+type ProjectHoursRow = {
+  projeto: string
+  horas: number
+}
 
 const entryStatusLabel: Record<SupervisorPendingEntry['status'], string> = {
   PENDING: 'Pendente',
@@ -283,6 +289,19 @@ export function SupervisorPage() {
     { pending: 0, approved: 0, rejected: 0 },
   ), [rangedEntries])
 
+  const projectHoursData = useMemo<ProjectHoursRow[]>(() => {
+    const hoursByProject = new Map<string, number>()
+    for (const entry of filteredEntries) {
+      const hoursAsText = formatMinutes(entry.durationMinutes)
+      const [hours = '0', minutes = '0'] = hoursAsText.split(':')
+      const decimalHours = Number(hours) + Number(minutes) / 60
+      hoursByProject.set(entry.projectCode, (hoursByProject.get(entry.projectCode) ?? 0) + decimalHours)
+    }
+    return Array.from(hoursByProject.entries())
+      .map(([projeto, horas]) => ({ projeto, horas: Number(horas.toFixed(2)) }))
+      .sort((left, right) => right.horas - left.horas)
+  }, [filteredEntries])
+
   function applyRange() {
     if (!isIsoDate(range.startDate) || !isIsoDate(range.endDate) || range.startDate > range.endDate) {
       setRangeError('Informe um intervalo válido, com a data inicial anterior à data final.')
@@ -392,6 +411,31 @@ export function SupervisorPage() {
                   <SummaryCard label="Pendentes" value={rangedSummary.pending} helper="Apontamentos aguardando validação no período." />
                   <SummaryCard label="Aprovados" value={rangedSummary.approved} helper="Registros já aprovados pela supervisão." />
                   <SummaryCard label="Rejeitados" value={rangedSummary.rejected} helper="Registros devolvidos com motivo informado." />
+                </section>
+
+                <section className="rounded-2xl border ui-border ui-surface p-5 shadow-sm" aria-labelledby="project-hours-chart-title">
+                  <div className="mb-4">
+                    <p className="text-xs font-bold uppercase tracking-wider ui-text-subtle">Dashboard</p>
+                    <h2 id="project-hours-chart-title" className="mt-1 text-lg font-extrabold ui-heading">Horas por Projeto</h2>
+                    <p className="mt-1 text-sm ui-text-muted">Total de horas dos apontamentos visíveis na tabela.</p>
+                  </div>
+                  {projectHoursData.length === 0 ? (
+                    <p className="rounded-xl border ui-border p-8 text-center text-sm font-semibold ui-text-muted">Nenhum apontamento filtrado para gerar o gráfico.</p>
+                  ) : (
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={projectHoursData} margin={{ top: 8, right: 12, left: 0, bottom: 44 }}>
+                        <XAxis dataKey="projeto" tick={{ fill: 'var(--color-text-muted)', fontSize: 12 }} angle={-25} textAnchor="end" interval={0} />
+                        <YAxis tick={{ fill: 'var(--color-text-muted)', fontSize: 12 }} />
+                        <Tooltip
+                          cursor={{ fill: 'rgb(255 255 255 / 0.06)' }}
+                          contentStyle={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '0.75rem', color: 'var(--color-text)' }}
+                          labelStyle={{ color: 'var(--color-text)' }}
+                          formatter={(value) => [`${Number(value).toFixed(2)} h`, 'Horas']}
+                        />
+                        <Bar dataKey="horas" fill="var(--color-primary)" radius={[8, 8, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  )}
                 </section>
 
                 <section className="grid gap-3 rounded-2xl border ui-border ui-surface p-4 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_auto]" aria-label="Filtros de apontamentos">
