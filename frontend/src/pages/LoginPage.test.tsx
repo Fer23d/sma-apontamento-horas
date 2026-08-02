@@ -1,8 +1,11 @@
 import { isValidElement, type ButtonHTMLAttributes, type ReactElement, type ReactNode } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { MemoryRouter, type NavigateFunction } from 'react-router-dom'
+import { PublicClientApplication } from '@azure/msal-browser'
+import { MsalProvider } from '@azure/msal-react'
 import { describe, expect, it, vi } from 'vitest'
 import { ThemeContext } from '../app/themeContext'
+import { msalConfig } from '../authConfig'
 import { SessionContext, type SessionContextValue } from '../features/session/sessionContext'
 import type { DemoRole, DemoSession } from '../features/session/types'
 import { LoginPage, LoginPageContent } from './LoginPage'
@@ -28,6 +31,7 @@ function sessionFor(role: DemoRole): DemoSession {
 }
 
 function renderLogin(from?: string) {
+  const msalInstance = new PublicClientApplication(msalConfig)
   const value: SessionContextValue = {
     session: null,
     profile: null,
@@ -38,11 +42,13 @@ function renderLogin(from?: string) {
 
   return renderToStaticMarkup(
     <MemoryRouter initialEntries={[{ pathname: '/login', state: from ? { from } : null }]}>
-      <ThemeContext.Provider value={{ theme: 'light', toggleTheme: vi.fn() }}>
-        <SessionContext.Provider value={value}>
-          <LoginPage />
-        </SessionContext.Provider>
-      </ThemeContext.Provider>
+      <MsalProvider instance={msalInstance}>
+        <ThemeContext.Provider value={{ theme: 'light', toggleTheme: vi.fn() }}>
+          <SessionContext.Provider value={value}>
+            <LoginPage />
+          </SessionContext.Provider>
+        </ThemeContext.Provider>
+      </MsalProvider>
     </MemoryRouter>,
   )
 }
@@ -69,7 +75,8 @@ describe('LoginPage', () => {
       'Entrar como Diretor/Administração',
     ]) expect(markup).toContain(label)
     expect(markup.match(/<img/g) ?? []).toHaveLength(1)
-    expect(markup).not.toMatch(/type="password"|Microsoft Login|Entrar com Microsoft/i)
+    expect(markup).toContain('Entrar com Microsoft')
+    expect(markup).not.toMatch(/type="password"|Microsoft Login/i)
   })
 
   it('exige um perfil explícito no contrato TypeScript de signIn', () => {
@@ -82,6 +89,8 @@ describe('LoginPage', () => {
     const content = LoginPageContent({
       from: undefined,
       signIn,
+      handleLogin: vi.fn(),
+      authError: null,
       navigate: navigate as NavigateFunction,
     })
     const buttons = findButtons(content).filter((button) => String(button.props.children).startsWith('Entrar como'))
@@ -103,6 +112,8 @@ describe('LoginPage', () => {
     const content = LoginPageContent({
       from: '/supervisor?periodo=atual#equipe',
       signIn,
+      handleLogin: vi.fn(),
+      authError: null,
       navigate: navigate as NavigateFunction,
     })
     const buttons = findButtons(content).filter((button) => String(button.props.children).startsWith('Entrar como'))

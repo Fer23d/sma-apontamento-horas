@@ -1,4 +1,7 @@
 import { useLocation, useNavigate, type NavigateFunction } from 'react-router-dom'
+import { useState } from 'react'
+import { useMsal } from '@azure/msal-react'
+import { loginRequest } from '../authConfig'
 import { BrandMark } from '../components/BrandMark'
 import { ThemeToggle } from '../components/ThemeToggle'
 import { canAccessDemoPath, getDemoHomePath } from '../features/session/routePolicy'
@@ -37,10 +40,12 @@ const DEMO_PROFILE_CARDS: readonly DemoProfileCard[] = [
 type LoginPageContentProps = {
   from: unknown
   signIn: SessionContextValue['signIn']
+  handleLogin: () => Promise<void>
+  authError: string | null
   navigate: NavigateFunction
 }
 
-export function LoginPageContent({ from, signIn, navigate }: LoginPageContentProps) {
+export function LoginPageContent({ from, signIn, handleLogin, authError, navigate }: LoginPageContentProps) {
   const enterDemo = (role: DemoRole) => {
     const destination = typeof from === 'string' && canAccessDemoPath(role, from)
       ? from
@@ -62,6 +67,10 @@ export function LoginPageContent({ from, signIn, navigate }: LoginPageContentPro
           <p className="mt-4 text-sm leading-6 text-[var(--color-text-muted)] sm:text-base">
             Entre sem senha para conhecer o ambiente. Este acesso é apenas demonstrativo e não realiza autenticação real.
           </p>
+          <button type="button" onClick={() => void handleLogin()} className="ui-button-secondary mt-6">
+            Entrar com Microsoft
+          </button>
+          {authError && <p role="alert" className="mt-3 text-sm font-semibold text-[var(--color-danger)]">{authError}</p>}
         </header>
 
         <div className="grid gap-5 md:grid-cols-3">
@@ -85,9 +94,28 @@ export function LoginPageContent({ from, signIn, navigate }: LoginPageContentPro
 
 export function LoginPage() {
   const { signIn } = useSession()
+  const { instance } = useMsal()
   const navigate = useNavigate()
   const location = useLocation()
   const from = (location.state as { from?: unknown } | null)?.from
+  const [authError, setAuthError] = useState<string | null>(null)
 
-  return <LoginPageContent from={from} signIn={signIn} navigate={navigate} />
+  async function handleLogin() {
+    setAuthError(null)
+    try {
+      const response = await instance.loginPopup(loginRequest)
+      const account = response.account
+      if (account) {
+        window.localStorage.setItem('sma:microsoft-user:v1', JSON.stringify({
+          name: account.name ?? account.username,
+          email: account.username,
+          homeAccountId: account.homeAccountId,
+        }))
+      }
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : 'Não foi possível autenticar com a Microsoft.')
+    }
+  }
+
+  return <LoginPageContent from={from} signIn={signIn} handleLogin={handleLogin} authError={authError} navigate={navigate} />
 }
