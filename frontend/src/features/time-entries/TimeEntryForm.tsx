@@ -35,9 +35,24 @@ export function TimeEntryForm({ entryId }: { entryId?: string }) {
           <Link className="mt-2 inline-block font-bold underline" to={`/colaborador?date=${controller.values.entryDate}`}>Ver resumo atualizado do dia</Link>
         </div>
       )}
-      {controller.submitError && <p role="alert" className="rounded-xl border border-red-300 bg-red-50 p-4 text-sm font-semibold text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200">{controller.submitError}</p>}
-
       <TimeEntryFields values={controller.values} errors={controller.errors} maxDate={getCorporateToday()} onChange={controller.setField} />
+
+      <fieldset>
+        <legend className="text-sm font-bold ui-text">Período do apontamento</legend>
+        <p className="mt-1 text-xs ui-text-subtle">Informe o horário inicial e final. A duração será calculada a partir desse intervalo.</p>
+        <div className="mt-2 grid max-w-sm grid-cols-2 gap-3">
+          <div>
+            <label htmlFor="start-time" className="text-xs font-semibold ui-text-muted">Início</label>
+            <input id="start-time" name="startTime" type="time" value={controller.values.startTime} onChange={(event) => controller.setField('startTime', event.target.value)} className={fieldClassName} aria-invalid={Boolean(controller.errors.startTime)} aria-describedby={controller.errors.startTime ? 'start-time-error' : undefined} />
+            <FieldError id="start-time-error" message={controller.errors.startTime} />
+          </div>
+          <div>
+            <label htmlFor="end-time" className="text-xs font-semibold ui-text-muted">Fim</label>
+            <input id="end-time" name="endTime" type="time" value={controller.values.endTime} onChange={(event) => controller.setField('endTime', event.target.value)} className={fieldClassName} aria-invalid={Boolean(controller.errors.endTime)} aria-describedby={controller.errors.endTime ? 'end-time-error' : undefined} />
+            <FieldError id="end-time-error" message={controller.errors.endTime} />
+          </div>
+        </div>
+      </fieldset>
 
       <fieldset>
         <legend className="text-sm font-bold ui-text">Duração em horas e minutos</legend>
@@ -70,11 +85,14 @@ export function TimeEntryForm({ entryId }: { entryId?: string }) {
         </div>
       )}
 
-      <div className="flex flex-col-reverse gap-3 border-t ui-border pt-5 sm:flex-row sm:justify-end">
-        <Link to="/colaborador/historico" className="rounded-xl border ui-border px-5 py-3 text-center text-sm font-bold ui-text hover:bg-[var(--color-surface-subtle)]">Voltar ao histórico</Link>
-        <button type="submit" disabled={controller.isSubmitting} className="rounded-xl ui-button-primary px-6 py-3 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-60">
-          {controller.isSubmitting ? 'Salvando…' : submitLabel}
-        </button>
+      <div className="space-y-3 border-t ui-border pt-5">
+        {controller.submitError && <p role="alert" className="text-sm font-semibold text-red-600 dark:text-red-400 sm:text-right">{controller.submitError}</p>}
+        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+          <Link to="/colaborador/historico" className="rounded-xl border ui-border px-5 py-3 text-center text-sm font-bold ui-text hover:bg-[var(--color-surface-subtle)]">Voltar ao histórico</Link>
+          <button type="submit" disabled={controller.isSubmitting} className="rounded-xl ui-button-primary px-6 py-3 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-60">
+            {controller.isSubmitting ? 'Salvando…' : submitLabel}
+          </button>
+        </div>
       </div>
     </form>
   )

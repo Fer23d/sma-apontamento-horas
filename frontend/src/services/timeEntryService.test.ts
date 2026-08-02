@@ -53,6 +53,8 @@ const validData: CreateTimeEntryData = {
   activityId: 'activity-project-design',
   disciplineCode: '—',
   documentTypeCode: '—',
+  startTime: '08:00',
+  endTime: '09:00',
   durationMinutes: 60,
   details: 'Teste de persistência',
 }
@@ -65,6 +67,8 @@ function v2Entry(overrides: Record<string, unknown> = {}) {
     clientId: 'client-industrial-alpha',
     projectCode: 'LEG-001',
     activityId: 'activity-project-design',
+    startTime: '08:00',
+    endTime: '09:00',
     durationMinutes: 60,
     details: 'Registro legado v2',
     status: 'ACTIVE',
@@ -365,6 +369,8 @@ describe('comandos e consultas de apontamento', () => {
 
     const duplicate = await service.duplicate(collaboratorId, created.id, created.version, {
       entryDate: '2026-07-14',
+      startTime: '09:00',
+      endTime: '10:30',
       durationMinutes: 90,
     })
 
@@ -439,8 +445,8 @@ describe('comandos e consultas de apontamento', () => {
     let nextId = 0
     const service = buildService(storage, { createId: () => `entry-${++nextId}` })
     await service.create(collaboratorId, validData)
-    await service.create(collaboratorId, { ...validData, entryDate: '2026-07-14', clientId: 'client-energy-beta', projectCode: 'BET-001' })
-    await service.create(collaboratorId, { ...validData, entryDate: '2026-07-15', projectCode: 'SMA-003' })
+    await service.create(collaboratorId, { ...validData, entryDate: '2026-07-14', clientId: 'client-energy-beta', projectCode: 'BET-001', startTime: '09:00', endTime: '10:00' })
+    await service.create(collaboratorId, { ...validData, entryDate: '2026-07-15', projectCode: 'SMA-003', startTime: '10:00', endTime: '11:00' })
 
     const firstPage = await service.list({ collaboratorId, startDate: '2026-07-01', endDate: '2026-07-31', pageSize: 2 })
     const filtered = await service.list({ collaboratorId, startDate: '2026-07-01', endDate: '2026-07-31', pageSize: 10, filters: { clientId: 'client-energy-beta' } })

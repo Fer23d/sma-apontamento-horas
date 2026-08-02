@@ -35,6 +35,17 @@ export function formatSignedMinutes(totalMinutes: number) {
   return `${totalMinutes > 0 ? '+' : '-'}${formatMinutes(totalMinutes)}`
 }
 
+export function timeToMinutes(time: string) {
+  if (!/^\d{2}:\d{2}$/.test(time)) return null
+  const [hours, minutes] = time.split(':').map(Number)
+  if (!Number.isInteger(hours) || !Number.isInteger(minutes) || hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return null
+  return hours * 60 + minutes
+}
+
+export function periodsOverlap(newStart: number, newEnd: number, existingStart: number, existingEnd: number) {
+  return newStart < existingEnd && newEnd > existingStart
+}
+
 export function isValidDuration(durationMinutes: number) {
   return Number.isInteger(durationMinutes) && durationMinutes > 0 && durationMinutes <= MAX_ENTRY_MINUTES
 }
@@ -64,6 +75,13 @@ export function validateTimeEntry(
   if (!['—', 'A', 'E'].includes(data.disciplineCode)) errors.disciplineCode = 'Selecione uma disciplina.'
   if (!['—', 'RN', 'GR', 'G', 'FD', 'DE', 'LM', 'DI', 'LC', 'LI', 'ET', 'MC', 'MO', 'MD', 'FG', 'LA', 'ES', 'CF'].includes(data.documentTypeCode)) {
     errors.documentTypeCode = 'Selecione um tipo de documento.'
+  }
+  if (!data.startTime || timeToMinutes(data.startTime) === null) errors.startTime = 'Informe o horário inicial.'
+  if (!data.endTime || timeToMinutes(data.endTime) === null) errors.endTime = 'Informe o horário final.'
+  if (data.startTime && data.endTime) {
+    const startMinutes = timeToMinutes(data.startTime)
+    const endMinutes = timeToMinutes(data.endTime)
+    if (startMinutes !== null && endMinutes !== null && endMinutes <= startMinutes) errors.endTime = 'O horário final deve ser posterior ao inicial.'
   }
   if (!isValidDuration(data.durationMinutes)) errors.durationMinutes = 'A duração deve ser maior que zero e de no máximo 24 horas.'
   if (!data.details.trim()) errors.details = 'Descreva o trabalho realizado.'
