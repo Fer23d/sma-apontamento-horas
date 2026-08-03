@@ -26,7 +26,7 @@ export function useProfile() {
 
   const load = useCallback(async () => {
     if (!sessionProfile) {
-      setState({ data: null, isLoading: false, error: 'Sessão demonstrativa não encontrada.' })
+      setState({ data: null, isLoading: false, error: 'Sessão corporativa não encontrada.' })
       return
     }
     setState((current) => ({ ...current, isLoading: true, error: null }))
@@ -59,7 +59,7 @@ export function useProfile() {
   useEffect(() => { void load() }, [load])
 
   const runAndReload = useCallback(async (operation: (collaboratorId: string) => Promise<unknown>) => {
-    if (!sessionProfile) throw new Error('Sessão demonstrativa não encontrada.')
+    if (!sessionProfile) throw new Error('Sessão corporativa não encontrada.')
     setIsSaving(true)
     try {
       await operation(sessionProfile.id)

@@ -15,7 +15,7 @@ const assignment = {
   squadId: 'squad-automation',
   squadName: 'Engenharia de Automação',
   supervisorId: 'supervisor-1',
-  supervisorName: 'Supervisora Demonstração',
+  supervisorName: 'Jeen Carlos E. Azevedo',
 }
 
 function approval(status: DayApproval['status']): DayApproval {

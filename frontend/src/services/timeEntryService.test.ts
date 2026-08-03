@@ -43,7 +43,7 @@ const assignment: AssignmentSnapshot = {
   squadId: 'squad-automation',
   squadName: 'Engenharia de Automação',
   supervisorId: 'supervisor-demo-001',
-  supervisorName: 'Supervisora Demonstração',
+  supervisorName: 'Jeen Carlos E. Azevedo',
 }
 
 const validData: CreateTimeEntryData = {

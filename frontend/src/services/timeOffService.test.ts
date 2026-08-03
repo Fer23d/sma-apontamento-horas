@@ -16,7 +16,7 @@ class MemoryStorage implements StorageLike {
 
 const assignment: AssignmentSnapshot = {
   squadId: 'squad-automation', squadName: 'Engenharia de Automação',
-  supervisorId: 'supervisor-demo-001', supervisorName: 'Supervisora Demonstração',
+  supervisorId: 'supervisor-demo-001', supervisorName: 'Jeen Carlos E. Azevedo',
 }
 
 function buildService(storage: StorageLike, today = '2026-07-20') {

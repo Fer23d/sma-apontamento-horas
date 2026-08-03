@@ -60,12 +60,12 @@ export function LoginPageContent({ from, signIn, handleLogin, authError, navigat
       <section className="w-full max-w-6xl" aria-labelledby="demo-login-title">
         <header className="mx-auto mb-10 flex max-w-2xl flex-col items-center text-center">
           <BrandMark variant="full" className="mb-7" />
-          <p className="ui-badge-secondary">Ambiente de demonstração</p>
+          <p className="ui-badge-secondary">Ambiente corporativo</p>
           <h1 id="demo-login-title" className="mt-4 text-3xl font-extrabold text-[var(--color-primary)] sm:text-4xl">
             Escolha seu perfil
           </h1>
           <p className="mt-4 text-sm leading-6 text-[var(--color-text-muted)] sm:text-base">
-            Entre sem senha para conhecer o ambiente. Este acesso é apenas demonstrativo e não realiza autenticação real.
+            Acesse o sistema pelo perfil adequado ao seu fluxo de trabalho. A autenticação corporativa pode ser usada quando configurada.
           </p>
           <button type="button" onClick={() => void handleLogin()} className="ui-button-secondary mt-6">
             Entrar com Microsoft
@@ -77,7 +77,7 @@ export function LoginPageContent({ from, signIn, handleLogin, authError, navigat
           {DEMO_PROFILE_CARDS.map((profile) => (
             <article key={profile.role} className="profile-card ui-card flex min-h-64 flex-col rounded-2xl p-6 transition-all duration-300 hover:-translate-y-2 hover:shadow-lg">
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-secondary)]">
-                Perfil demonstrativo
+                Perfil de acesso
               </p>
               <h2 className="mt-3 text-xl font-extrabold text-[var(--color-text)]">{profile.name}</h2>
               <p className="mt-3 flex-1 text-sm leading-6 text-[var(--color-text-muted)]">{profile.description}</p>

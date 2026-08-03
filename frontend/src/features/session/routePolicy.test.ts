@@ -9,7 +9,7 @@ import {
 
 const collaboratorSession: DemoSession = {
   id: 'demo-collaborator-001',
-  name: 'Colaborador Demonstração',
+  name: 'Colaborador',
   role: 'COLLABORATOR',
   createdAt: '2026-07-21T15:30:00.000Z',
   explicitLoginAt: '2026-07-21T15:30:00.000Z',
@@ -17,7 +17,7 @@ const collaboratorSession: DemoSession = {
   version: 2,
 }
 
-describe('política de rotas da demonstração', () => {
+describe('política de rotas da produção', () => {
   it.each<[DemoRole, string]>([
     ['COLLABORATOR', '/colaborador'],
     ['SUPERVISOR', '/supervisor'],

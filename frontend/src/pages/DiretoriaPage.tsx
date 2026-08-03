@@ -121,7 +121,7 @@ function DiretoriaSidebar({ onSignOut }: { onSignOut: () => void }) {
       </nav>
       <div className="border-t border-[var(--color-sidebar-border)] p-4">
         <button type="button" onClick={onSignOut} className="w-full rounded-xl border border-[var(--color-sidebar-border)] px-4 py-3 text-left text-sm font-bold text-[var(--color-sidebar-text)] hover:bg-[var(--color-navigation-hover)]">
-          Sair da demonstração
+          Sair do sistema
         </button>
       </div>
     </aside>
@@ -210,7 +210,7 @@ export function DiretoriaPage() {
                   <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-secondary)]">Dashboard</p>
                   <h2 id="project-allocation-title" className="mt-1 text-xl font-extrabold text-[var(--color-text)]">Alocação de Tempo por Projeto</h2>
                 </div>
-                <p className="text-sm text-[var(--color-text-muted)]">{entries.length > 0 ? 'Dados reais do localStorage' : 'Dados demonstrativos para aprovação visual'}</p>
+                <p className="text-sm text-[var(--color-text-muted)]">{entries.length > 0 ? 'Dados reais do localStorage' : 'Dados corporativos para aprovação visual'}</p>
               </div>
               <div className="h-[320px]">
                 <ResponsiveContainer width="100%" height="100%">

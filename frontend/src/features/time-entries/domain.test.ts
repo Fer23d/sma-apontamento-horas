@@ -61,7 +61,7 @@ describe('validações e formatação', () => {
     disciplineCode: '—',
     documentTypeCode: '—',
     durationMinutes: 60,
-    details: 'Atividade demonstrativa',
+    details: 'Atividade corporativa',
   } as CreateTimeEntryData
 
   it('rejeita número do projeto composto somente por espaços', () => {

@@ -115,20 +115,20 @@ describe('calendário acessível', () => {
     expect(markup).toContain('data-calendar-placeholder="true" aria-hidden="true"')
   })
 
-  it('explica que o calendário é demonstrativo sem expor termos técnicos', () => {
+  it('explica que o calendário é corporativo sem expor termos técnicos', () => {
     const markup = renderToStaticMarkup(<MonthlyCalendar monthKey="2026-07" selectedDate="2026-07-20" days={[]} onMonthChange={vi.fn()} onSelectDate={vi.fn()} />)
 
-    expect(markup).toContain('Calendário de demonstração: os feriados nacionais, estaduais e municipais ainda não estão integrados a uma fonte oficial.')
+    expect(markup).toContain('Calendário corporativo: os feriados nacionais, estaduais e municipais ainda não estão integrados a uma fonte oficial.')
     expect(markup).toContain('role="note"')
     expect(markup).not.toContain('HolidayProvider')
-    expect(markup).not.toContain('provider demonstrativo')
+    expect(markup).not.toContain('provider corporativo')
   })
 
   it('sinaliza registro histórico conflitante com evento integral', () => {
     const summary = { ...day('2026-07-20', 'VACATION'), hasIntegralEventConflict: true }
     const markup = renderToStaticMarkup(<DayDetails summary={summary} events={[{
       id: 'vacation-1', collaboratorId: 'demo-collaborator-001', type: 'VACATION', startDate: '2026-07-20', endDate: '2026-07-20',
-      title: 'Férias demonstrativas', source: 'DEMO', createdAt: '2026-07-01T12:00:00.000Z',
+      title: 'Férias corporativas', source: 'DEMO', createdAt: '2026-07-01T12:00:00.000Z',
     }]} approval={approval} />)
 
     expect(markup).toContain('Conflito com evento integral')

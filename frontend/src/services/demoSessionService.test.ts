@@ -52,7 +52,7 @@ function expectDomainDataPreserved(storage: SessionStorage) {
 function validSession(overrides: Partial<DemoSession> = {}): DemoSession {
   return {
     id: 'demo-collaborator-001',
-    name: 'Colaborador Demonstração',
+    name: 'Colaborador',
     role: 'COLLABORATOR',
     createdAt: NOW,
     explicitLoginAt: NOW,

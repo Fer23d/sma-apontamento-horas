@@ -63,7 +63,7 @@
 - [ ] Executar testes alvo e confirmar que as datas adjacentes ainda são botões.
 - [ ] Implementar união `placeholder | day` e preencher somente as semanas usadas.
 - [ ] Renderizar placeholder como elemento não interativo, `aria-hidden`, sem data ou handler.
-- [ ] Trocar o aviso pela frase de calendário demonstrativo aprovada, com `role="note"`.
+- [ ] Trocar o aviso pela frase de calendário corporativo aprovada, com `role="note"`.
 - [ ] Executar testes alvo, lint e typecheck.
 - [ ] Commit: `fix(calendario): exibir somente dias do mes selecionado`.
 
@@ -165,7 +165,7 @@
 
 **Files:** Modify only an affected file after reproducing a defect and adding its regression test.
 
-- [ ] Iniciar Vite em `127.0.0.1:4173` e usar o acesso demonstrativo existente.
+- [ ] Iniciar Vite em `127.0.0.1:4173` e usar o acesso corporativo existente.
 - [ ] Visitar Visão geral, Novo apontamento, Histórico, Folgas e Perfil.
 - [ ] Validar 1920, 1440, 1024 e 390 px nos temas claro e escuro.
 - [ ] Validar drawer por clique, Tab, Shift+Tab, Escape, backdrop e navegação.

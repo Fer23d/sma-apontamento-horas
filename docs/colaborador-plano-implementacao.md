@@ -46,7 +46,7 @@ Não é necessário criar todas as pastas de uma vez. Cada etapa cria somente o 
 
 | Módulo | Responsabilidade | Componentes principais sugeridos | Hooks | Services | Tipos/utilitários | Dependências |
 |---|---|---|---|---|---|---|
-| `auth` | Sessão demonstrativa e contexto do usuário atual. | `DemoLogin`, `SessionGuard`, `CurrentUserBadge`. | `useSession`. | `demoSessionService`. | `Session`, `SessionUser`. | `profile`; roteamento. |
+| `auth` | Sessão corporativa e contexto do usuário atual. | `DemoLogin`, `SessionGuard`, `CurrentUserBadge`. | `useSession`. | `demoSessionService`. | `Session`, `SessionUser`. | `profile`; roteamento. |
 | `profile` | Perfil profissional somente leitura e referência da jornada. | `ProfileSummary`, `WorkProfileCard`. | `useProfile`. | `profileService`. | `ProfessionalProfile`, vigência. | `auth`, `workSchedules`. |
 | `collaborator` | Composição do dashboard e navegação da área individual. | `CollaboratorDashboard`, cards de resumo e atenção. | `useCollaboratorDashboard`. | `collaboratorSummaryService`. | `DashboardSummary`. | sessão, jornada, apontamentos, calendário. |
 | `timeEntries` | Criar, validar, listar, editar, duplicar e cancelar apontamentos. | `TimeEntryForm`, `TimeEntryFields`, `DurationInput`, `TimeEntryTable`, `EntryActions`, `EntryDetails`. | `useTimeEntryForm`, `useTimeEntries`, `useEntryActions`. | `timeEntryService`, adaptador local. | `TimeEntry`, comandos, filtros, paginação, validadores e formatadores. | sessão, catálogos, jornada. |
@@ -115,7 +115,7 @@ Utilitários de domínio, sem React ou armazenamento:
 
 A implementação passa a ser organizada por fluxos completos, cada um atravessando domínio, service, persistência, interface e testes:
 
-1. **Fatia 1 — sessão e apontamento diário básico (implementada):** sessão demonstrativa, perfil, jornada semanal, clientes e atividades simulados, número do projeto digitado, criação persistida localmente, dashboard e resumo diário.
+1. **Fatia 1 — sessão e apontamento diário básico (implementada):** sessão corporativa, perfil, jornada semanal, clientes e atividades simulados, número do projeto digitado, criação persistida localmente, dashboard e resumo diário.
 2. **Fatia 2 — histórico e ciclo de vida:** histórico paginado, edição versionada, duplicação, cancelamento lógico e motivos; rascunho persistido continua sujeito a decisão.
 3. **Fatia 3 — calendário e eventos:** calendário mensal e `CalendarEvent` para feriados, férias, afastamentos, folgas, compensações e exceções de jornada.
 4. **Fatia 4 — contexto técnico do projeto:** disciplina, tipo de documento, documentos da LD e percentual de avanço, sem antecipar administração/importação.
@@ -128,17 +128,17 @@ Visão agregada da squad, homologação, Supervisor, Diretor e integrações def
 
 Os blocos abaixo descrevem capacidades e dependências técnicas, não uma ordem de entregas horizontais.
 
-#### Capacidade — Sessão demonstrativa e perfil
+#### Capacidade — Sessão corporativa e perfil
 
 **Objetivo:** retirar conceitualmente a seleção livre de colaborador e estabelecer um único usuário atual com perfil/jornada visíveis.
 
 **Dependências:** rotas e layout existentes.
 
-**Entregáveis:** tipos de sessão/perfil, provider demonstrativo, guard de rotas, mock de um usuário, perfil somente leitura.
+**Entregáveis:** tipos de sessão/perfil, provider corporativo, guard de rotas, mock de um usuário, perfil somente leitura.
 
 **Critérios de conclusão:** todas as rotas conhecem o mesmo usuário; nenhuma UI permite escolher colega; jornada não depende de nome.
 
-**Riscos:** confundir sessão demonstrativa com segurança real; persistir dados entre usuários de teste.
+**Riscos:** confundir sessão corporativa com segurança real; persistir dados entre usuários de teste.
 
 **Não fazer:** autenticação real, Firebase, JWT, SSO, gestão de usuários.
 
@@ -356,7 +356,7 @@ Decisões bloqueantes devem ser resolvidas antes da etapa correspondente, em esp
 
 ## 8. Critérios globais de conclusão da fase do Colaborador
 
-- usuário demonstrativo único, sem seleção de colegas;
+- usuário corporativo único, sem seleção de colegas;
 - dados e comandos isolados pelo usuário da sessão;
 - apontamento tipado com campos condicionais;
 - jornada e saldo em minutos, centralizados e testados;
@@ -397,20 +397,20 @@ Esses pontos são **Fora do escopo da fase do Colaborador** e não devem gerar i
 
 ### Implementado
 
-- sessão demonstrativa por perfil, restaurada após recarregar e com opção de sair;
+- sessão corporativa por perfil, restaurada após recarregar e com opção de sair;
 - proteção das rotas do Colaborador e redirecionamentos de login;
 - perfil somente leitura com cargo, squad e jornada;
 - jornada semanal de 480 minutos de segunda a sexta e zero no fim de semana;
 - tipos `TimeEntry`, `DailySummary`, perfil, jornada e catálogos;
 - regras puras de conversão, formatação, validação, jornada, soma e resumo diário;
-- catálogo demonstrativo de clientes e vinte atividades; não há catálogo oficial de projetos nesta fase;
+- catálogo corporativo de clientes e vinte atividades; não há catálogo oficial de projetos nesta fase;
 - service com interface e adaptador `localStorage`, chave versionada e isolamento por colaborador;
 - formulário com data, cliente, número do projeto, atividade, duração e detalhamento;
 - dashboard com saldos reais locais por dia, mês, intervalo e total, além da lista do dia;
-- calendário mensal demonstrativo, eventos integrais/parciais e solicitações de folga;
+- calendário mensal corporativo, eventos integrais/parciais e solicitações de folga;
 - histórico paginado com filtros, edição, duplicação e cancelamento lógico;
 - perfil com squad ativa e carga horária versionada;
-- contrato demonstrativo de aprovação diária, sem tela funcional de Supervisor;
+- contrato corporativo de aprovação diária, sem tela funcional de Supervisor;
 - estados de carregamento, vazio, sucesso e erro;
 - navegação responsiva, foco visível e tema claro/escuro preservado;
 - testes unitários de domínio e persistência defensiva com Vitest.
@@ -426,7 +426,7 @@ Esses pontos são **Fora do escopo da fase do Colaborador** e não devem gerar i
 - o mapa de projetos antigos existe somente no módulo de migração como compatibilidade temporária, não como catálogo oficial;
 - perfil e catálogos são mocks sem nomes reais;
 - saldo é prévia local e não oficial;
-- `CalendarEvent` representa feriados, férias e afastamentos demonstrativos; folgas possuem coleção própria.
+- `CalendarEvent` representa feriados, férias e afastamentos corporativos; folgas possuem coleção própria.
 
 ### Pendências e limitações
 
@@ -435,8 +435,8 @@ Esses pontos são **Fora do escopo da fase do Colaborador** e não devem gerar i
 - feriados ainda não possuem fonte oficial completa;
 - disciplina e tipo documental existem como catálogos mínimos; documentos da LD e percentual de avanço permanecem fora do escopo;
 - sem exportação, visão agregada da squad ou homologação;
-- aprovação diária possui domínio/service demonstrativos e apresentação no dashboard/histórico; a tela funcional de Supervisor e a homologação corporativa permanecem fora do escopo;
-- storage local é demonstrativo, específico do navegador e não oferece segurança.
+- aprovação diária possui domínio/service corporativos e apresentação no dashboard/histórico; a tela funcional de Supervisor e a homologação corporativa permanecem fora do escopo;
+- storage local é corporativo, específico do navegador e não oferece segurança.
 
 ### Próximos passos recomendados
 
@@ -450,7 +450,7 @@ Esses pontos são **Fora do escopo da fase do Colaborador** e não devem gerar i
 A sequência corretiva que levou ao estado consolidado acima, detalhada em `docs/superpowers/plans/2026-07-20-rodada-corretiva-colaborador-implementation.md`, foi:
 
 1. corrigir shell, sidebar/drawer, foco e marca reutilizável;
-2. substituir datas adjacentes do calendário por placeholders inertes e esclarecer a origem demonstrativa dos feriados;
+2. substituir datas adjacentes do calendário por placeholders inertes e esclarecer a origem corporativa dos feriados;
 3. completar o catálogo com vinte atividades e remover a ação duplicada;
 4. remover projeção futura e limitar saldos reais ao dia atual;
 5. neutralizar conflitos de eventos integrais e bloquear novos lançamentos nessas datas;
@@ -458,4 +458,4 @@ A sequência corretiva que levou ao estado consolidado acima, detalhada em `docs
 7. destacar versões editadas sem alterar status de aprovação;
 8. verificar todas as páginas, temas, breakpoints, console e suíte integral.
 
-Essa rodada preserva `sma:time-entries:v3`, seus backups, auditoria, dados históricos e o acesso demonstrativo atual. Não cria autenticação, backend, fonte oficial de feriados, Supervisor ou Diretor.
+Essa rodada preserva `sma:time-entries:v3`, seus backups, auditoria, dados históricos e o acesso corporativo atual. Não cria autenticação, backend, fonte oficial de feriados, Supervisor ou Diretor.

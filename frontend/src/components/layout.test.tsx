@@ -24,7 +24,7 @@ const collaboratorSession: DemoSession = {
 const supervisorSession: DemoSession = {
   ...collaboratorSession,
   id: 'demo-supervisor-001',
-  name: 'Supervisor Demonstração',
+  name: 'Supervisor',
   role: 'SUPERVISOR',
 }
 
@@ -116,7 +116,7 @@ describe('layout responsivo do colaborador', () => {
   it('exibe o resumo profissional e todos os links principais na sidebar', () => {
     const markup = renderLayout()
 
-    expect(markup).toContain('Colaborador Demonstração')
+    expect(markup).toContain('Colaborador')
     expect(markup).toContain('Projetista')
     expect(markup).toContain('Engenharia de Automação')
     for (const label of ['Visão geral', 'Novo apontamento', 'Histórico', 'Ausências', 'Meu perfil']) {
@@ -177,7 +177,7 @@ describe('layout responsivo do colaborador', () => {
   })
 })
 
-describe('guardas da sessão demonstrativa', () => {
+describe('guardas da sessão corporativa', () => {
   it('autoriza a área pelo papel da sessão mesmo quando não existe perfil de colaborador', () => {
     const markup = renderGuard(
       <ProtectedRoute allowedRoles={['SUPERVISOR']}><p>Área da supervisão</p></ProtectedRoute>,

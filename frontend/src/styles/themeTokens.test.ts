@@ -19,7 +19,7 @@ import workloadHistorySource from '../features/workloads/WorkloadHistory.tsx?raw
 
 const hex = (value: string) => `#${value}`
 const stylesheet = readFileSync(new URL('./index.css', import.meta.url), 'utf8')
-const demonstrativeSources = Object.values(import.meta.glob('../{pages,features,components}/**/*.tsx', {
+const appUiSources = Object.values(import.meta.glob('../{pages,features,components}/**/*.tsx', {
   eager: true,
   import: 'default',
   query: '?raw',
@@ -326,11 +326,11 @@ describe('tokens institucionais e contraste', () => {
     expect(summaryCardSource).not.toContain('dark:border-amber')
   })
 
-  it('remove aliases temporarios e neutros estruturais antigos das areas demonstrativas', () => {
+  it('remove aliases temporarios e neutros estruturais antigos das areas corporativas', () => {
     const legacyBrandPattern = new RegExp(['sma', '(?:navy|green)'].join('-'))
 
     expect(stylesheet).not.toMatch(legacyBrandPattern)
-    for (const source of demonstrativeSources) {
+    for (const source of appUiSources) {
       expect(source).not.toMatch(legacyBrandPattern)
       expect(source).not.toMatch(/(?:bg|text|border|divide|ring)-slate-/)
       expect(source).not.toContain('rounded-xl-subtle')

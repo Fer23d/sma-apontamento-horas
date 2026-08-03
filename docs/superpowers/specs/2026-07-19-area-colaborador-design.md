@@ -2,7 +2,7 @@
 
 ## Contexto e objetivo
 
-Esta especificação consolida as regras aprovadas para evoluir o frontend React existente na branch `refactor/frontend-colaborador`. O resultado é uma área demonstrativa completa do Colaborador, responsiva e acessível, com regras de domínio testáveis e persistência local substituível por API.
+Esta especificação consolida as regras aprovadas para evoluir o frontend React existente na branch `refactor/frontend-colaborador`. O resultado é uma área corporativa completa do Colaborador, responsiva e acessível, com regras de domínio testáveis e persistência local substituível por API.
 
 O frontend React é a fonte de verdade. O arquivo legado `SMA_banco de horas 2.html` permanece intocado e serve apenas como referência visual. Não haverá backend, banco, autenticação real nem controles de Supervisor ou Diretor nesta entrega.
 
@@ -12,7 +12,7 @@ O frontend React é a fonte de verdade. O arquivo legado `SMA_banco de horas 2.h
 - Funções puras concentram datas civis, jornada, saldos, calendário e transições de estado.
 - Hooks coordenam carregamento, mutações e feedback de interface.
 - Repositórios assíncronos escondem `localStorage` e expõem contratos compatíveis com uma API futura.
-- Catálogos demonstrativos ficam isolados em `src/mocks` e nunca são tratados como fonte oficial.
+- Catálogos corporativos ficam isolados em `src/mocks` e nunca são tratados como fonte oficial.
 - Todo tempo é armazenado em minutos inteiros; a interface apresenta `HHhMM`.
 - Datas de negócio usam `YYYY-MM-DD` e o fuso corporativo configurável `America/Sao_Paulo`.
 - O usuário da sessão é o único dono dos dados consultados e modificados.
@@ -37,9 +37,9 @@ O layout mantém o design system atual: azul-marinho, verde, fundos claros/escur
 
 ## Identidade, perfil e vínculo
 
-`CollaboratorProfile` contém identidade, cargo, status ativo, localidade controlada, squad ativa e histórico de cargas. A demonstração usa um único colaborador, localidade São Paulo/SP, squad Engenharia de Automação e supervisor demonstrativo associado.
+`CollaboratorProfile` contém identidade, cargo, status ativo, localidade controlada, squad ativa e histórico de cargas. A produ??o usa um único colaborador, localidade São Paulo/SP, squad Engenharia de Automação e supervisor corporativo associado.
 
-O Colaborador pode trocar sua squad ativa entre as squads demonstrativas. O supervisor é resolvido pelo catálogo de squads e não é escolhido separadamente. A troca:
+O Colaborador pode trocar sua squad ativa entre as squads corporativas. O supervisor é resolvido pelo catálogo de squads e não é escolhido separadamente. A troca:
 
 - afeta apenas novos apontamentos e novas solicitações;
 - preserva snapshots de registros anteriores, inclusive pendentes;
@@ -55,7 +55,7 @@ Versões aprovadas de carga valem a partir de sua data de vigência e nunca reca
 
 - identificador e colaborador automáticos;
 - data civil;
-- cliente do catálogo demonstrativo;
+- cliente do catálogo corporativo;
 - `projectCode` textual obrigatório;
 - atividade do catálogo fixo;
 - disciplina;
@@ -72,7 +72,7 @@ Não existem `projectId`, `projectName`, Avanço (%) ou Documento (LD). A migra�
 ### Campos e validações
 
 - Data: hoje ou data anterior da mesma competência aberta; nunca futura. Competência fechada bloqueia criação/edição, salvo reabertura explícita do dia ou do mês.
-- Cliente: seletor obrigatório baseado no catálogo demonstrativo e independente do projeto.
+- Cliente: seletor obrigatório baseado no catálogo corporativo e independente do projeto.
 - Código do projeto: obrigatório, máximo de 80 caracteres após `trim()`, preservando capitalização, espaços internos, zeros, pontos, barras e hífens.
 - Atividade: catálogo fixo de vinte atividades de trabalho definido na rodada corretiva de 20/07/2026. Férias, afastamentos, feriados e folgas são eventos administrativos e não podem ser criados pelo seletor de atividade.
 - Disciplina: escolha obrigatória entre `—` (Não se aplica), `A` (Automação) e `E` (Elétrica). O valor `—` é explícito e válido.
@@ -103,11 +103,11 @@ Enquanto a competência estiver aberta e o dia não estiver aprovado, o Colabora
 - `REOPENED`: dia ou competência explicitamente reaberta;
 - `NO_SUBMISSION`: dia útil encerrado sem apontamento após fechamento.
 
-O dia atual nunca pode ser aprovado. Aprovação abaixo da carga é permitida apenas com justificativa. Aprovação e solicitação de correção são operações de domínio/repositório demonstrativo, sem botões na área do Colaborador.
+O dia atual nunca pode ser aprovado. Aprovação abaixo da carga é permitida apenas com justificativa. Aprovação e solicitação de correção são operações de domínio/repositório corporativo, sem botões na área do Colaborador.
 
 Em correção, múltiplas edições permanecem liberadas e não mudam automaticamente o status. `Concluir correção` é a única ação que retorna o dia a `AVAILABLE_FOR_APPROVAL` e registra auditoria. Esse botão não aparece no fluxo normal.
 
-Competências anteriores são fechadas por padrão na demonstração. Dias úteis sem registros tornam-se `NO_SUBMISSION`, sem horas fictícias. Reabertura possui responsável, instante, justificativa e escopo.
+Competências anteriores são fechadas por padrão na produ??o. Dias úteis sem registros tornam-se `NO_SUBMISSION`, sem horas fictícias. Reabertura possui responsável, instante, justificativa e escopo.
 
 ## Jornada e saldos
 
@@ -131,7 +131,7 @@ Cada resumo diário oferece jornada base, jornada ajustada, minutos justificados
 
 `CalendarEvent` representa férias, afastamento integral/parcial e registros externos somente leitura. O Colaborador não cria, edita ou apaga esses eventos.
 
-`HolidayProvider` é uma porta separada. A demonstração usa fixtures determinísticas e identificadas como fonte demonstrativa para a localidade controlada; não faz chamada externa e não afirma cobertura oficial completa. Uma API futura substituirá o provider sem alterar componentes.
+`HolidayProvider` é uma porta separada. A produ??o usa fixtures determinísticas e identificadas como fonte corporativa para a localidade controlada; não faz chamada externa e não afirma cobertura oficial completa. Uma API futura substituirá o provider sem alterar componentes.
 
 ## Folgas
 
@@ -200,7 +200,7 @@ A nova chave de apontamentos é `sma:time-entries:v3`.
 - IDs, cliente, projeto, atividade, duração, data, detalhes e timestamps são preservados.
 - Disciplina e tipo documental ausentes recebem `—`.
 - Avanço e Documento (LD) são ignorados.
-- O colaborador demonstrativo conhecido recebe o snapshot determinístico vigente; outros legados recebem snapshot `null`, sem atribuição inventada.
+- O colaborador corporativo conhecido recebe o snapshot determinístico vigente; outros legados recebem snapshot `null`, sem atribuição inventada.
 - A migração só é concluída após gravar, reler e validar a `v3`.
 - Falha ou JSON inválido retorna coleção vazia/erro controlado, preserva a fonte e não sobrescreve dados.
 - Consultas normais usam somente `v3`; versões anteriores não são combinadas.
@@ -214,7 +214,7 @@ Perfil, aprovações, eventos, folgas, auditoria e notificações usam repositó
 - Dashboard e calendário calculam apenas janelas delimitadas.
 - Não existem listeners globais nem dados individuais de colegas.
 - Nenhum detalhe sensível é registrado em logs.
-- A demonstração local não representa segurança; backend futuro repetirá autorização e cálculos autoritativos.
+- A produ??o local não representa segurança; backend futuro repetirá autorização e cálculos autoritativos.
 
 ## Acessibilidade e experiência
 
@@ -237,7 +237,7 @@ Perfil, aprovações, eventos, folgas, auditoria e notificações usam repositó
 
 ## Critérios de aceite
 
-- Todas as rotas protegidas funcionam com sessão demonstrativa.
+- Todas as rotas protegidas funcionam com sessão corporativa.
 - Formulário, histórico, ações, calendário, saldos, folgas e perfil obedecem às regras descritas.
 - Migração `v2` → `v3` é segura, idempotente e testada.
 - Testes obrigatórios de domínio, persistência e interface passam.

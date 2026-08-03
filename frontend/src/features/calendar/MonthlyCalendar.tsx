@@ -73,7 +73,7 @@ export function MonthlyCalendar({ monthKey, selectedDate, days, onMonthChange, o
         })}
       </div>
       <div className="mt-5"><CalendarLegend /></div>
-      <p role="note" className="mt-3 rounded-lg ui-surface-subtle px-3 py-2 text-xs leading-5 ui-text-muted">Calendário de demonstração: os feriados nacionais, estaduais e municipais ainda não estão integrados a uma fonte oficial.</p>
+      <p role="note" className="mt-3 rounded-lg ui-surface-subtle px-3 py-2 text-xs leading-5 ui-text-muted">Calendário corporativo: os feriados nacionais, estaduais e municipais ainda não estão integrados a uma fonte oficial.</p>
     </section>
   )
 }

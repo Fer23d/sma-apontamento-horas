@@ -1,10 +1,10 @@
-# Identidade SM&A e Login Demonstrativo Implementation Plan
+# Identidade SM&A e Login Corporativo Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Integrar a logo oficial e uma identidade clara/escura acessível, padronizar os nove estados do calendário e criar acesso demonstrativo explícito por perfil sem alterar as regras funcionais do Colaborador.
+**Goal:** Integrar a logo oficial e uma identidade clara/escura acessível, padronizar os nove estados do calendário e criar acesso corporativo explícito por perfil sem alterar as regras funcionais do Colaborador.
 
-**Architecture:** O asset oficial entra por um `BrandMark` reutilizável. Um único sistema de tokens CSS alimenta shell, componentes e estados do calendário. A sessão demonstrativa `v2` é tipada, persistida por um service isolado e protegida por uma política pura de rotas; a área do Colaborador continua usando o perfil atual, enquanto Supervisor e Diretor/Administração recebem placeholders honestos.
+**Architecture:** O asset oficial entra por um `BrandMark` reutilizável. Um único sistema de tokens CSS alimenta shell, componentes e estados do calendário. A sessão corporativa `v2` é tipada, persistida por um service isolado e protegida por uma política pura de rotas; a área do Colaborador continua usando o perfil atual, enquanto Supervisor e Diretor/Administração recebem placeholders honestos.
 
 **Tech Stack:** React 19, TypeScript 6, Vite 8, Tailwind CSS 4, React Router 7, Vitest 4 e oxlint já instalados.
 
@@ -26,8 +26,8 @@
 ### Task 1: Registrar especificação e plano
 
 **Files:**
-- Create: `docs/superpowers/specs/2026-07-21-identidade-login-demonstrativo-design.md`
-- Create: `docs/superpowers/plans/2026-07-21-identidade-login-demonstrativo-implementation.md`
+- Create: `docs/superpowers/specs/2026-07-21-identidade-login-corporativo-design.md`
+- Create: `docs/superpowers/plans/2026-07-21-identidade-login-corporativo-implementation.md`
 
 **Interfaces:**
 - Consumes: imagem oficial anexada e linha de base do commit `53b77ec`.
@@ -46,7 +46,7 @@ Documentar `DemoRole`, `DemoSession`, chave `sma:demo-session:v2`, migração de
 Run:
 
 ```powershell
-rg -n "pendência de implementação|placeholder a definir|decisão aberta" docs/superpowers/specs/2026-07-21-identidade-login-demonstrativo-design.md docs/superpowers/plans/2026-07-21-identidade-login-demonstrativo-implementation.md
+rg -n "pendência de implementação|placeholder a definir|decisão aberta" docs/superpowers/specs/2026-07-21-identidade-login-corporativo-design.md docs/superpowers/plans/2026-07-21-identidade-login-corporativo-implementation.md
 git diff --check
 ```
 
@@ -55,10 +55,10 @@ Expected: nenhuma decisão aberta e `git diff --check` com exit code 0.
 - [ ] **Step 4: Commit**
 
 ```powershell
-git add -- docs/superpowers/specs/2026-07-21-identidade-login-demonstrativo-design.md docs/superpowers/plans/2026-07-21-identidade-login-demonstrativo-implementation.md
+git add -- docs/superpowers/specs/2026-07-21-identidade-login-corporativo-design.md docs/superpowers/plans/2026-07-21-identidade-login-corporativo-implementation.md
 git diff --cached --stat
 git diff --cached
-git commit -m "docs(frontend): definir identidade e login demonstrativo"
+git commit -m "docs(frontend): definir identidade e login corporativo"
 ```
 
 ### Task 2: Integrar o asset e o BrandMark oficial
@@ -369,7 +369,7 @@ git diff --cached
 git commit -m "feat(calendario): padronizar cores semanticas dos estados"
 ```
 
-### Task 5: Implementar sessão demonstrativa v2 e política de rotas
+### Task 5: Implementar sessão corporativa v2 e política de rotas
 
 **Files:**
 - Create: `frontend/src/features/session/types.ts`
@@ -461,7 +461,7 @@ Expected: migração, persistência, política, shell, lint e TypeScript aprovad
 git add -- frontend/src/features/session frontend/src/services/demoSessionService.ts frontend/src/services/demoSessionService.test.ts frontend/src/components/layout.test.tsx
 git diff --cached --stat
 git diff --cached
-git commit -m "feat(auth): versionar sessao demonstrativa por perfil"
+git commit -m "feat(auth): versionar sessao corporativa por perfil"
 ```
 
 ### Task 6: Criar login, placeholders e rotas por perfil
@@ -475,7 +475,7 @@ git commit -m "feat(auth): versionar sessao demonstrativa por perfil"
 
 **Interfaces:**
 - Consumes: `signIn(role)`, `getDemoHomePath`, `BrandMark`, `ThemeToggle` e guardas por perfil.
-- Produces: `/login`, `/supervisor`, `/administracao` e cards demonstrativos explícitos.
+- Produces: `/login`, `/supervisor`, `/administracao` e cards corporativos explícitos.
 
 - [ ] **Step 1: Escrever testes RED de conteúdo**
 
@@ -485,12 +485,12 @@ Renderizar `LoginPage` com `MemoryRouter` e contexto. Exigir:
 for (const label of ['Entrar como Colaborador', 'Entrar como Supervisor', 'Entrar como Diretor/Administração']) {
   expect(markup).toContain(label)
 }
-expect(markup).toContain('Ambiente de demonstração')
+expect(markup).toContain('Ambiente de produ??o')
 expect(markup).toContain('SM&amp;A — Sistemas Elétricos e Automação')
 expect(markup).not.toMatch(/senha|Microsoft Login|Entrar com Microsoft/i)
 ```
 
-Testar os dois placeholders com nome do perfil, “em desenvolvimento” e “Sair da demonstração”.
+Testar os dois placeholders com nome do perfil, “em desenvolvimento” e “Sair da produ??o”.
 
 - [ ] **Step 2: Executar RED**
 
@@ -533,7 +533,7 @@ Expected: conteúdo, sessão, rotas, lint, TypeScript e build aprovados.
 git add -- frontend/src/pages/LoginPage.tsx frontend/src/pages/LoginPage.test.tsx frontend/src/pages/DemoAreaPlaceholderPage.tsx frontend/src/pages/DemoAreaPlaceholderPage.test.tsx frontend/src/app/AppRoutes.tsx
 git diff --cached --stat
 git diff --cached
-git commit -m "feat(auth): criar login demonstrativo por perfil"
+git commit -m "feat(auth): criar login corporativo por perfil"
 ```
 
 ### Task 7: Remover atalhos e aplicar padrões visuais às páginas
@@ -609,7 +609,7 @@ Expected: nenhum literal fora de `index.css`, nenhum token institucional legado 
 git add -- frontend/src frontend/README.md
 git diff --cached --stat
 git diff --cached
-git commit -m "feat(tema): aplicar identidade nas areas demonstrativas"
+git commit -m "feat(tema): aplicar identidade nas areas corporativas"
 ```
 
 ### Task 8: Validar visualmente e corrigir regressões

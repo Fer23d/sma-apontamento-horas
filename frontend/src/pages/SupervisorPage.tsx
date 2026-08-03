@@ -134,7 +134,7 @@ function SupervisorSidebar({ activeView, profile, onChange, onSignOut }: {
 
       <div className="border-t border-[var(--color-sidebar-border)] p-4">
         <button type="button" onClick={onSignOut} className="w-full rounded-xl border border-[var(--color-sidebar-border)] px-4 py-3 text-left text-sm font-bold text-[var(--color-sidebar-text)] hover:bg-[var(--color-navigation-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-sidebar-text)]">
-          Sair da demonstração
+          Sair do sistema
         </button>
         <p className="mt-3 px-1 text-xs text-[var(--color-sidebar-text-muted)]">Dados sincronizados via localStorage.</p>
       </div>

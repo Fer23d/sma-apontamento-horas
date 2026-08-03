@@ -12,9 +12,9 @@ const NOW = '2026-07-21T15:30:00.000Z'
 
 function sessionFor(role: DemoRole): DemoSession {
   const names: Record<DemoRole, string> = {
-    COLLABORATOR: 'Colaborador Demonstração',
-    SUPERVISOR: 'Supervisor Demonstração',
-    DIRECTOR_ADMIN: 'Diretor/Administração Demonstração',
+    COLLABORATOR: 'Colaborador',
+    SUPERVISOR: 'Supervisor',
+    DIRECTOR_ADMIN: 'Diretoria',
   }
   return {
     id: `demo-${role.toLowerCase()}`,
@@ -75,7 +75,7 @@ function findLogoutButton(node: ReactNode): ReactElement<ButtonHTMLAttributes<HT
     return null
   }
   if (!isValidElement<{ children?: ReactNode }>(node)) return null
-  if (node.type === 'button' && node.props.children === 'Sair da demonstração') {
+  if (node.type === 'button' && node.props.children === 'Sair do sistema') {
     return node as ReactElement<ButtonHTMLAttributes<HTMLButtonElement>>
   }
   return findLogoutButton(node.props.children)
@@ -86,9 +86,9 @@ describe('DemoAreaPlaceholderPage', () => {
     const markup = renderPlaceholderPage()
 
     expect(markup).toContain('Diretor/Administração')
-    expect(markup).toContain('Diretor/Administração Demonstração')
+    expect(markup).toContain('Diretoria')
     expect(markup).toMatch(/em desenvolvimento/i)
-    expect(markup).toContain('Sair da demonstração')
+    expect(markup).toContain('Sair do sistema')
     expect(markup).not.toMatch(/aprovar|indicadores|equipe ativa|solicitações pendentes/i)
   })
 
@@ -97,7 +97,7 @@ describe('DemoAreaPlaceholderPage', () => {
     const navigate = vi.fn()
     const content = DemoAreaPlaceholderContent({
       role: 'DIRECTOR_ADMIN',
-      sessionName: 'Diretor/Administração Demonstração',
+      sessionName: 'Diretoria',
       signOut,
       navigate: navigate as NavigateFunction,
     })
@@ -111,7 +111,7 @@ describe('DemoAreaPlaceholderPage', () => {
 
   it.each([
     ['/supervisor', 'SUPERVISOR', 'Gestão da Equipe'],
-    ['/administracao', 'DIRECTOR_ADMIN', 'Diretor/Administração Demonstração'],
+    ['/administracao', 'DIRECTOR_ADMIN', 'Diretoria'],
   ] as const)('protege a rota %s para o perfil correto', (path, role, expectedName) => {
     expect(renderRoutes(path, role)).toContain(expectedName)
   })

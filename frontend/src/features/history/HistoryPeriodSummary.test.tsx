@@ -19,13 +19,13 @@ describe('resumo do período no histórico', () => {
   it('mostra somente saldo real, informa o corte futuro e preserva eventos sem apontamento', () => {
     const markup = renderToStaticMarkup(<HistoryPeriodSummary summary={summary} events={[{
       id: 'holiday-1', collaboratorId: 'collaborator-1', type: 'HOLIDAY', startDate: '2026-07-09', endDate: '2026-07-09',
-      title: 'Feriado demonstrativo', source: 'DEMO', createdAt: '2026-07-01T12:00:00.000Z',
+      title: 'Feriado corporativo', source: 'DEMO', createdAt: '2026-07-01T12:00:00.000Z',
     }]} timeOffRequests={[timeOff]} />)
     expect(markup).toContain('Saldo real do período')
     expect(markup).toContain('-01:00')
     expect(markup).not.toContain('Projeção futura')
     expect(markup).toContain('Datas futuras não são consideradas no saldo real.')
-    expect(markup).toContain('Feriado demonstrativo')
+    expect(markup).toContain('Feriado corporativo')
     expect(markup).toContain('Ausência aprovada')
   })
 })

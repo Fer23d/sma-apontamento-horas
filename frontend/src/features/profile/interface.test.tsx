@@ -9,7 +9,7 @@ import { WorkloadRequestForm } from '../workloads/WorkloadRequestForm'
 describe('interface de perfil profissional', () => {
   it('exibe status, localização controlada, squad, supervisor e carga vigente', () => {
     const markup = renderToStaticMarkup(<ProfileSummary profile={demoCollaborator} assignment={demoAssignmentSnapshot} currentWorkload={demoWorkloadVersions[0]} />)
-    for (const text of ['Ativo', 'São Paulo', 'Engenharia de Automação', 'Supervisora Demonstração', '08:00']) expect(markup).toContain(text)
+    for (const text of ['Ativo', 'São Paulo', 'Engenharia de Automação', 'Jeen Carlos E. Azevedo', '08:00']) expect(markup).toContain(text)
     expect(markup).toContain('Use &quot;Editar Perfil&quot;')
     expect(markup).toContain('Localização e status seguem controlados pela empresa')
   })

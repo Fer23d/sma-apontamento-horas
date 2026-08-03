@@ -94,7 +94,7 @@ function DiretoriaSidebar({ onSignOut }: { onSignOut: () => void }) {
       </nav>
       <div className="border-t border-[var(--color-sidebar-border)] p-4">
         <button type="button" onClick={onSignOut} className="w-full rounded-xl border border-[var(--color-sidebar-border)] px-4 py-3 text-left text-sm font-bold text-[var(--color-sidebar-text)] hover:bg-[var(--color-navigation-hover)]">
-          Sair da demonstração
+          Sair do sistema
         </button>
       </div>
     </aside>

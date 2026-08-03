@@ -21,7 +21,7 @@ const NOW = '2026-07-21T15:30:00.000Z'
 function sessionFor(role: DemoRole): DemoSession {
   return {
     id: `demo-${role.toLowerCase()}`,
-    name: `${role} Demonstração`,
+    name: `${role} Produção`,
     role,
     createdAt: NOW,
     explicitLoginAt: NOW,
@@ -63,11 +63,11 @@ function findButtons(node: ReactNode): ReactElement<ButtonHTMLAttributes<HTMLBut
 }
 
 describe('LoginPage', () => {
-  it('explica a demonstração sem senha e apresenta os três perfis', () => {
+  it('explica o acesso corporativo e apresenta os três perfis', () => {
     const markup = renderLogin()
 
-    expect(markup).toContain('Ambiente de demonstração')
-    expect(markup).toMatch(/sem senha/i)
+    expect(markup).toContain('Ambiente corporativo')
+    expect(markup).toContain('Acesse o sistema pelo perfil adequado ao seu fluxo de trabalho.')
     expect(markup).toContain('alt="SM&amp;A — Sistemas Elétricos e Automação"')
     for (const label of [
       'Entrar como Colaborador',
