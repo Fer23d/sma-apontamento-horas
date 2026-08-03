@@ -66,7 +66,7 @@ const timeOffStatusToStored = {
   CANCELLED: 'Cancelado',
 } as const
 
-const MOCK_TEAM_ENTRIES: readonly Omit<SupervisorPendingEntry, 'status'>[] = [
+export const MOCK_TEAM_ENTRIES: readonly Omit<SupervisorPendingEntry, 'status'>[] = [
   { id: 'supervisor-demo-entry-001', collaboratorId: demoCollaborator.id, collaboratorName: demoCollaborator.name, entryDate: '2026-07-21', projectCode: 'SM&A-ENG-142', durationMinutes: 480, activityName: 'Elaboração de projeto' },
   { id: 'supervisor-demo-entry-002', collaboratorId: 'demo-collaborator-002', collaboratorName: 'Marina Costa', entryDate: '2026-07-21', projectCode: 'SM&A-AUT-087', durationMinutes: 360, activityName: 'Modelo 3D' },
   { id: 'supervisor-demo-entry-003', collaboratorId: 'demo-collaborator-003', collaboratorName: 'Rafael Almeida', entryDate: '2026-07-22', projectCode: 'SM&A-ELE-211', durationMinutes: 420, activityName: 'Verificação de documento' },
@@ -85,7 +85,7 @@ const DEFAULT_APPROVALS: Record<string, StoredApproval> = {
   'supervisor-demo-entry-006': { status: 'APPROVED', decidedAt: '2026-07-25T12:00:00.000Z', decidedBy: 'demo-supervisor-001' },
 }
 
-const SEED_TIME_OFF_REQUESTS: readonly TimeOffRequest[] = [
+export const SEED_TIME_OFF_REQUESTS: readonly TimeOffRequest[] = [
   { id: 'supervisor-demo-time-off-001', collaboratorId: demoCollaborator.id, date: '2026-08-05', reason: 'Compromisso familiar previamente agendado.', status: 'PENDING', assignmentSnapshot: demoAssignmentSnapshot, createdAt: '2026-07-29T12:00:00.000Z', updatedAt: '2026-07-29T12:00:00.000Z' },
   { id: 'supervisor-demo-time-off-002', collaboratorId: 'demo-collaborator-002', date: '2026-08-07', reason: 'Banco de horas para resolver documentação pessoal.', status: 'PENDING', assignmentSnapshot: demoAssignmentSnapshot, createdAt: '2026-07-30T12:00:00.000Z', updatedAt: '2026-07-30T12:00:00.000Z' },
   { id: 'supervisor-demo-time-off-003', collaboratorId: 'demo-collaborator-003', date: '2026-08-10', reason: 'Consulta médica.', status: 'APPROVED', assignmentSnapshot: demoAssignmentSnapshot, createdAt: '2026-07-26T12:00:00.000Z', updatedAt: '2026-07-27T12:00:00.000Z', decidedAt: '2026-07-27T12:00:00.000Z' },
@@ -122,8 +122,8 @@ export class LocalStorageSupervisorService implements SupervisorService {
   constructor(
     storage: StorageLike,
     now = () => new Date().toISOString(),
-    seedEntries: readonly Omit<SupervisorPendingEntry, 'status'>[] = MOCK_TEAM_ENTRIES,
-    seedTimeOffRequests: readonly TimeOffRequest[] = SEED_TIME_OFF_REQUESTS,
+    seedEntries: readonly Omit<SupervisorPendingEntry, 'status'>[] = [],
+    seedTimeOffRequests: readonly TimeOffRequest[] = [],
   ) {
     this.storage = storage
     this.now = now
@@ -149,7 +149,27 @@ export class LocalStorageSupervisorService implements SupervisorService {
     try {
       const raw = this.storage.getItem(TIME_ENTRY_STORAGE_KEY)
       if (!raw) return { version: 3, entriesByCollaborator: {} }
-      const parsed = JSON.parse(raw) as Partial<TimeEntryStorageV3>
+      const parsed = JSON.parse(raw) as Partial<TimeEntryStorageV3> | Array<Record<string, unknown>>
+      if (Array.isArray(parsed)) {
+        const entriesByCollaborator = parsed.reduce<Record<string, unknown[]>>((grouped, entry) => {
+          const collaboratorId = entry.collaboratorId
+          if (typeof collaboratorId !== 'string') return grouped
+          grouped[collaboratorId] = [...(grouped[collaboratorId] ?? []), entry]
+          return grouped
+        }, {})
+        return {
+          version: 3,
+          entriesByCollaborator: Object.fromEntries(
+            Object.entries(entriesByCollaborator).map(([collaboratorId, entries]) => [
+              collaboratorId,
+              entries.flatMap((entry) => {
+                const normalized = normalizeTimeEntry(entry, collaboratorId)
+                return normalized ? [normalized] : []
+              }),
+            ]),
+          ),
+        }
+      }
       if (parsed.version !== 3 || !parsed.entriesByCollaborator || typeof parsed.entriesByCollaborator !== 'object') {
         return { version: 3, entriesByCollaborator: {} }
       }

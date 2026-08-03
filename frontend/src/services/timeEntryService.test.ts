@@ -304,6 +304,30 @@ describe('migração segura de apontamentos v2 para v3', () => {
 })
 
 describe('comandos e consultas de apontamento', () => {
+  it('grava apontamentos na chave compartilhada apontamentos_sma', async () => {
+    const storage = new MemoryStorage()
+    const service = buildService(storage)
+
+    await service.create(collaboratorId, validData)
+
+    expect(TIME_ENTRY_STORAGE_KEY).toBe('apontamentos_sma')
+    expect(storage.getItem(TIME_ENTRY_STORAGE_KEY)).toContain('stable-entry-id')
+    expect(storage.getItem('sma:time-entries:v3')).toBeNull()
+  })
+
+  it('migra leitura da chave v3 antiga para apontamentos_sma', async () => {
+    const storage = new MemoryStorage()
+    storage.setItem('sma:time-entries:v3', JSON.stringify({
+      version: 3,
+      entriesByCollaborator: { [collaboratorId]: [v3Entry({ id: 'legacy-v3-entry' })] },
+    }))
+
+    const entries = await buildService(storage).listByDate(collaboratorId, '2026-07-13')
+
+    expect(entries).toEqual([expect.objectContaining({ id: 'legacy-v3-entry' })])
+    expect(storage.getItem(TIME_ENTRY_STORAGE_KEY)).toContain('legacy-v3-entry')
+  })
+
   it('cria com snapshot, trim externo e preservação dos caracteres internos', async () => {
     const storage = new MemoryStorage()
     const service = buildService(storage)

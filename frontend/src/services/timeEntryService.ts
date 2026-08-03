@@ -24,7 +24,8 @@ import {
 export { LEGACY_V1_TIME_ENTRY_STORAGE_KEY, LEGACY_V2_TIME_ENTRY_STORAGE_KEY } from './timeEntryMigration'
 export type { StorageLike } from './storage'
 
-export const TIME_ENTRY_STORAGE_KEY = 'sma:time-entries:v3'
+export const TIME_ENTRY_STORAGE_KEY = 'apontamentos_sma'
+const LEGACY_V3_TIME_ENTRY_STORAGE_KEY = 'sma:time-entries:v3'
 
 export type TimeEntryFilters = {
   clientId?: string
@@ -139,25 +140,41 @@ export class LocalStorageTimeEntryService implements TimeEntryService {
     this.onAuditError = onAuditError ?? ((message, error) => console.error(message, error))
   }
 
+  private normalizeEntriesByCollaborator(entriesByCollaborator: Record<string, unknown>): TimeEntryStorageV3 {
+    return {
+      version: 3,
+      entriesByCollaborator: Object.fromEntries(
+        Object.entries(entriesByCollaborator).map(([collaboratorId, entries]) => [
+          collaboratorId,
+          Array.isArray(entries)
+            ? entries.flatMap((entry) => {
+                const normalized = normalizeTimeEntry(entry, collaboratorId)
+                return normalized ? [normalized] : []
+              })
+            : [],
+        ]),
+      ),
+    }
+  }
+
   private parseV3(raw: string): TimeEntryStorageV3 {
     const parsed = JSON.parse(raw) as unknown
     if (!parsed || typeof parsed !== 'object') throw new Error('Estrutura v3 inválida.')
+    if (Array.isArray(parsed)) {
+      const entriesByCollaborator = parsed.reduce<Record<string, unknown[]>>((grouped, entry) => {
+        if (!entry || typeof entry !== 'object') return grouped
+        const collaboratorId = (entry as Record<string, unknown>).collaboratorId
+        if (typeof collaboratorId !== 'string') return grouped
+        grouped[collaboratorId] = [...(grouped[collaboratorId] ?? []), entry]
+        return grouped
+      }, {})
+      return this.normalizeEntriesByCollaborator(entriesByCollaborator)
+    }
     const candidate = parsed as Partial<TimeEntryStorageV3>
     if (candidate.version !== 3 || !candidate.entriesByCollaborator || typeof candidate.entriesByCollaborator !== 'object') {
       throw new Error('Versão ou coleção v3 inválida.')
     }
-    const entriesByCollaborator = Object.fromEntries(
-      Object.entries(candidate.entriesByCollaborator).map(([collaboratorId, entries]) => [
-        collaboratorId,
-        Array.isArray(entries)
-          ? entries.flatMap((entry) => {
-              const normalized = normalizeTimeEntry(entry, collaboratorId)
-              return normalized ? [normalized] : []
-            })
-          : [],
-      ]),
-    )
-    return { version: 3, entriesByCollaborator }
+    return this.normalizeEntriesByCollaborator(candidate.entriesByCollaborator)
   }
 
   private read(): ReadResult {
@@ -165,6 +182,12 @@ export class LocalStorageTimeEntryService implements TimeEntryService {
     try {
       const rawV3 = this.storage.getItem(TIME_ENTRY_STORAGE_KEY)
       if (rawV3 !== null) return { data: this.parseV3(rawV3), canWrite: true }
+      const legacyRawV3 = this.storage.getItem(LEGACY_V3_TIME_ENTRY_STORAGE_KEY)
+      if (legacyRawV3 !== null) {
+        const legacyData = this.parseV3(legacyRawV3)
+        this.writeAndValidate(legacyData)
+        return { data: legacyData, canWrite: true }
+      }
 
       let rawV2 = this.storage.getItem(LEGACY_V2_TIME_ENTRY_STORAGE_KEY)
       if (rawV2 === null) {
