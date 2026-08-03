@@ -105,7 +105,7 @@ function DiretoriaSidebar({ onSignOut }: { onSignOut: () => void }) {
           <span className="flex h-12 w-12 items-center justify-center rounded-full border border-[var(--color-sidebar-border)] bg-[var(--color-sidebar-surface)] text-sm font-extrabold">DI</span>
           <div>
             <p className="text-sm font-extrabold leading-tight">Diretoria SM&A</p>
-            <p className="mt-0.5 text-xs leading-tight text-[var(--color-sidebar-text-muted)]">Visao macro</p>
+            <p className="mt-0.5 text-xs leading-tight text-[var(--color-sidebar-text-muted)]">Visão macro</p>
           </div>
         </div>
       </section>
@@ -121,7 +121,7 @@ function DiretoriaSidebar({ onSignOut }: { onSignOut: () => void }) {
       </nav>
       <div className="border-t border-[var(--color-sidebar-border)] p-4">
         <button type="button" onClick={onSignOut} className="w-full rounded-xl border border-[var(--color-sidebar-border)] px-4 py-3 text-left text-sm font-bold text-[var(--color-sidebar-text)] hover:bg-[var(--color-navigation-hover)]">
-          Sair da demonstracao
+          Sair da demonstração
         </button>
       </div>
     </aside>
@@ -178,7 +178,7 @@ export function DiretoriaPage() {
           <BrandMark variant="compact" />
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--color-secondary)]">SM&A - Painel da Diretoria</p>
-            <p className="text-sm text-[var(--color-text-muted)]">Visao macro e alocacao de tempo por projetos</p>
+            <p className="text-sm text-[var(--color-text-muted)]">Visão macro e alocação de tempo por projetos</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -192,25 +192,25 @@ export function DiretoriaPage() {
         <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-7xl space-y-6">
             <section>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-secondary)]">Visao Macro</p>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-secondary)]">Visão Macro</p>
               <h1 className="mt-2 text-3xl font-extrabold text-[var(--color-text)]">SM&A - Painel da Diretoria</h1>
-              <p className="mt-2 text-sm text-[var(--color-text-muted)]">Visao macro e alocacao de tempo por projetos.</p>
+              <p className="mt-2 text-sm text-[var(--color-text-muted)]">Visão macro e alocação de tempo por projetos.</p>
             </section>
 
             <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4" aria-label="Indicadores da diretoria">
-              <SummaryCard label="Total de Horas Apontadas (Mes)" value={totalMonthHours > 0 ? totalMonthHours.toFixed(1) : '298'} helper="Horas consolidadas no mes atual" />
+              <SummaryCard label="Total de Horas Apontadas (Mês)" value={totalMonthHours > 0 ? totalMonthHours.toFixed(1) : '298'} helper="Horas consolidadas no mês atual" />
               <SummaryCard label="Projetos Ativos" value={activeProjects || 3} helper="Projetos com apontamentos registrados" />
               <SummaryCard label="Apontamentos Registrados" value={entries.length} helper="Base persistida em localStorage" />
-              <SummaryCard label="Pendencias Gerais" value={pendingAbsences} helper="Ausencias aguardando decisao" />
+              <SummaryCard label="Pendências Gerais" value={pendingAbsences} helper="Ausências aguardando decisão" />
             </section>
 
             <section className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-sm" aria-labelledby="project-allocation-title">
               <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                   <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-secondary)]">Dashboard</p>
-                  <h2 id="project-allocation-title" className="mt-1 text-xl font-extrabold text-[var(--color-text)]">Alocacao de Tempo por Projeto</h2>
+                  <h2 id="project-allocation-title" className="mt-1 text-xl font-extrabold text-[var(--color-text)]">Alocação de Tempo por Projeto</h2>
                 </div>
-                <p className="text-sm text-[var(--color-text-muted)]">{entries.length > 0 ? 'Dados reais do localStorage' : 'Dados demonstrativos para aprovacao visual'}</p>
+                <p className="text-sm text-[var(--color-text-muted)]">{entries.length > 0 ? 'Dados reais do localStorage' : 'Dados demonstrativos para aprovação visual'}</p>
               </div>
               <div className="h-[320px]">
                 <ResponsiveContainer width="100%" height="100%">

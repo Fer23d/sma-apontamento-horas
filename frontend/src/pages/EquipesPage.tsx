@@ -22,6 +22,10 @@ function getSquads(data: DEPGerencia[]) {
   return data.flatMap((gerencia) => gerencia.squads.map((squad) => ({ ...squad, gerente: gerencia.gerente })))
 }
 
+function getSquadNumber(squadName: string) {
+  return Number.parseInt(squadName.match(/S(\d+)/)?.[1] || '0', 10)
+}
+
 function getFirstSquadName(data: DEPGerencia[]) {
   return data[0]?.squads[0]?.nome ?? ''
 }
@@ -74,7 +78,7 @@ function DiretoriaSidebar({ onSignOut }: { onSignOut: () => void }) {
           <span className="flex h-12 w-12 items-center justify-center rounded-full border border-[var(--color-sidebar-border)] bg-[var(--color-sidebar-surface)] text-sm font-extrabold">DI</span>
           <div>
             <p className="text-sm font-extrabold leading-tight">Diretoria SM&A</p>
-            <p className="mt-0.5 text-xs leading-tight text-[var(--color-sidebar-text-muted)]">Visao macro</p>
+            <p className="mt-0.5 text-xs leading-tight text-[var(--color-sidebar-text-muted)]">Visão macro</p>
           </div>
         </div>
       </section>
@@ -90,7 +94,7 @@ function DiretoriaSidebar({ onSignOut }: { onSignOut: () => void }) {
       </nav>
       <div className="border-t border-[var(--color-sidebar-border)] p-4">
         <button type="button" onClick={onSignOut} className="w-full rounded-xl border border-[var(--color-sidebar-border)] px-4 py-3 text-left text-sm font-bold text-[var(--color-sidebar-text)] hover:bg-[var(--color-navigation-hover)]">
-          Sair da demonstracao
+          Sair da demonstração
         </button>
       </div>
     </aside>
@@ -233,7 +237,7 @@ export function EquipesPage() {
           <BrandMark variant="compact" />
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--color-secondary)]">SM&A - Gerenciamento de Equipes</p>
-            <p className="text-sm text-[var(--color-text-muted)]">Organograma editavel e movimentacao de colaboradores</p>
+            <p className="text-sm text-[var(--color-text-muted)]">Organograma editável e movimentação de colaboradores</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -249,7 +253,7 @@ export function EquipesPage() {
             <section>
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-secondary)]">Estrutura DEP</p>
               <h1 className="mt-2 text-3xl font-extrabold text-[var(--color-text)]">SM&A - Gerenciamento de Equipes</h1>
-              <p className="mt-2 text-sm text-[var(--color-text-muted)]">Gerencie colaboradores, cargos e transferencias entre squads.</p>
+              <p className="mt-2 text-sm text-[var(--color-text-muted)]">Gerencie colaboradores, cargos e transferências entre squads.</p>
             </section>
 
             <section className="space-y-5" aria-labelledby="dep-org-title">
@@ -261,7 +265,7 @@ export function EquipesPage() {
                   <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3">
                     <p className="px-2 pb-3 text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">Squads</p>
                     <div className="max-h-[620px] space-y-2 overflow-y-auto pr-1">
-                      {getSquads(dadosOrganograma).map((squad) => {
+                      {getSquads(dadosOrganograma).toSorted((a, b) => getSquadNumber(a.nome) - getSquadNumber(b.nome)).map((squad) => {
                         const isActive = squadSelecionada === squad.nome
                         return (
                           <button
@@ -270,12 +274,12 @@ export function EquipesPage() {
                             onClick={() => setSquadSelecionada(squad.nome)}
                             className={`w-full rounded-xl border px-3 py-3 text-left transition ${
                               isActive
-                                ? 'border-[var(--color-primary)] bg-[var(--color-primary)] text-[#06241f]'
+                                ? 'border-[var(--color-primary)] bg-[var(--color-primary)] text-white'
                                 : 'border-[var(--color-border)] bg-[var(--color-surface-subtle)] text-[var(--color-text)] hover:border-[var(--color-primary)]'
                             }`}
                           >
-                            <span className="block text-sm font-extrabold">{squad.nome}</span>
-                            <span className={`mt-1 block text-xs ${isActive ? 'text-[#06241f]' : 'text-[var(--color-text-muted)]'}`}>{squad.supervisor}</span>
+                            <span className={`block text-sm font-extrabold ${isActive ? 'text-white' : ''}`}>{squad.nome}</span>
+                            <span className={`mt-1 block text-xs ${isActive ? 'text-white' : 'text-[var(--color-text-muted)]'}`}>{squad.supervisor}</span>
                           </button>
                         )
                       })}
