@@ -2,13 +2,15 @@ import { useCallback, useEffect, useState } from 'react'
 import { timeOffService } from '../../services/timeOffService'
 import { addDays, getCorporateToday } from '../../shared/utils/date'
 import { useSession } from '../session/useSession'
-import type { TimeOffRequest } from './types'
+import type { AbsenceType, TimeOffRequest } from './types'
 
 export function useTimeOffRequests() {
   const { profile } = useSession()
   const today = getCorporateToday()
   const [requests, setRequests] = useState<TimeOffRequest[]>([])
-  const [date, setDate] = useState('')
+  const [absenceType, setAbsenceType] = useState<AbsenceType>('Folga')
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
   const [reason, setReason] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -22,7 +24,7 @@ export function useTimeOffRequests() {
     try {
       setRequests(await timeOffService.listByRange(profile.id, addDays(today, -365), addDays(today, 730)))
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : 'Não foi possível carregar as folgas.')
+      setError(loadError instanceof Error ? loadError.message : 'Não foi possível carregar as ausências.')
     } finally {
       setIsLoading(false)
     }
@@ -34,8 +36,8 @@ export function useTimeOffRequests() {
     if (!profile || isSubmitting) return
     setIsSubmitting(true); setError(null); setFeedback(null)
     try {
-      await timeOffService.create(profile.id, { date, reason })
-      setDate(''); setReason(''); setFeedback('Solicitação criada e encaminhada à supervisão da squad registrada.')
+      await timeOffService.create(profile.id, { absenceType, startDate, endDate, reason })
+      setAbsenceType('Folga'); setStartDate(''); setEndDate(''); setReason(''); setFeedback('Ausência registrada e encaminhada à supervisão da squad registrada.')
       await load()
     } catch (createError) {
       setError(createError instanceof Error ? createError.message : 'Não foi possível criar a solicitação.')
@@ -52,9 +54,9 @@ export function useTimeOffRequests() {
   const cancelApproved = async (request: TimeOffRequest, cancellationReason: string) => {
     if (!profile) return
     await timeOffService.cancelApproved(profile.id, request.id, cancellationReason)
-    setFeedback('Folga cancelada. A supervisão foi notificada e a projeção foi recalculada.')
+    setFeedback('Ausência cancelada. A supervisão foi notificada e a projeção foi recalculada.')
     await load()
   }
 
-  return { today, requests, date, setDate, reason, setReason, isLoading, isSubmitting, error, feedback, create, removePending, cancelApproved, reload: load }
+  return { today, requests, absenceType, setAbsenceType, startDate, setStartDate, endDate, setEndDate, reason, setReason, isLoading, isSubmitting, error, feedback, create, removePending, cancelApproved, reload: load }
 }

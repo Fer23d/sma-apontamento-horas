@@ -7,6 +7,19 @@ const eventLabels: Record<CalendarEvent['type'], string> = {
   HOLIDAY: 'Feriado', VACATION: 'Férias', MEDICAL_LEAVE_FULL: 'Afastamento integral', MEDICAL_LEAVE_PARTIAL: 'Afastamento parcial',
 }
 
+function formatAbsencePeriod(request: TimeOffRequest) {
+  const startDate = request.startDate ?? request.date
+  const endDate = request.endDate ?? request.date
+  return startDate === endDate ? formatDatePtBr(startDate) : `${formatDatePtBr(startDate)} a ${formatDatePtBr(endDate)}`
+}
+
+function absenceStatusLabel(request: TimeOffRequest) {
+  const type = request.absenceType ?? 'Ausência'
+  if (request.status === 'APPROVED') return `${type} aprovada`
+  if (request.status === 'PENDING') return `${type} pendente`
+  return `${type} rejeitada`
+}
+
 export function HistoryPeriodSummary({ summary, events, timeOffRequests }: { summary: PeriodSummary; events: CalendarEvent[]; timeOffRequests: TimeOffRequest[] }) {
   const visibleTimeOff = timeOffRequests.filter((request) => request.status !== 'CANCELLED')
   return (
@@ -23,7 +36,7 @@ export function HistoryPeriodSummary({ summary, events, timeOffRequests }: { sum
         {events.length === 0 && visibleTimeOff.length === 0 ? <p className="mt-2 text-sm ui-text-muted">Nenhum evento encontrado no período.</p> : (
           <ul className="mt-3 grid gap-2 md:grid-cols-2">
             {events.map((event) => <li key={event.id} className="rounded-xl ui-surface-subtle p-3 text-sm"><strong>{eventLabels[event.type]}:</strong> {event.title} · {formatDatePtBr(event.startDate)}{event.endDate !== event.startDate ? ` a ${formatDatePtBr(event.endDate)}` : ''}</li>)}
-            {visibleTimeOff.map((request) => <li key={request.id} className="rounded-xl ui-surface-subtle p-3 text-sm"><strong>{request.status === 'APPROVED' ? 'Folga aprovada' : request.status === 'PENDING' ? 'Folga pendente' : 'Folga rejeitada'}:</strong> {formatDatePtBr(request.date)} · {request.reason}</li>)}
+            {visibleTimeOff.map((request) => <li key={request.id} className="rounded-xl ui-surface-subtle p-3 text-sm"><strong>{absenceStatusLabel(request)}:</strong> {formatAbsencePeriod(request)} · {request.reason}</li>)}
           </ul>
         )}
       </div>

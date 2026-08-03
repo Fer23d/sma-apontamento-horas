@@ -21,6 +21,7 @@ import { workloadService } from '../../services/workloadService'
 import { calculateDaySummary, calculatePeriodSummary } from '../calendar/domain'
 import type { CalendarEvent, DailySummary, PeriodSummary } from '../calendar/types'
 import type { TimeOffRequest } from '../time-off/types'
+import { requestAppliesToDate } from '../time-off/types'
 
 export type HistoryFiltersValue = {
   mode: HistoryPeriodMode
@@ -113,7 +114,7 @@ export function useTimeEntryHistory() {
       const enriched = await Promise.all(page.items.map(async (entry) => {
         const entriesOfDay = periodEntries.filter((item) => item.entryDate === entry.entryDate)
         const eventsOfDay = allEvents.filter((event) => event.startDate <= entry.entryDate && event.endDate >= entry.entryDate)
-        const timeOffOfDay = timeOffRequests.filter((request) => request.date === entry.entryDate && request.status !== 'CANCELLED')
+        const timeOffOfDay = timeOffRequests.filter((request) => requestAppliesToDate(request, entry.entryDate) && request.status !== 'CANCELLED')
         const daySummary = calculateDaySummary({ date: entry.entryDate, today, collaboratorId: profile.id, entries: entriesOfDay, events: eventsOfDay, timeOffRequests, workloadVersions })
         const approval = await dayApprovalService.getForDate(
           profile.id,

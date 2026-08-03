@@ -11,6 +11,7 @@ import { holidayProvider } from '../../services/holidayProvider'
 import { timeEntryService } from '../../services/timeEntryService'
 import { timeOffService } from '../../services/timeOffService'
 import type { TimeOffRequest } from '../time-off/types'
+import { requestAppliesToDate } from '../time-off/types'
 import type { AssignmentSnapshot } from '../squads/types'
 import type { WorkloadVersion } from '../workloads/types'
 import { eachIsoDate, getCorporateToday, getMonthRange } from '../../shared/utils/date'
@@ -99,7 +100,7 @@ export function useCollaboratorDashboard(selectedDate: string, monthKey: string,
       }
       const selectedEntries = monthEntries.filter((entry) => entry.entryDate === selectedDate)
       const selectedEvents = monthAllEvents.filter((event) => event.startDate <= selectedDate && event.endDate >= selectedDate)
-      const selectedTimeOffRequests = monthTimeOff.filter((request) => request.date === selectedDate && request.status !== 'CANCELLED')
+      const selectedTimeOffRequests = monthTimeOff.filter((request) => requestAppliesToDate(request, selectedDate) && request.status !== 'CANCELLED')
       const selectedSummary = monthSummary.days.find((day) => day.date === selectedDate) ?? calculateDaySummary({
         date: selectedDate, today, collaboratorId: profile.id, entries: selectedEntries, events: selectedEvents,
         timeOffRequests: monthTimeOff, workloadVersions,

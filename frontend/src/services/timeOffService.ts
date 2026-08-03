@@ -1,6 +1,7 @@
 import type { AuditEvent, SupervisorNotification } from '../features/audit/types'
 import type { AssignmentSnapshot } from '../features/squads/types'
-import type { TimeOffRequest } from '../features/time-off/types'
+import type { AbsenceType, TimeOffRequest } from '../features/time-off/types'
+import { requestOverlapsRange } from '../features/time-off/types'
 import { getCorporateToday, isIsoDate } from '../shared/utils/date'
 import { auditService } from './auditService'
 import { notificationService } from './notificationService'
@@ -33,17 +34,39 @@ function isAssignmentSnapshot(value: unknown): value is AssignmentSnapshot {
     && typeof item.supervisorId === 'string' && typeof item.supervisorName === 'string'
 }
 
-function isTimeOffRequest(value: unknown): value is TimeOffRequest {
-  if (!value || typeof value !== 'object') return false
+const absenceTypes: readonly AbsenceType[] = ['Folga', 'Férias', 'Atestado Médico', 'Outros']
+
+function normalizeTimeOffRequest(value: unknown): TimeOffRequest | null {
+  if (!value || typeof value !== 'object') return null
   const item = value as Record<string, unknown>
-  return typeof item.id === 'string'
-    && typeof item.collaboratorId === 'string'
-    && isIsoDate(String(item.date))
-    && typeof item.reason === 'string'
-    && ['PENDING', 'APPROVED', 'REJECTED', 'CANCELLED'].includes(String(item.status))
-    && (item.assignmentSnapshot === null || isAssignmentSnapshot(item.assignmentSnapshot))
-    && typeof item.createdAt === 'string'
-    && typeof item.updatedAt === 'string'
+  if (typeof item.id !== 'string'
+    || typeof item.collaboratorId !== 'string'
+    || typeof item.reason !== 'string'
+    || !['PENDING', 'APPROVED', 'REJECTED', 'CANCELLED'].includes(String(item.status))
+    || (item.assignmentSnapshot !== null && !isAssignmentSnapshot(item.assignmentSnapshot))
+    || typeof item.createdAt !== 'string'
+    || typeof item.updatedAt !== 'string') return null
+  const startDate = typeof item.startDate === 'string' && isIsoDate(item.startDate) ? item.startDate : String(item.date)
+  const endDate = typeof item.endDate === 'string' && isIsoDate(item.endDate) ? item.endDate : startDate
+  if (!isIsoDate(startDate) || !isIsoDate(endDate) || endDate < startDate) return null
+  const absenceType = absenceTypes.includes(item.absenceType as AbsenceType) ? item.absenceType as AbsenceType : 'Folga'
+  return {
+    id: item.id,
+    collaboratorId: item.collaboratorId,
+    absenceType,
+    startDate,
+    endDate,
+    date: startDate,
+    reason: item.reason,
+    status: item.status as TimeOffRequest['status'],
+    assignmentSnapshot: item.assignmentSnapshot as AssignmentSnapshot | null,
+    createdAt: item.createdAt,
+    updatedAt: item.updatedAt,
+    decidedAt: typeof item.decidedAt === 'string' ? item.decidedAt : undefined,
+    rejectionReason: typeof item.rejectionReason === 'string' ? item.rejectionReason : undefined,
+    cancellationReason: typeof item.cancellationReason === 'string' ? item.cancellationReason : undefined,
+    cancelledAt: typeof item.cancelledAt === 'string' ? item.cancelledAt : undefined,
+  }
 }
 
 export class LocalTimeOffService {
@@ -75,7 +98,13 @@ export class LocalTimeOffService {
       if (!parsed || typeof parsed !== 'object') throw new Error('Estrutura de folgas inválida.')
       const candidate = parsed as Partial<TimeOffStorage>
       if (candidate.version !== 1 || !Array.isArray(candidate.requests)) throw new Error('Versão de folgas inválida.')
-      return { version: 1, requests: candidate.requests.filter(isTimeOffRequest) }
+      return {
+        version: 1,
+        requests: candidate.requests.flatMap((request) => {
+          const normalized = normalizeTimeOffRequest(request)
+          return normalized ? [normalized] : []
+        }),
+      }
     } catch (error) {
       console.error('Não foi possível ler as solicitações de folga.', error)
       return { version: 1, requests: [] }
@@ -108,24 +137,29 @@ export class LocalTimeOffService {
 
   async listByRange(collaboratorId: string, startDate: string, endDate: string) {
     return this.read().requests
-      .filter((request) => request.collaboratorId === collaboratorId && request.date >= startDate && request.date <= endDate)
-      .sort((left, right) => left.date.localeCompare(right.date))
+      .filter((request) => request.collaboratorId === collaboratorId && requestOverlapsRange(request, startDate, endDate))
+      .sort((left, right) => (left.startDate ?? left.date).localeCompare(right.startDate ?? right.date))
   }
 
   async listApprovedByRange(collaboratorId: string, startDate: string, endDate: string) {
     return (await this.listByRange(collaboratorId, startDate, endDate)).filter((request) => request.status === 'APPROVED')
   }
 
-  async create(collaboratorId: string, input: { date: string; reason: string }) {
+  async create(collaboratorId: string, input: { absenceType?: AbsenceType; startDate?: string; endDate?: string; date?: string; reason: string }) {
     const reason = input.reason.trim()
-    if (!isIsoDate(input.date) || input.date <= this.today()) throw new Error('A folga deve ser solicitada para uma data futura.')
-    if (!reason) throw new Error('Informe a justificativa da solicitação de folga.')
+    const absenceType = input.absenceType ?? 'Folga'
+    const startDate = input.startDate ?? input.date ?? ''
+    const endDate = input.endDate ?? startDate
+    if (!absenceTypes.includes(absenceType)) throw new Error('Informe o tipo de ausência.')
+    if (!isIsoDate(startDate) || startDate <= this.today()) throw new Error('A ausência deve ser solicitada para uma data futura.')
+    if (!isIsoDate(endDate) || endDate < startDate) throw new Error('Informe uma data de retorno válida.')
+    if (!reason) throw new Error('Informe a justificativa da solicitação de ausência.')
     const assignmentSnapshot = this.resolveAssignment(collaboratorId)
     if (!assignmentSnapshot) throw new Error('Não existe squad ativa para encaminhar a solicitação.')
     const storage = this.read()
     const timestamp = this.now()
     const request: TimeOffRequest = {
-      id: this.createId(), collaboratorId, date: input.date, reason, status: 'PENDING', assignmentSnapshot,
+      id: this.createId(), collaboratorId, absenceType, startDate, endDate, date: startDate, reason, status: 'PENDING', assignmentSnapshot,
       createdAt: timestamp, updatedAt: timestamp,
     }
     storage.requests.push(request)
@@ -183,7 +217,7 @@ export class LocalTimeOffService {
     if (index < 0) throw new Error('Solicitação de folga não encontrada.')
     const current = storage.requests[index]
     if (current.status !== 'PENDING') throw new Error('Somente uma solicitação pendente pode ser excluída diretamente.')
-    if (current.date <= this.today()) throw new Error('A data da solicitação já ocorreu.')
+    if ((current.startDate ?? current.date) <= this.today()) throw new Error('A data da solicitação já ocorreu.')
     const cancelled: TimeOffRequest = { ...current, status: 'CANCELLED', cancellationReason: 'Solicitação retirada pelo colaborador', cancelledAt: this.now(), updatedAt: this.now() }
     storage.requests[index] = cancelled
     this.write(storage)
@@ -199,7 +233,7 @@ export class LocalTimeOffService {
     if (index < 0) throw new Error('Folga não encontrada.')
     const current = storage.requests[index]
     if (current.status !== 'APPROVED') throw new Error('Somente uma folga aprovada pode ser cancelada por esta ação.')
-    if (current.date <= this.today()) throw new Error('A data da folga já ocorreu e não permite cancelamento direto.')
+    if ((current.startDate ?? current.date) <= this.today()) throw new Error('A data da ausência já ocorreu e não permite cancelamento direto.')
     const cancelled: TimeOffRequest = { ...current, status: 'CANCELLED', cancellationReason, cancelledAt: this.now(), updatedAt: this.now() }
     storage.requests[index] = cancelled
     this.write(storage)

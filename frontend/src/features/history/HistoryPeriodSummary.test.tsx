@@ -26,6 +26,6 @@ describe('resumo do período no histórico', () => {
     expect(markup).not.toContain('Projeção futura')
     expect(markup).toContain('Datas futuras não são consideradas no saldo real.')
     expect(markup).toContain('Feriado demonstrativo')
-    expect(markup).toContain('Folga aprovada')
+    expect(markup).toContain('Ausência aprovada')
   })
 })

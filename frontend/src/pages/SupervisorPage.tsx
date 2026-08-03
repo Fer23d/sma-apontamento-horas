@@ -238,7 +238,7 @@ function SupervisorProfileView({ profile, onSave }: { profile: SupervisorProfile
           </div>
           <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
             <dt className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-muted)]">Permissões</dt>
-            <dd className="mt-1 font-bold text-[var(--color-text)]">Aprovar apontamentos e folgas</dd>
+            <dd className="mt-1 font-bold text-[var(--color-text)]">Aprovar apontamentos e ausências</dd>
           </div>
         </dl>
       )}
@@ -603,9 +603,9 @@ export function SupervisorPage() {
             {activeView === 'requests' && (
               <>
                 <section className="grid gap-4 md:grid-cols-3" aria-label="Resumo das solicitações">
-                  <SummaryCard label="Folgas pendentes" value={dashboard.requestSummary.pending} helper="Solicitações aguardando decisão." />
-                  <SummaryCard label="Folgas aprovadas" value={dashboard.requestSummary.approved} helper="Folgas liberadas pela supervisão." />
-                  <SummaryCard label="Folgas rejeitadas" value={dashboard.requestSummary.rejected} helper="Solicitações recusadas com justificativa." />
+                  <SummaryCard label="Ausências pendentes" value={dashboard.requestSummary.pending} helper="Solicitações aguardando decisão." />
+                  <SummaryCard label="Ausências aprovadas" value={dashboard.requestSummary.approved} helper="Ausências liberadas pela supervisão." />
+                  <SummaryCard label="Ausências rejeitadas" value={dashboard.requestSummary.rejected} helper="Solicitações recusadas com justificativa." />
                 </section>
                 {dashboard.isLoading ? (
                   <p className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-8 text-center font-semibold text-[var(--color-text-muted)]" aria-live="polite">
@@ -635,7 +635,7 @@ export function SupervisorPage() {
         entry={rejectionTarget?.item ?? null}
         error={rejectionError}
         isSubmitting={dashboard.isMutating}
-        title={rejectionTarget?.type === 'time-off' ? 'Rejeitar solicitação de folga' : 'Rejeitar apontamento'}
+        title={rejectionTarget?.type === 'time-off' ? 'Rejeitar solicitação de ausência' : 'Rejeitar apontamento'}
         description={rejectionDescription}
         onClose={() => setRejectionTarget(null)}
         onConfirm={(reason) => void rejectTarget(reason)}

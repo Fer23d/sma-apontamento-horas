@@ -244,13 +244,16 @@ export class LocalStorageSupervisorService implements SupervisorService {
         id: request.id,
         collaboratorId: request.collaboratorId,
         collaboratorName: collaborators.get(request.collaboratorId) ?? request.collaboratorId,
+        absenceType: request.absenceType ?? 'Folga',
+        startDate: request.startDate ?? request.date,
+        endDate: request.endDate ?? request.date,
         date: request.date,
         reason: request.reason,
         status: request.status,
         rejectionReason: request.rejectionReason,
         decidedAt: request.decidedAt,
       }))
-      .sort((left, right) => right.date.localeCompare(left.date) || left.collaboratorName.localeCompare(right.collaboratorName))
+      .sort((left, right) => right.startDate.localeCompare(left.startDate) || left.collaboratorName.localeCompare(right.collaboratorName))
   }
 
   async approveTimeOffRequest(requestId: string, supervisorId: string) {

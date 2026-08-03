@@ -13,12 +13,16 @@ function formatDate(date: string) {
   return new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC' }).format(new Date(`${date}T00:00:00.000Z`))
 }
 
+function formatPeriod(request: SupervisorTimeOffRequest) {
+  return request.startDate === request.endDate ? formatDate(request.startDate) : `${formatDate(request.startDate)} a ${formatDate(request.endDate)}`
+}
+
 export function SupervisorRequestsTable({ requests, isMutating, onApprove, onReject }: SupervisorRequestsTableProps) {
   if (requests.length === 0) {
     return (
       <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-8 text-center">
         <p className="font-bold text-[var(--color-text)]">Nenhuma solicitação encontrada.</p>
-        <p className="mt-2 text-sm text-[var(--color-text-muted)]">Os pedidos de folga da equipe aparecerão aqui.</p>
+        <p className="mt-2 text-sm text-[var(--color-text-muted)]">Os pedidos de ausência da equipe aparecerão aqui.</p>
       </div>
     )
   }
@@ -28,7 +32,7 @@ export function SupervisorRequestsTable({ requests, isMutating, onApprove, onRej
       <div className="flex flex-col gap-2 border-b border-[var(--color-border)] p-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-secondary)]">Solicitações</p>
-          <h2 id="supervisor-requests-title" className="mt-1 text-xl font-extrabold text-[var(--color-text)]">Folgas da equipe</h2>
+          <h2 id="supervisor-requests-title" className="mt-1 text-xl font-extrabold text-[var(--color-text)]">Ausências da equipe</h2>
         </div>
         <p className="text-sm text-[var(--color-text-muted)]">{requests.length} solicitação(ões)</p>
       </div>
@@ -38,7 +42,8 @@ export function SupervisorRequestsTable({ requests, isMutating, onApprove, onRej
           <thead className="sticky top-0 z-10 bg-[var(--color-surface-subtle)] text-xs uppercase tracking-[0.12em] text-[var(--color-text-muted)]">
             <tr>
               <th scope="col" className="px-5 py-4">Colaborador</th>
-              <th scope="col" className="px-5 py-4">Data da folga</th>
+              <th scope="col" className="px-5 py-4">Tipo</th>
+              <th scope="col" className="px-5 py-4">Período</th>
               <th scope="col" className="px-5 py-4">Justificativa</th>
               <th scope="col" className="px-5 py-4">Status</th>
               <th scope="col" className="px-5 py-4 text-right">Ações</th>
@@ -51,7 +56,8 @@ export function SupervisorRequestsTable({ requests, isMutating, onApprove, onRej
               return (
                 <tr key={request.id} className="transition hover:bg-[var(--color-surface-subtle)]">
                   <td className="px-5 py-4 font-bold text-[var(--color-text)]">{request.collaboratorName}</td>
-                  <td className="px-5 py-4 text-[var(--color-text-muted)]">{formatDate(request.date)}</td>
+                  <td className="px-5 py-4 text-[var(--color-text-muted)]">{request.absenceType}</td>
+                  <td className="px-5 py-4 text-[var(--color-text-muted)]">{formatPeriod(request)}</td>
                   <td className="px-5 py-4">
                     <p className="max-w-md text-[var(--color-text)]">{request.reason}</p>
                     {request.rejectionReason && <p className="mt-2 text-xs text-[var(--color-text-muted)]">Motivo: {request.rejectionReason}</p>}
@@ -87,7 +93,7 @@ export function SupervisorRequestsTable({ requests, isMutating, onApprove, onRej
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <h3 className="font-extrabold text-[var(--color-text)]">{request.collaboratorName}</h3>
-                  <p className="mt-1 text-sm text-[var(--color-text-muted)]">{formatDate(request.date)}</p>
+                  <p className="mt-1 text-sm text-[var(--color-text-muted)]">{request.absenceType} · {formatPeriod(request)}</p>
                 </div>
                 <StatusBadge tone={status.tone}>{status.label}</StatusBadge>
               </div>

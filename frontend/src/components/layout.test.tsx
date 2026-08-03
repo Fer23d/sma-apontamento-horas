@@ -119,7 +119,7 @@ describe('layout responsivo do colaborador', () => {
     expect(markup).toContain('Colaborador Demonstração')
     expect(markup).toContain('Projetista')
     expect(markup).toContain('Engenharia de Automação')
-    for (const label of ['Visão geral', 'Novo apontamento', 'Histórico', 'Folgas', 'Meu perfil']) {
+    for (const label of ['Visão geral', 'Novo apontamento', 'Histórico', 'Ausências', 'Meu perfil']) {
       expect(markup).toContain(label)
     }
   })

@@ -20,7 +20,7 @@ const DEMO_PROFILE_CARDS: readonly DemoProfileCard[] = [
   {
     role: 'COLLABORATOR',
     name: 'Colaborador',
-    description: 'Apontamentos, saldos, histórico, folgas e perfil.',
+    description: 'Apontamentos, saldos, histórico, ausências e perfil.',
     actionLabel: 'Entrar como Colaborador',
   },
   {

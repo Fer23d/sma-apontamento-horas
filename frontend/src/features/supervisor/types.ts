@@ -18,6 +18,9 @@ export type SupervisorTimeOffRequest = {
   id: string
   collaboratorId: string
   collaboratorName: string
+  absenceType: string
+  startDate: string
+  endDate: string
   date: string
   reason: string
   status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED'

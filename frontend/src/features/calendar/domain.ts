@@ -1,6 +1,7 @@
 import { compareIsoDates, eachIsoDate } from '../../shared/utils/date'
 import type { TimeEntry } from '../time-entries/types'
 import type { TimeOffRequest } from '../time-off/types'
+import { requestAppliesToDate } from '../time-off/types'
 import { getBaseExpectedMinutes } from '../workloads/domain'
 import type { WorkloadVersion } from '../workloads/types'
 import type { CalendarEvent, CalendarVisualState, DailySummary, PeriodSummary } from './types'
@@ -69,7 +70,7 @@ export function calculateDaySummary(input: DaySummaryInput): DailySummary {
   const extraMinutes = Math.max(workedMinutes - expectedMinutes, 0)
   const missingMinutes = Math.max(expectedMinutes - workedMinutes, 0)
   const hasApprovedTimeOff = input.timeOffRequests.some((request) =>
-    request.collaboratorId === input.collaboratorId && request.date === input.date && request.status === 'APPROVED')
+    request.collaboratorId === input.collaboratorId && requestAppliesToDate(request, input.date) && request.status === 'APPROVED')
 
   return {
     date: input.date,
