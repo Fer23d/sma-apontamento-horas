@@ -10,6 +10,7 @@ import { ProtectedRoute } from '../features/session/ProtectedRoute'
 import { PublicOnlyRoute } from '../features/session/PublicOnlyRoute'
 import { SupervisorPage } from '../pages/SupervisorPage'
 import { DiretoriaPage } from '../pages/DiretoriaPage'
+import { EquipesPage } from '../pages/EquipesPage'
 
 export function AppRoutes() {
   return (
@@ -26,6 +27,7 @@ export function AppRoutes() {
       </Route>
       <Route path="/supervisor" element={<ProtectedRoute allowedRoles={['SUPERVISOR']}><SupervisorPage /></ProtectedRoute>} />
       <Route path="/administracao" element={<ProtectedRoute allowedRoles={['DIRECTOR_ADMIN']}><DiretoriaPage /></ProtectedRoute>} />
+      <Route path="/administracao/equipes" element={<ProtectedRoute allowedRoles={['DIRECTOR_ADMIN']}><EquipesPage /></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   )
