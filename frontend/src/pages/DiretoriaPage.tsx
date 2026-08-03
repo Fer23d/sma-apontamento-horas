@@ -7,6 +7,7 @@ import { TIME_OFF_STORAGE_KEY } from '../services/timeOffService'
 import { TIME_ENTRY_STORAGE_KEY } from '../services/timeEntryService'
 import { getMonthKey } from '../shared/utils/date'
 import { useSession } from '../features/session/useSession'
+import { organogramaDEP } from '../data/mockDEP'
 
 type DiretoriaEntry = {
   id: string
@@ -193,6 +194,37 @@ export function DiretoriaPage() {
               <SummaryCard label="Projetos Ativos" value={activeProjects || 3} helper="Projetos com apontamentos registrados" />
               <SummaryCard label="Apontamentos Registrados" value={entries.length} helper="Base persistida em localStorage" />
               <SummaryCard label="Pendencias Gerais" value={pendingAbsences} helper="Ausencias aguardando decisao" />
+            </section>
+
+            <section className="space-y-5" aria-labelledby="dep-org-title">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-secondary)]">Estrutura DEP</p>
+                <h2 id="dep-org-title" className="mt-1 text-xl font-extrabold text-[var(--color-text)]">Organograma de Equipes (DEP)</h2>
+              </div>
+              {organogramaDEP.map((gerencia) => (
+                <article key={gerencia.gerente} className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-sm">
+                  <div className="mb-5 flex flex-col gap-1 border-b border-[var(--color-border)] pb-4">
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">Gerencia</p>
+                    <h3 className="text-2xl font-extrabold text-[var(--color-primary)]">Gerencia: {gerencia.gerente}</h3>
+                  </div>
+                  <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+                    {gerencia.squads.map((squad) => (
+                      <section key={`${gerencia.gerente}-${squad.nome}`} className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-subtle)] p-4">
+                        <h4 className="text-base font-extrabold text-[var(--color-text)]">{squad.nome}</h4>
+                        <p className="mt-1 text-sm font-bold text-[var(--color-primary)]">Supervisor: {squad.supervisor}</p>
+                        <ul className="mt-4 max-h-72 space-y-2 overflow-y-auto pr-1">
+                          {squad.colaboradores.map((colaborador) => (
+                            <li key={`${squad.nome}-${colaborador.nome}`} className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2">
+                              <p className="text-sm font-semibold text-[var(--color-text)]">{colaborador.nome}</p>
+                              <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">{colaborador.cargo}</p>
+                            </li>
+                          ))}
+                        </ul>
+                      </section>
+                    ))}
+                  </div>
+                </article>
+              ))}
             </section>
 
             <section className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-sm" aria-labelledby="project-allocation-title">

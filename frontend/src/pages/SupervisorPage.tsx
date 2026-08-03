@@ -15,6 +15,7 @@ import { useSupervisorDashboard } from '../features/supervisor/useSupervisorDash
 import { useSession } from '../features/session/useSession'
 import { formatMinutes } from '../features/time-entries/domain'
 import { getCorporateToday, getMonthKey, getMonthRange, isIsoDate } from '../shared/utils/date'
+import { getAllColaboradores } from '../data/mockDEP'
 
 type ActiveView = 'entries' | 'requests' | 'history' | 'profile'
 type EntryStatusFilter = 'ALL' | SupervisorPendingEntry['status']
@@ -258,12 +259,13 @@ export function SupervisorPage() {
   const [appliedRange, setAppliedRange] = useState(monthRange)
   const [rangeError, setRangeError] = useState<string | null>(null)
   const [supervisorProfile, setSupervisorProfile] = useState<SupervisorProfile>(() => readSupervisorProfile())
-  const [collaboratorFilter, setCollaboratorFilter] = useState('ALL')
+  const [collaboratorFilter, setCollaboratorFilter] = useState('Todos')
   const [statusFilter, setStatusFilter] = useState<EntryStatusFilter>('ALL')
   const [filtroProjeto, setFiltroProjeto] = useState('Todos')
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [rejectionTarget, setRejectionTarget] = useState<RejectionTarget | null>(null)
   const [rejectionError, setRejectionError] = useState<string | null>(null)
+  const collaboratorOptions = useMemo(() => ['Todos', ...getAllColaboradores()], [])
 
   useEffect(() => {
     setRange(monthRange)
@@ -273,7 +275,7 @@ export function SupervisorPage() {
   const hasCustomRange = appliedRange.startDate !== monthRange.startDate || appliedRange.endDate !== monthRange.endDate
 
   const filteredEntries = useMemo(() => dashboard.entries.filter((entry) => {
-    const matchesCollaborator = collaboratorFilter === 'ALL' || entry.collaboratorId === collaboratorFilter
+    const matchesCollaborator = collaboratorFilter === 'ALL' || collaboratorFilter === 'Todos' || entry.collaboratorName === collaboratorFilter || entry.collaboratorId === collaboratorFilter
     const matchesStatus = statusFilter === 'ALL' || entry.status === statusFilter
     const matchesProject = filtroProjeto === 'Todos' || entry.projectCode === filtroProjeto
     const matchesDate = entry.entryDate >= appliedRange.startDate && entry.entryDate <= appliedRange.endDate
@@ -537,9 +539,8 @@ export function SupervisorPage() {
                   <label className="text-sm font-bold ui-text">
                     Colaborador
                     <select value={collaboratorFilter} onChange={(event) => setCollaboratorFilter(event.target.value)} className="mt-1 block w-full ui-field rounded-xl px-3 py-2 font-normal ui-text">
-                      <option value="ALL">Todos da Equipe</option>
-                      {dashboard.collaborators.map((collaborator) => (
-                        <option key={collaborator.id} value={collaborator.id}>{collaborator.name}</option>
+                      {collaboratorOptions.map((collaborator) => (
+                        <option key={collaborator} value={collaborator}>{collaborator === 'Todos' ? 'Todos da Equipe' : collaborator}</option>
                       ))}
                     </select>
                   </label>
