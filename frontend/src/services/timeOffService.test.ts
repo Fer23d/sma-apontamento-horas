@@ -54,6 +54,32 @@ describe('LocalTimeOffService', () => {
     expect(notifications.map((notification) => notification.type)).toEqual(['TIME_OFF_REQUESTED'])
   })
 
+  it('grava ausência na chave compartilhada ausencias_sma com campos de aprovação', async () => {
+    const storage = new MemoryStorage()
+    const { service } = buildService(storage)
+
+    await service.create('collaborator-1', {
+      absenceType: 'Férias',
+      startDate: '2026-07-25',
+      endDate: '2026-07-28',
+      reason: 'Descanso programado',
+      collaboratorName: 'Ana Lima',
+    })
+
+    const persisted = JSON.parse(storage.getItem(TIME_OFF_STORAGE_KEY) ?? '[]') as Array<Record<string, unknown>>
+    expect(TIME_OFF_STORAGE_KEY).toBe('ausencias_sma')
+    expect(persisted).toEqual([expect.objectContaining({
+      id: 'time-off-1',
+      colaborador: 'Ana Lima',
+      colaboradorId: 'collaborator-1',
+      tipo: 'Férias',
+      dataInicio: '2026-07-25',
+      dataRetorno: '2026-07-28',
+      justificativa: 'Descanso programado',
+      status: 'Pendente',
+    })])
+  })
+
   it('bloqueia solicitação para hoje ou para o passado', async () => {
     const { service } = buildService(new MemoryStorage())
     await expect(service.create('collaborator-1', { date: '2026-07-20', reason: 'Compromisso' })).rejects.toThrow('futura')

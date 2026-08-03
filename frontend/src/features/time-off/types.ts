@@ -6,6 +6,7 @@ export type AbsenceType = 'Folga' | 'Férias' | 'Atestado Médico' | 'Outros'
 export interface TimeOffRequest {
   id: string
   collaboratorId: string
+  collaboratorName?: string
   absenceType?: AbsenceType
   startDate?: string
   endDate?: string

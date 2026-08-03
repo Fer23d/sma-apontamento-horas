@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { LocalStorageSupervisorService } from './supervisorService'
 import type { StorageLike } from './storage'
 import { TIME_ENTRY_STORAGE_KEY } from './timeEntryService'
+import { TIME_OFF_STORAGE_KEY } from './timeOffService'
 
 function createMemoryStorage(): StorageLike {
   const values = new Map<string, string>()
@@ -93,6 +94,41 @@ describe('LocalStorageSupervisorService', () => {
         id: 'real-entry-001',
         collaboratorId: 'collaborator-real-001',
         projectCode: 'SM&A-REAL-001',
+        status: 'PENDING',
+      }),
+    ]))
+  })
+
+  it('lista ausÃªncias gravadas na chave compartilhada para aprovaÃ§Ã£o do supervisor', async () => {
+    const storage = createMemoryStorage()
+    storage.setItem(TIME_OFF_STORAGE_KEY, JSON.stringify([{
+      id: 'absence-001',
+      colaborador: 'Ana Lima',
+      colaboradorId: 'demo-collaborator-001',
+      tipo: 'Atestado MÃ©dico',
+      dataInicio: '2026-08-03',
+      dataRetorno: '2026-08-04',
+      justificativa: 'Consulta e repouso.',
+      status: 'Pendente',
+      assignmentSnapshot: {
+        squadId: 'squad-automation',
+        squadName: 'Engenharia de AutomaÃ§Ã£o',
+        supervisorId: 'supervisor-demo-001',
+        supervisorName: 'Supervisora DemonstraÃ§Ã£o',
+      },
+      createdAt: '2026-08-01T12:00:00.000Z',
+      updatedAt: '2026-08-01T12:00:00.000Z',
+    }]))
+    const service = new LocalStorageSupervisorService(storage, () => '2026-08-01T12:00:00.000Z', [], [])
+
+    await expect(service.listTimeOffRequests('demo-supervisor-001')).resolves.toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        id: 'absence-001',
+        collaboratorName: 'Ana Lima',
+        absenceType: 'Atestado MÃ©dico',
+        startDate: '2026-08-03',
+        endDate: '2026-08-04',
+        reason: 'Consulta e repouso.',
         status: 'PENDING',
       }),
     ]))

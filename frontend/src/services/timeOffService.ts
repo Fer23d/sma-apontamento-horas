@@ -9,7 +9,7 @@ import { profileService } from './profileService'
 import { createBrowserStorage, type StorageLike } from './storage'
 import { defaultPostCommitErrorHandler, runPostCommitEffect, type PostCommitErrorHandler } from './postCommit'
 
-export const TIME_OFF_STORAGE_KEY = 'sma:time-off-requests:v1'
+export const TIME_OFF_STORAGE_KEY = 'ausencias_sma'
 
 export type TimeOffStorage = {
   version: 1
@@ -27,6 +27,38 @@ type TimeOffDependencies = {
   onPostCommitError?: PostCommitErrorHandler
 }
 
+type StoredAbsence = {
+  id: string
+  colaborador: string
+  colaboradorId?: string
+  tipo: AbsenceType
+  dataInicio: string
+  dataRetorno: string
+  justificativa: string
+  status: 'Pendente' | 'Aprovado' | 'Rejeitado' | 'Cancelado'
+  assignmentSnapshot?: AssignmentSnapshot | null
+  createdAt?: string
+  updatedAt?: string
+  decidedAt?: string
+  rejectionReason?: string
+  cancellationReason?: string
+  cancelledAt?: string
+}
+
+const statusToStored: Record<TimeOffRequest['status'], StoredAbsence['status']> = {
+  PENDING: 'Pendente',
+  APPROVED: 'Aprovado',
+  REJECTED: 'Rejeitado',
+  CANCELLED: 'Cancelado',
+}
+
+const statusFromStored: Record<StoredAbsence['status'], TimeOffRequest['status']> = {
+  Pendente: 'PENDING',
+  Aprovado: 'APPROVED',
+  Rejeitado: 'REJECTED',
+  Cancelado: 'CANCELLED',
+}
+
 function isAssignmentSnapshot(value: unknown): value is AssignmentSnapshot {
   if (!value || typeof value !== 'object') return false
   const item = value as Record<string, unknown>
@@ -39,6 +71,34 @@ const absenceTypes: readonly AbsenceType[] = ['Folga', 'Férias', 'Atestado Méd
 function normalizeTimeOffRequest(value: unknown): TimeOffRequest | null {
   if (!value || typeof value !== 'object') return null
   const item = value as Record<string, unknown>
+  if (typeof item.colaborador === 'string'
+    && typeof item.tipo === 'string'
+    && typeof item.dataInicio === 'string'
+    && typeof item.dataRetorno === 'string'
+    && typeof item.justificativa === 'string'
+    && typeof item.status === 'string') {
+    const status = statusFromStored[item.status as StoredAbsence['status']]
+    const absenceType = absenceTypes.includes(item.tipo as AbsenceType) ? item.tipo as AbsenceType : 'Folga'
+    if (typeof item.id !== 'string' || !status || !isIsoDate(item.dataInicio) || !isIsoDate(item.dataRetorno) || item.dataRetorno < item.dataInicio) return null
+    return {
+      id: item.id,
+      collaboratorId: typeof item.colaboradorId === 'string' ? item.colaboradorId : item.colaborador,
+      collaboratorName: item.colaborador,
+      absenceType,
+      startDate: item.dataInicio,
+      endDate: item.dataRetorno,
+      date: item.dataInicio,
+      reason: item.justificativa,
+      status,
+      assignmentSnapshot: item.assignmentSnapshot === null || isAssignmentSnapshot(item.assignmentSnapshot) ? item.assignmentSnapshot as AssignmentSnapshot | null : null,
+      createdAt: typeof item.createdAt === 'string' ? item.createdAt : new Date().toISOString(),
+      updatedAt: typeof item.updatedAt === 'string' ? item.updatedAt : new Date().toISOString(),
+      decidedAt: typeof item.decidedAt === 'string' ? item.decidedAt : undefined,
+      rejectionReason: typeof item.rejectionReason === 'string' ? item.rejectionReason : undefined,
+      cancellationReason: typeof item.cancellationReason === 'string' ? item.cancellationReason : undefined,
+      cancelledAt: typeof item.cancelledAt === 'string' ? item.cancelledAt : undefined,
+    }
+  }
   if (typeof item.id !== 'string'
     || typeof item.collaboratorId !== 'string'
     || typeof item.reason !== 'string'
@@ -53,6 +113,7 @@ function normalizeTimeOffRequest(value: unknown): TimeOffRequest | null {
   return {
     id: item.id,
     collaboratorId: item.collaboratorId,
+    collaboratorName: typeof item.collaboratorName === 'string' ? item.collaboratorName : undefined,
     absenceType,
     startDate,
     endDate,
@@ -66,6 +127,26 @@ function normalizeTimeOffRequest(value: unknown): TimeOffRequest | null {
     rejectionReason: typeof item.rejectionReason === 'string' ? item.rejectionReason : undefined,
     cancellationReason: typeof item.cancellationReason === 'string' ? item.cancellationReason : undefined,
     cancelledAt: typeof item.cancelledAt === 'string' ? item.cancelledAt : undefined,
+  }
+}
+
+function toStoredAbsence(request: TimeOffRequest): StoredAbsence {
+  return {
+    id: request.id,
+    colaborador: request.collaboratorName ?? request.collaboratorId,
+    colaboradorId: request.collaboratorId,
+    tipo: request.absenceType ?? 'Folga',
+    dataInicio: request.startDate ?? request.date,
+    dataRetorno: request.endDate ?? request.date,
+    justificativa: request.reason,
+    status: statusToStored[request.status],
+    assignmentSnapshot: request.assignmentSnapshot,
+    createdAt: request.createdAt,
+    updatedAt: request.updatedAt,
+    decidedAt: request.decidedAt,
+    rejectionReason: request.rejectionReason,
+    cancellationReason: request.cancellationReason,
+    cancelledAt: request.cancelledAt,
   }
 }
 
@@ -96,6 +177,15 @@ export class LocalTimeOffService {
       if (!raw) return { version: 1, requests: [] }
       const parsed = JSON.parse(raw) as unknown
       if (!parsed || typeof parsed !== 'object') throw new Error('Estrutura de folgas inválida.')
+      if (Array.isArray(parsed)) {
+        return {
+          version: 1,
+          requests: parsed.flatMap((request) => {
+            const normalized = normalizeTimeOffRequest(request)
+            return normalized ? [normalized] : []
+          }),
+        }
+      }
       const candidate = parsed as Partial<TimeOffStorage>
       if (candidate.version !== 1 || !Array.isArray(candidate.requests)) throw new Error('Versão de folgas inválida.')
       return {
@@ -112,7 +202,7 @@ export class LocalTimeOffService {
   }
 
   private write(data: TimeOffStorage) {
-    const serialized = JSON.stringify(data)
+    const serialized = JSON.stringify(data.requests.map(toStoredAbsence))
     this.storage.setItem(TIME_OFF_STORAGE_KEY, serialized)
     if (this.storage.getItem(TIME_OFF_STORAGE_KEY) !== serialized) throw new Error('Não foi possível confirmar a gravação da folga.')
   }
@@ -145,7 +235,7 @@ export class LocalTimeOffService {
     return (await this.listByRange(collaboratorId, startDate, endDate)).filter((request) => request.status === 'APPROVED')
   }
 
-  async create(collaboratorId: string, input: { absenceType?: AbsenceType; startDate?: string; endDate?: string; date?: string; reason: string }) {
+  async create(collaboratorId: string, input: { absenceType?: AbsenceType; startDate?: string; endDate?: string; date?: string; reason: string; collaboratorName?: string }) {
     const reason = input.reason.trim()
     const absenceType = input.absenceType ?? 'Folga'
     const startDate = input.startDate ?? input.date ?? ''
@@ -159,7 +249,7 @@ export class LocalTimeOffService {
     const storage = this.read()
     const timestamp = this.now()
     const request: TimeOffRequest = {
-      id: this.createId(), collaboratorId, absenceType, startDate, endDate, date: startDate, reason, status: 'PENDING', assignmentSnapshot,
+      id: this.createId(), collaboratorId, collaboratorName: input.collaboratorName, absenceType, startDate, endDate, date: startDate, reason, status: 'PENDING', assignmentSnapshot,
       createdAt: timestamp, updatedAt: timestamp,
     }
     storage.requests.push(request)

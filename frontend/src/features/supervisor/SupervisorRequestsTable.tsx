@@ -32,7 +32,7 @@ export function SupervisorRequestsTable({ requests, isMutating, onApprove, onRej
       <div className="flex flex-col gap-2 border-b border-[var(--color-border)] p-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-secondary)]">Solicitações</p>
-          <h2 id="supervisor-requests-title" className="mt-1 text-xl font-extrabold text-[var(--color-text)]">Ausências da equipe</h2>
+          <h2 id="supervisor-requests-title" className="mt-1 text-xl font-extrabold text-[var(--color-text)]">Solicitações de Ausência</h2>
         </div>
         <p className="text-sm text-[var(--color-text-muted)]">{requests.length} solicitação(ões)</p>
       </div>

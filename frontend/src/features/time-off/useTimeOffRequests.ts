@@ -36,7 +36,7 @@ export function useTimeOffRequests() {
     if (!profile || isSubmitting) return
     setIsSubmitting(true); setError(null); setFeedback(null)
     try {
-      await timeOffService.create(profile.id, { absenceType, startDate, endDate, reason })
+      await timeOffService.create(profile.id, { absenceType, startDate, endDate, reason, collaboratorName: profile.name })
       setAbsenceType('Folga'); setStartDate(''); setEndDate(''); setReason(''); setFeedback('Ausência registrada e encaminhada à supervisão da squad registrada.')
       await load()
     } catch (createError) {
