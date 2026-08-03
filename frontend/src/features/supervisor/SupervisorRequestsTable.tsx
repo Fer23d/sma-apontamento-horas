@@ -18,11 +18,13 @@ function formatPeriod(request: SupervisorTimeOffRequest) {
 }
 
 export function SupervisorRequestsTable({ requests, isMutating, onApprove, onReject }: SupervisorRequestsTableProps) {
-  if (requests.length === 0) {
+  const safeRequests = Array.isArray(requests) ? requests : []
+
+  if (safeRequests.length === 0) {
     return (
       <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-8 text-center">
-        <p className="font-bold text-[var(--color-text)]">Nenhuma solicitação encontrada.</p>
-        <p className="mt-2 text-sm text-[var(--color-text-muted)]">Os pedidos de ausência da equipe aparecerão aqui.</p>
+        <p className="font-bold text-[var(--color-text)]">Nenhum registro encontrado.</p>
+        <p className="mt-2 text-sm text-[var(--color-text-muted)]">Os pedidos de ausencia da equipe aparecerao aqui.</p>
       </div>
     )
   }
@@ -31,10 +33,10 @@ export function SupervisorRequestsTable({ requests, isMutating, onApprove, onRej
     <section className="ui-card overflow-hidden rounded-2xl" aria-labelledby="supervisor-requests-title">
       <div className="flex flex-col gap-2 border-b border-[var(--color-border)] p-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-secondary)]">Solicitações</p>
-          <h2 id="supervisor-requests-title" className="mt-1 text-xl font-extrabold text-[var(--color-text)]">Solicitações de Ausência</h2>
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-secondary)]">Solicitacoes</p>
+          <h2 id="supervisor-requests-title" className="mt-1 text-xl font-extrabold text-[var(--color-text)]">Solicitacoes de Ausencia</h2>
         </div>
-        <p className="text-sm text-[var(--color-text-muted)]">{requests.length} solicitação(ões)</p>
+        <p className="text-sm text-[var(--color-text-muted)]">{safeRequests.length} solicitacao(oes)</p>
       </div>
 
       <div className="hidden max-h-[600px] overflow-auto md:block">
@@ -43,14 +45,14 @@ export function SupervisorRequestsTable({ requests, isMutating, onApprove, onRej
             <tr>
               <th scope="col" className="px-5 py-4">Colaborador</th>
               <th scope="col" className="px-5 py-4">Tipo</th>
-              <th scope="col" className="px-5 py-4">Período</th>
+              <th scope="col" className="px-5 py-4">Periodo</th>
               <th scope="col" className="px-5 py-4">Justificativa</th>
               <th scope="col" className="px-5 py-4">Status</th>
-              <th scope="col" className="px-5 py-4 text-right">Ações</th>
+              <th scope="col" className="px-5 py-4 text-right">Acoes</th>
             </tr>
           </thead>
           <tbody className="divide-y ui-divide">
-            {requests.map((request) => {
+            {safeRequests && safeRequests.length > 0 ? safeRequests.map((request) => {
               const status = timeOffStatusPresentation[request.status]
               const isPending = request.status === 'PENDING'
               return (
@@ -74,18 +76,24 @@ export function SupervisorRequestsTable({ requests, isMutating, onApprove, onRej
                         </button>
                       </div>
                     ) : (
-                      <p className="text-right text-xs font-bold text-[var(--color-text-muted)]">Concluído</p>
+                      <p className="text-right text-xs font-bold text-[var(--color-text-muted)]">Concluido</p>
                     )}
                   </td>
                 </tr>
               )
-            })}
+            }) : (
+              <tr>
+                <td colSpan={6} className="px-5 py-8 text-center text-sm text-[var(--color-text-muted)]">
+                  Nenhum registro encontrado.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
 
       <div className="max-h-[600px] divide-y overflow-y-auto ui-divide md:hidden">
-        {requests.map((request) => {
+        {safeRequests && safeRequests.length > 0 ? safeRequests.map((request) => {
           const status = timeOffStatusPresentation[request.status]
           const isPending = request.status === 'PENDING'
           return (
@@ -93,7 +101,7 @@ export function SupervisorRequestsTable({ requests, isMutating, onApprove, onRej
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <h3 className="font-extrabold text-[var(--color-text)]">{request.collaboratorName}</h3>
-                  <p className="mt-1 text-sm text-[var(--color-text-muted)]">{request.absenceType} · {formatPeriod(request)}</p>
+                  <p className="mt-1 text-sm text-[var(--color-text-muted)]">{request.absenceType} - {formatPeriod(request)}</p>
                 </div>
                 <StatusBadge tone={status.tone}>{status.label}</StatusBadge>
               </div>
@@ -111,7 +119,7 @@ export function SupervisorRequestsTable({ requests, isMutating, onApprove, onRej
               )}
             </article>
           )
-        })}
+        }) : <p className="p-5 text-sm text-[var(--color-text-muted)]">Nenhum registro encontrado.</p>}
       </div>
     </section>
   )

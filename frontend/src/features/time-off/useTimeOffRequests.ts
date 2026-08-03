@@ -22,7 +22,8 @@ export function useTimeOffRequests() {
     setIsLoading(true)
     setError(null)
     try {
-      setRequests(await timeOffService.listByRange(profile.id, addDays(today, -365), addDays(today, 730)))
+      const stored = await timeOffService.listByRange(profile.id, addDays(today, -365), addDays(today, 730))
+      setRequests(Array.isArray(stored) ? stored : [])
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Não foi possível carregar as ausências.')
     } finally {
@@ -36,7 +37,8 @@ export function useTimeOffRequests() {
     if (!profile || isSubmitting) return
     setIsSubmitting(true); setError(null); setFeedback(null)
     try {
-      await timeOffService.create(profile.id, { absenceType, startDate, endDate, reason, collaboratorName: profile.name })
+      const created = await timeOffService.create(profile.id, { absenceType, startDate, endDate, reason, collaboratorName: profile.name })
+      setRequests((current) => [...current, created].sort((left, right) => (left.startDate ?? left.date).localeCompare(right.startDate ?? right.date)))
       setAbsenceType('Folga'); setStartDate(''); setEndDate(''); setReason(''); setFeedback('Ausência registrada e encaminhada à supervisão da squad registrada.')
       await load()
     } catch (createError) {

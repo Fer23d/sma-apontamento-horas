@@ -80,6 +80,27 @@ describe('LocalTimeOffService', () => {
     })])
   })
 
+  it('aprova ausencia gravada no formato simples da chave compartilhada', async () => {
+    const storage = new MemoryStorage()
+    storage.setItem(TIME_OFF_STORAGE_KEY, JSON.stringify([{
+      id: 'absence-raw-1',
+      colaborador: 'Ana Lima',
+      colaboradorId: 'collaborator-1',
+      tipo: 'FÃ©rias',
+      dataInicio: '2026-07-25',
+      dataRetorno: '2026-07-28',
+      justificativa: 'Descanso programado',
+      status: 'Pendente',
+    }]))
+    const { service } = buildService(storage)
+
+    const approved = await service.approve('supervisor-demo-001', 'absence-raw-1')
+
+    expect(approved.status).toBe('APPROVED')
+    const persisted = JSON.parse(storage.getItem(TIME_OFF_STORAGE_KEY) ?? '[]') as Array<Record<string, unknown>>
+    expect(persisted[0]).toMatchObject({ id: 'absence-raw-1', status: 'Aprovado' })
+  })
+
   it('bloqueia solicitação para hoje ou para o passado', async () => {
     const { service } = buildService(new MemoryStorage())
     await expect(service.create('collaborator-1', { date: '2026-07-20', reason: 'Compromisso' })).rejects.toThrow('futura')

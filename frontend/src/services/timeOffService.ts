@@ -103,7 +103,7 @@ function normalizeTimeOffRequest(value: unknown): TimeOffRequest | null {
     || typeof item.collaboratorId !== 'string'
     || typeof item.reason !== 'string'
     || !['PENDING', 'APPROVED', 'REJECTED', 'CANCELLED'].includes(String(item.status))
-    || (item.assignmentSnapshot !== null && !isAssignmentSnapshot(item.assignmentSnapshot))
+    || (item.assignmentSnapshot != null && !isAssignmentSnapshot(item.assignmentSnapshot))
     || typeof item.createdAt !== 'string'
     || typeof item.updatedAt !== 'string') return null
   const startDate = typeof item.startDate === 'string' && isIsoDate(item.startDate) ? item.startDate : String(item.date)
@@ -120,7 +120,7 @@ function normalizeTimeOffRequest(value: unknown): TimeOffRequest | null {
     date: startDate,
     reason: item.reason,
     status: item.status as TimeOffRequest['status'],
-    assignmentSnapshot: item.assignmentSnapshot as AssignmentSnapshot | null,
+    assignmentSnapshot: item.assignmentSnapshot as AssignmentSnapshot | null | undefined ?? null,
     createdAt: item.createdAt,
     updatedAt: item.updatedAt,
     decidedAt: typeof item.decidedAt === 'string' ? item.decidedAt : undefined,
@@ -265,7 +265,7 @@ export class LocalTimeOffService {
     if (index < 0) throw new Error('Solicitação de folga não encontrada.')
     const current = storage.requests[index]
     if (current.status !== 'PENDING') throw new Error('A solicitação de folga não está pendente.')
-    if (!current.assignmentSnapshot || current.assignmentSnapshot.supervisorId !== supervisorId) {
+    if (current.assignmentSnapshot && current.assignmentSnapshot.supervisorId !== supervisorId) {
       throw new Error('Somente o supervisor associado à solicitação pode aprovar a folga.')
     }
     const timestamp = this.now()
@@ -287,7 +287,7 @@ export class LocalTimeOffService {
     if (index < 0) throw new Error('Solicitação de folga não encontrada.')
     const current = storage.requests[index]
     if (current.status !== 'PENDING') throw new Error('A solicitação de folga não está pendente.')
-    if (!current.assignmentSnapshot || current.assignmentSnapshot.supervisorId !== supervisorId) {
+    if (current.assignmentSnapshot && current.assignmentSnapshot.supervisorId !== supervisorId) {
       throw new Error('Somente o supervisor associado à solicitação pode rejeitar a folga.')
     }
     const timestamp = this.now()

@@ -300,7 +300,7 @@ export class LocalStorageSupervisorService implements SupervisorService {
     const storage = this.ensureSeedTimeOffRequests()
     const collaborators = new Map(TEAM_MEMBERS.map((member) => [member.id, member.name]))
     return storage.requests
-      .filter((request) => request.assignmentSnapshot?.supervisorId === supervisorId || (supervisorId === SUPERVISOR_SESSION_ID && COMPATIBLE_SUPERVISOR_IDS.has(request.assignmentSnapshot?.supervisorId ?? '')))
+      .filter((request) => !request.assignmentSnapshot || request.assignmentSnapshot.supervisorId === supervisorId || (supervisorId === SUPERVISOR_SESSION_ID && COMPATIBLE_SUPERVISOR_IDS.has(request.assignmentSnapshot.supervisorId)))
       .map<SupervisorTimeOffRequest>((request) => ({
         id: request.id,
         collaboratorId: request.collaboratorId,

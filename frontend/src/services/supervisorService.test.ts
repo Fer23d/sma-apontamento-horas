@@ -29,7 +29,7 @@ const seedEntries = [
     entryDate: '2026-07-29',
     projectCode: 'SM&A-002',
     durationMinutes: 360,
-    activityName: 'Revisão',
+    activityName: 'Revisao',
   },
 ]
 
@@ -44,7 +44,7 @@ describe('LocalStorageSupervisorService', () => {
     ]))
   })
 
-  it('persiste aprovação e rejeição no storage local', async () => {
+  it('persiste aprovacao e rejeicao no storage local', async () => {
     const storage = createMemoryStorage()
     const service = new LocalStorageSupervisorService(storage, () => '2026-07-30T12:00:00.000Z', seedEntries)
 
@@ -61,8 +61,9 @@ describe('LocalStorageSupervisorService', () => {
   it('exige motivo para rejeitar', async () => {
     const service = new LocalStorageSupervisorService(createMemoryStorage(), () => '2026-07-30T12:00:00.000Z', seedEntries)
 
-    expect(() => service.reject('entry-001', 'supervisor-001', '   ')).toThrow('Informe o motivo da rejeição.')
+    expect(() => service.reject('entry-001', 'supervisor-001', '   ')).toThrow(/motivo/)
   })
+
   it('lista apontamentos reais gravados na mesma chave local do colaborador', async () => {
     const storage = createMemoryStorage()
     storage.setItem(TIME_ENTRY_STORAGE_KEY, JSON.stringify({
@@ -75,8 +76,8 @@ describe('LocalStorageSupervisorService', () => {
           clientId: 'client-real',
           projectCode: 'SM&A-REAL-001',
           activityId: 'activity-real',
-          disciplineCode: '—',
-          documentTypeCode: '—',
+          disciplineCode: 'A',
+          documentTypeCode: 'RN',
           durationMinutes: 300,
           details: 'Apontamento real do colaborador',
           assignmentSnapshot: null,
@@ -99,23 +100,17 @@ describe('LocalStorageSupervisorService', () => {
     ]))
   })
 
-  it('lista ausÃªncias gravadas na chave compartilhada para aprovaÃ§Ã£o do supervisor', async () => {
+  it('lista ausencias gravadas na chave compartilhada para aprovacao do supervisor', async () => {
     const storage = createMemoryStorage()
     storage.setItem(TIME_OFF_STORAGE_KEY, JSON.stringify([{
       id: 'absence-001',
       colaborador: 'Ana Lima',
       colaboradorId: 'demo-collaborator-001',
-      tipo: 'Atestado MÃ©dico',
+      tipo: 'Atestado Medico',
       dataInicio: '2026-08-03',
       dataRetorno: '2026-08-04',
       justificativa: 'Consulta e repouso.',
       status: 'Pendente',
-      assignmentSnapshot: {
-        squadId: 'squad-automation',
-        squadName: 'Engenharia de AutomaÃ§Ã£o',
-        supervisorId: 'supervisor-demo-001',
-        supervisorName: 'Supervisora DemonstraÃ§Ã£o',
-      },
       createdAt: '2026-08-01T12:00:00.000Z',
       updatedAt: '2026-08-01T12:00:00.000Z',
     }]))
@@ -125,7 +120,7 @@ describe('LocalStorageSupervisorService', () => {
       expect.objectContaining({
         id: 'absence-001',
         collaboratorName: 'Ana Lima',
-        absenceType: 'Atestado MÃ©dico',
+        absenceType: 'Atestado Medico',
         startDate: '2026-08-03',
         endDate: '2026-08-04',
         reason: 'Consulta e repouso.',

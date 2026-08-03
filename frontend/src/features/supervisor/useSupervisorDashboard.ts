@@ -42,7 +42,13 @@ export function useSupervisorDashboard(supervisorId: string | undefined) {
         supervisorService.getSummary(),
         supervisorService.getRequestSummary(supervisorId),
       ])
-      setData({ collaborators, entries, requests, summary, requestSummary })
+      setData({
+        collaborators: Array.isArray(collaborators) ? collaborators : [],
+        entries: Array.isArray(entries) ? entries : [],
+        requests: Array.isArray(requests) ? requests : [],
+        summary,
+        requestSummary,
+      })
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : 'Não foi possível carregar os dados da supervisão.')
     } finally {
