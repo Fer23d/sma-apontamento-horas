@@ -195,6 +195,8 @@ export function EquipesPage() {
   const now = new Date()
   const [mesSelecionado, setMesSelecionado] = useState(now.getMonth() + 1)
   const [anoSelecionado, setAnoSelecionado] = useState(now.getFullYear())
+  const [squadMesSelecionado, setSquadMesSelecionado] = useState(now.getMonth() + 1)
+  const [squadAnoSelecionado, setSquadAnoSelecionado] = useState(now.getFullYear())
   const [isExporting, setIsExporting] = useState(false)
   const [exportError, setExportError] = useState<string | null>(null)
   const yearOptions = useMemo(() => {
@@ -212,6 +214,17 @@ export function EquipesPage() {
   const squadOptions = useMemo(() => getSquads(dadosOrganograma).map((squad) => squad.nome), [dadosOrganograma])
   const selectedSquad = useMemo(() => findSquad(dadosOrganograma, squadSelecionada), [dadosOrganograma, squadSelecionada])
   const organogramaAtual = dadosOrganograma.length > 0 ? dadosOrganograma : organogramaDEP
+
+  function resetSquadPeriod() {
+    const current = new Date()
+    setSquadMesSelecionado(current.getMonth() + 1)
+    setSquadAnoSelecionado(current.getFullYear())
+  }
+
+  function handleSquadSelection(squadName: string) {
+    setSquadSelecionada(squadName)
+    resetSquadPeriod()
+  }
 
   function handleSaveCollaborator(sourceSquadName: string, originalName: string, updated: DEPColaborador, targetSquadName: string) {
     setDadosOrganograma((current) => {
@@ -246,7 +259,10 @@ export function EquipesPage() {
         }),
       }))
       persistOrganograma(next)
-      if (targetSquadName !== sourceSquadName) setSquadSelecionada(targetSquadName)
+      if (targetSquadName !== sourceSquadName) {
+        setSquadSelecionada(targetSquadName)
+        resetSquadPeriod()
+      }
       return next
     })
   }
@@ -273,7 +289,12 @@ export function EquipesPage() {
     setIsExporting(true)
     setExportError(null)
     try {
-      await exportSquadHoursReport({ organograma: organogramaAtual, squadName: selectedSquad.nome, mesSelecionado, anoSelecionado })
+      await exportSquadHoursReport({
+        organograma: organogramaAtual,
+        squadName: selectedSquad.nome,
+        mesSelecionado: squadMesSelecionado,
+        anoSelecionado: squadAnoSelecionado,
+      })
     } catch (error) {
       setExportError(error instanceof Error ? error.message : 'Não foi possível exportar o relatório da equipe.')
     } finally {
@@ -363,7 +384,7 @@ export function EquipesPage() {
                           <button
                             key={`${squad.gerente}-${squad.nome}`}
                             type="button"
-                            onClick={() => setSquadSelecionada(squad.nome)}
+                            onClick={() => handleSquadSelection(squad.nome)}
                             className={`w-full rounded-xl border px-3 py-3 text-left transition ${
                               isActive
                                 ? 'border-[var(--color-primary)] bg-[var(--color-primary)] text-white'
@@ -382,23 +403,45 @@ export function EquipesPage() {
                 <section className="min-w-0 flex-1 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-sm">
                     {selectedSquad ? (
                       <>
-                        <div className="mb-5 flex flex-col gap-2 border-b border-[var(--color-border)] pb-4 sm:flex-row sm:items-end sm:justify-between">
+                        <div className="mb-5 flex flex-col gap-3 border-b border-[var(--color-border)] pb-4 xl:flex-row xl:items-end xl:justify-between">
                           <div>
                             <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">Equipe selecionada</p>
                             <h3 className="mt-1 text-2xl font-extrabold text-[var(--color-text)]">{selectedSquad.nome}</h3>
                             <p className="mt-1 text-sm font-bold text-[var(--color-primary)]">Supervisor: {selectedSquad.supervisor}</p>
                           </div>
-                          <div className="flex flex-col items-start gap-2 sm:items-end">
-                            <p className="text-sm text-[var(--color-text-muted)]">{selectedSquad.colaboradores.length} colaborador(es)</p>
-                            <button
-                              type="button"
-                              onClick={handleExportSelectedSquadHours}
-                              disabled={isExporting}
-                              className="inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm font-bold text-[var(--color-primary)] transition hover:border-[var(--color-primary)] hover:bg-[var(--color-surface-subtle)] disabled:cursor-not-allowed disabled:opacity-60"
-                            >
-                              <span className="flex h-6 w-6 items-center justify-center rounded-md bg-[var(--color-navigation-active-detail)] text-[10px] font-black text-[var(--color-primary)]">XL</span>
-                              Exportar Horas da Equipe
-                            </button>
+                          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-end">
+                            <label className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">
+                              Mês
+                              <select
+                                value={squadMesSelecionado}
+                                onChange={(event) => setSquadMesSelecionado(Number(event.target.value))}
+                                className="mt-1 w-full min-w-40 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-3 text-sm font-semibold text-[var(--color-text)] outline-none transition focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
+                              >
+                                {monthOptions.map((month) => <option key={month.value} value={month.value}>{month.label}</option>)}
+                              </select>
+                            </label>
+                            <label className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">
+                              Ano
+                              <select
+                                value={squadAnoSelecionado}
+                                onChange={(event) => setSquadAnoSelecionado(Number(event.target.value))}
+                                className="mt-1 w-full min-w-28 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-3 text-sm font-semibold text-[var(--color-text)] outline-none transition focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
+                              >
+                                {yearOptions.map((year) => <option key={year} value={year}>{year}</option>)}
+                              </select>
+                            </label>
+                            <div className="flex flex-col items-start gap-2 sm:items-end">
+                              <p className="text-sm text-[var(--color-text-muted)]">{selectedSquad.colaboradores.length} colaborador(es)</p>
+                              <button
+                                type="button"
+                                onClick={handleExportSelectedSquadHours}
+                                disabled={isExporting}
+                                className="inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm font-bold text-[var(--color-primary)] transition hover:border-[var(--color-primary)] hover:bg-[var(--color-surface-subtle)] disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                <span className="flex h-6 w-6 items-center justify-center rounded-md bg-[var(--color-navigation-active-detail)] text-[10px] font-black text-[var(--color-primary)]">XL</span>
+                                Exportar Horas da Equipe
+                              </button>
+                            </div>
                           </div>
                         </div>
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
