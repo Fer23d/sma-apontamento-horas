@@ -4,6 +4,8 @@ import { BrandMark } from '../components/BrandMark'
 import { ThemeToggle } from '../components/ThemeToggle'
 import { useSession } from '../features/session/useSession'
 import { organogramaDEP, type DEPColaborador, type DEPGerencia, type DEPSquad } from '../data/mockDEP'
+import { exportGeneralHoursReport, exportSquadHoursReport } from '../services/excelExportService'
+import { getCorporateToday, getMonthKey } from '../shared/utils/date'
 
 const ORGANOGRAMA_STORAGE_KEY = 'organograma_editavel_sma'
 const cargoOptions = ['Engenheiro', 'Projetista', 'Desenhista', 'Estagiário', 'Estagiário 4h']
@@ -177,6 +179,9 @@ export function EquipesPage() {
   const navigate = useNavigate()
   const [dadosOrganograma, setDadosOrganograma] = useState<DEPGerencia[]>([])
   const [squadSelecionada, setSquadSelecionada] = useState(getFirstSquadName(organogramaDEP))
+  const [isExporting, setIsExporting] = useState(false)
+  const [exportError, setExportError] = useState<string | null>(null)
+  const reportMonthKey = getMonthKey(getCorporateToday())
 
   useEffect(() => {
     const storedOrganograma = loadEditableOrganograma()
@@ -186,6 +191,7 @@ export function EquipesPage() {
 
   const squadOptions = useMemo(() => getSquads(dadosOrganograma).map((squad) => squad.nome), [dadosOrganograma])
   const selectedSquad = useMemo(() => findSquad(dadosOrganograma, squadSelecionada), [dadosOrganograma, squadSelecionada])
+  const organogramaAtual = dadosOrganograma.length > 0 ? dadosOrganograma : organogramaDEP
 
   function handleSaveCollaborator(sourceSquadName: string, originalName: string, updated: DEPColaborador, targetSquadName: string) {
     setDadosOrganograma((current) => {
@@ -230,6 +236,31 @@ export function EquipesPage() {
     navigate('/login', { replace: true })
   }
 
+  async function handleExportAllHours() {
+    setIsExporting(true)
+    setExportError(null)
+    try {
+      await exportGeneralHoursReport({ organograma: organogramaAtual, monthKey: reportMonthKey })
+    } catch (error) {
+      setExportError(error instanceof Error ? error.message : 'Não foi possível exportar o relatório geral.')
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
+  async function handleExportSelectedSquadHours() {
+    if (!selectedSquad) return
+    setIsExporting(true)
+    setExportError(null)
+    try {
+      await exportSquadHoursReport({ organograma: organogramaAtual, squadName: selectedSquad.nome, monthKey: reportMonthKey })
+    } catch (error) {
+      setExportError(error instanceof Error ? error.message : 'Não foi possível exportar o relatório da equipe.')
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-text)]">
       <header className="sticky top-0 z-40 flex h-20 w-full items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-header)] px-4 shadow-sm sm:px-6 lg:px-8">
@@ -251,10 +282,29 @@ export function EquipesPage() {
         <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-7xl space-y-6">
             <section>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-secondary)]">Estrutura DEP</p>
-              <h1 className="mt-2 text-3xl font-extrabold text-[var(--color-text)]">SM&A - Gerenciamento de Equipes</h1>
-              <p className="mt-2 text-sm text-[var(--color-text-muted)]">Gerencie colaboradores, cargos e transferências entre squads.</p>
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-secondary)]">Estrutura DEP</p>
+                  <h1 className="mt-2 text-3xl font-extrabold text-[var(--color-text)]">SM&A - Gerenciamento de Equipes</h1>
+                  <p className="mt-2 text-sm text-[var(--color-text-muted)]">Gerencie colaboradores, cargos e transferências entre squads.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleExportAllHours}
+                  disabled={isExporting}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--color-primary)] bg-[var(--color-primary)] px-4 py-3 text-sm font-bold text-[#06241f] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/20 text-[10px] font-black text-[#06241f]">XL</span>
+                  Exportar Horas (Geral)
+                </button>
+              </div>
             </section>
+
+            {exportError && (
+              <div role="alert" className="rounded-2xl border border-[var(--color-danger)] bg-[var(--color-surface)] p-4 text-sm font-semibold text-[var(--color-danger)]">
+                {exportError}
+              </div>
+            )}
 
             <section className="space-y-5" aria-labelledby="dep-org-title">
               <div>
@@ -288,17 +338,28 @@ export function EquipesPage() {
                 </aside>
 
                 <section className="min-w-0 flex-1 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-sm">
-                  {selectedSquad ? (
-                    <>
-                      <div className="mb-5 flex flex-col gap-2 border-b border-[var(--color-border)] pb-4 sm:flex-row sm:items-end sm:justify-between">
-                        <div>
-                          <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">Equipe selecionada</p>
-                          <h3 className="mt-1 text-2xl font-extrabold text-[var(--color-text)]">{selectedSquad.nome}</h3>
-                          <p className="mt-1 text-sm font-bold text-[var(--color-primary)]">Supervisor: {selectedSquad.supervisor}</p>
+                    {selectedSquad ? (
+                      <>
+                        <div className="mb-5 flex flex-col gap-2 border-b border-[var(--color-border)] pb-4 sm:flex-row sm:items-end sm:justify-between">
+                          <div>
+                            <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">Equipe selecionada</p>
+                            <h3 className="mt-1 text-2xl font-extrabold text-[var(--color-text)]">{selectedSquad.nome}</h3>
+                            <p className="mt-1 text-sm font-bold text-[var(--color-primary)]">Supervisor: {selectedSquad.supervisor}</p>
+                          </div>
+                          <div className="flex flex-col items-start gap-2 sm:items-end">
+                            <p className="text-sm text-[var(--color-text-muted)]">{selectedSquad.colaboradores.length} colaborador(es)</p>
+                            <button
+                              type="button"
+                              onClick={handleExportSelectedSquadHours}
+                              disabled={isExporting}
+                              className="inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm font-bold text-[var(--color-primary)] transition hover:border-[var(--color-primary)] hover:bg-[var(--color-surface-subtle)] disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              <span className="flex h-6 w-6 items-center justify-center rounded-md bg-[var(--color-navigation-active-detail)] text-[10px] font-black text-[var(--color-primary)]">XL</span>
+                              Exportar Horas da Equipe
+                            </button>
+                          </div>
                         </div>
-                        <p className="text-sm text-[var(--color-text-muted)]">{selectedSquad.colaboradores.length} colaborador(es)</p>
-                      </div>
-                      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
                         {selectedSquad.colaboradores.map((colaborador) => (
                           <EditableCollaboratorCard
                             key={`${selectedSquad.nome}-${colaborador.nome}`}
