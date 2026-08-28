@@ -8,12 +8,12 @@ import type { TimeEntry } from '../features/time-entries/types'
 import { normalizeTimeEntry, type TimeEntryStorageV3 } from './timeEntryMigration'
 import { TIME_ENTRY_STORAGE_KEY } from './timeEntryService'
 import { createBrowserStorage, type StorageLike } from './storage'
-import { getCorporateToday, getMonthKey } from '../shared/utils/date'
 
 const COLLABORATOR_PROFILE_STORAGE_KEY = 'sma:collaborator-profile:v1'
 
 type MonthScope = {
-  monthKey?: string
+  mesSelecionado?: number
+  anoSelecionado?: number
 }
 
 type SquadExportInput = MonthScope & {
@@ -145,6 +145,13 @@ function filterEntriesByMonth(entries: TimeEntry[], monthKey: string) {
   return entries.filter((entry) => entry.entryDate.startsWith(monthKey))
 }
 
+function buildMonthKey(mesSelecionado?: number, anoSelecionado?: number) {
+  const currentDate = new Date()
+  const year = Number.isInteger(anoSelecionado) ? Number(anoSelecionado) : currentDate.getFullYear()
+  const month = Number.isInteger(mesSelecionado) ? Number(mesSelecionado) : currentDate.getMonth() + 1
+  return `${year}-${String(month).padStart(2, '0')}`
+}
+
 function filterEntriesBySquad(entries: TimeEntry[], squadName: string) {
   return entries.filter((entry) => entry.assignmentSnapshot?.squadName === squadName)
 }
@@ -238,12 +245,13 @@ async function writeWorkbook(workbook: ExcelJS.Workbook, fileName: string) {
   saveAs(new Blob([buffer]), fileName)
 }
 
-export async function exportGeneralHoursReport({ organograma, monthKey = getMonthKey(getCorporateToday()) }: GeneralExportInput) {
+export async function exportGeneralHoursReport({ organograma, mesSelecionado, anoSelecionado }: GeneralExportInput) {
   const storage = createBrowserStorage()
   const knownSquads = flattenOrganograma(organograma)
   if (knownSquads.length === 0) {
     // O organograma pode estar vazio em ambientes de teste; seguimos exportando somente o que existir no storage.
   }
+  const monthKey = buildMonthKey(mesSelecionado, anoSelecionado)
   const entries = filterEntriesByMonth(readTimeEntryStorage(storage), monthKey)
   const rows: GeneralReportRow[] = entries.map((entry) => {
     const squad = entry.assignmentSnapshot?.squadName ?? '—'
@@ -298,8 +306,9 @@ export async function exportGeneralHoursReport({ organograma, monthKey = getMont
   await writeWorkbook(workbook, `Relatorio_Horas_Geral_${monthKey}.xlsx`)
 }
 
-export async function exportSquadHoursReport({ organograma, squadName, monthKey = getMonthKey(getCorporateToday()) }: SquadExportInput) {
+export async function exportSquadHoursReport({ organograma, squadName, mesSelecionado, anoSelecionado }: SquadExportInput) {
   const storage = createBrowserStorage()
+  const monthKey = buildMonthKey(mesSelecionado, anoSelecionado)
   const entries = filterEntriesByMonth(readTimeEntryStorage(storage), monthKey)
   const squad = findSquad(organograma, squadName)
   const filteredEntries = filterEntriesBySquad(entries, squadName)

@@ -5,10 +5,23 @@ import { ThemeToggle } from '../components/ThemeToggle'
 import { useSession } from '../features/session/useSession'
 import { organogramaDEP, type DEPColaborador, type DEPGerencia, type DEPSquad } from '../data/mockDEP'
 import { exportGeneralHoursReport, exportSquadHoursReport } from '../services/excelExportService'
-import { getCorporateToday, getMonthKey } from '../shared/utils/date'
 
 const ORGANOGRAMA_STORAGE_KEY = 'organograma_editavel_sma'
 const cargoOptions = ['Engenheiro', 'Projetista', 'Desenhista', 'Estagiário', 'Estagiário 4h']
+const monthOptions = [
+  { value: 1, label: 'Janeiro' },
+  { value: 2, label: 'Fevereiro' },
+  { value: 3, label: 'Março' },
+  { value: 4, label: 'Abril' },
+  { value: 5, label: 'Maio' },
+  { value: 6, label: 'Junho' },
+  { value: 7, label: 'Julho' },
+  { value: 8, label: 'Agosto' },
+  { value: 9, label: 'Setembro' },
+  { value: 10, label: 'Outubro' },
+  { value: 11, label: 'Novembro' },
+  { value: 12, label: 'Dezembro' },
+]
 
 function cloneOrganograma(data: DEPGerencia[]) {
   return data.map((gerencia) => ({
@@ -179,9 +192,16 @@ export function EquipesPage() {
   const navigate = useNavigate()
   const [dadosOrganograma, setDadosOrganograma] = useState<DEPGerencia[]>([])
   const [squadSelecionada, setSquadSelecionada] = useState(getFirstSquadName(organogramaDEP))
+  const now = new Date()
+  const [mesSelecionado, setMesSelecionado] = useState(now.getMonth() + 1)
+  const [anoSelecionado, setAnoSelecionado] = useState(now.getFullYear())
   const [isExporting, setIsExporting] = useState(false)
   const [exportError, setExportError] = useState<string | null>(null)
-  const reportMonthKey = getMonthKey(getCorporateToday())
+  const yearOptions = useMemo(() => {
+    const startYear = 2024
+    const endYear = new Date().getFullYear()
+    return Array.from({ length: endYear - startYear + 1 }, (_, index) => startYear + index)
+  }, [])
 
   useEffect(() => {
     const storedOrganograma = loadEditableOrganograma()
@@ -240,7 +260,7 @@ export function EquipesPage() {
     setIsExporting(true)
     setExportError(null)
     try {
-      await exportGeneralHoursReport({ organograma: organogramaAtual, monthKey: reportMonthKey })
+      await exportGeneralHoursReport({ organograma: organogramaAtual, mesSelecionado, anoSelecionado })
     } catch (error) {
       setExportError(error instanceof Error ? error.message : 'Não foi possível exportar o relatório geral.')
     } finally {
@@ -253,7 +273,7 @@ export function EquipesPage() {
     setIsExporting(true)
     setExportError(null)
     try {
-      await exportSquadHoursReport({ organograma: organogramaAtual, squadName: selectedSquad.nome, monthKey: reportMonthKey })
+      await exportSquadHoursReport({ organograma: organogramaAtual, squadName: selectedSquad.nome, mesSelecionado, anoSelecionado })
     } catch (error) {
       setExportError(error instanceof Error ? error.message : 'Não foi possível exportar o relatório da equipe.')
     } finally {
@@ -288,15 +308,37 @@ export function EquipesPage() {
                   <h1 className="mt-2 text-3xl font-extrabold text-[var(--color-text)]">SM&A - Gerenciamento de Equipes</h1>
                   <p className="mt-2 text-sm text-[var(--color-text-muted)]">Gerencie colaboradores, cargos e transferências entre squads.</p>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleExportAllHours}
-                  disabled={isExporting}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--color-primary)] bg-[var(--color-primary)] px-4 py-3 text-sm font-bold text-[#06241f] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/20 text-[10px] font-black text-[#06241f]">XL</span>
-                  Exportar Horas (Geral)
-                </button>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                  <label className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">
+                    Mês
+                    <select
+                      value={mesSelecionado}
+                      onChange={(event) => setMesSelecionado(Number(event.target.value))}
+                      className="mt-1 w-full min-w-40 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-3 text-sm font-semibold text-[var(--color-text)] outline-none transition focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
+                    >
+                      {monthOptions.map((month) => <option key={month.value} value={month.value}>{month.label}</option>)}
+                    </select>
+                  </label>
+                  <label className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">
+                    Ano
+                    <select
+                      value={anoSelecionado}
+                      onChange={(event) => setAnoSelecionado(Number(event.target.value))}
+                      className="mt-1 w-full min-w-28 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-3 text-sm font-semibold text-[var(--color-text)] outline-none transition focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
+                    >
+                      {yearOptions.map((year) => <option key={year} value={year}>{year}</option>)}
+                    </select>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleExportAllHours}
+                    disabled={isExporting}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--color-primary)] bg-[var(--color-primary)] px-4 py-3 text-sm font-bold text-[#06241f] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/20 text-[10px] font-black text-[#06241f]">XL</span>
+                    Exportar Horas (Geral)
+                  </button>
+                </div>
               </div>
             </section>
 
