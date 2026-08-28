@@ -50,6 +50,11 @@ const DEFAULT_PROFILE_META: CollaboratorMeta = {
   jobTitle: 'Projetista',
 }
 
+// Substitua pelo base64 real da logo quando quiser embutir a imagem no XLSX.
+// Exemplo:
+// const SMA_LOGO_BASE64 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...'
+const SMA_LOGO_BASE64 = ''
+
 function isTimeEntryStorageV3(value: unknown): value is TimeEntryStorageV3 {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false
   const candidate = value as Partial<TimeEntryStorageV3>
@@ -144,8 +149,19 @@ function filterEntriesBySquad(entries: TimeEntry[], squadName: string) {
   return entries.filter((entry) => entry.assignmentSnapshot?.squadName === squadName)
 }
 
-function applyHeaderStyle(worksheet: ExcelJS.Worksheet) {
-  const headerRow = worksheet.getRow(1)
+function getColumnLetter(columnNumber: number) {
+  let dividend = columnNumber
+  let columnName = ''
+  while (dividend > 0) {
+    const modulo = (dividend - 1) % 26
+    columnName = String.fromCharCode(65 + modulo) + columnName
+    dividend = Math.floor((dividend - modulo) / 26)
+  }
+  return columnName
+}
+
+function applyHeaderStyle(worksheet: ExcelJS.Worksheet, rowNumber: number) {
+  const headerRow = worksheet.getRow(rowNumber)
   headerRow.height = 24
   headerRow.eachCell((cell) => {
     cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F3A52' } }
@@ -160,9 +176,43 @@ function applyHeaderStyle(worksheet: ExcelJS.Worksheet) {
   })
 }
 
-function applyBodyStyle(worksheet: ExcelJS.Worksheet, centeredColumns: number[]) {
+function applyCorporateHeader(
+  workbook: ExcelJS.Workbook,
+  worksheet: ExcelJS.Worksheet,
+  title: string,
+  lastDataColumnNumber: number,
+) {
+  const titleRangeEnd = getColumnLetter(Math.max(3, lastDataColumnNumber))
+  worksheet.getRow(1).height = 60
+  worksheet.mergeCells(`C1:${titleRangeEnd}1`)
+  worksheet.getCell('C1').value = title
+  worksheet.getCell('C1').font = { bold: true, size: 16, color: { argb: 'FF0F172A' } }
+  worksheet.getCell('C1').alignment = { vertical: 'middle', horizontal: 'center' }
+  worksheet.getCell('C1').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } }
+
+  worksheet.getCell('A1').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } }
+  worksheet.getCell('B1').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } }
+
+  if (SMA_LOGO_BASE64) {
+    const imageId = workbook.addImage({
+      base64: SMA_LOGO_BASE64,
+      extension: 'png',
+    })
+    worksheet.addImage(imageId, {
+      tl: { col: 0.15, row: 0.1 },
+      ext: { width: 140, height: 44 },
+    })
+  } else {
+    worksheet.getCell('A1').value = 'SM&A'
+    worksheet.mergeCells(1, 1, 1, 2)
+    worksheet.getCell('A1').font = { bold: true, size: 18, color: { argb: 'FF1F3A52' } }
+    worksheet.getCell('A1').alignment = { vertical: 'middle', horizontal: 'center' }
+  }
+}
+
+function applyBodyStyle(worksheet: ExcelJS.Worksheet, centeredColumns: number[], firstDataRow = 3) {
   worksheet.eachRow((row, rowNumber) => {
-    if (rowNumber === 1) return
+    if (rowNumber < firstDataRow) return
     row.height = 21
     row.eachCell((cell, columnNumber) => {
       cell.border = {
@@ -229,16 +279,19 @@ export async function exportGeneralHoursReport({ organograma, monthKey = getMont
 
   const worksheet = workbook.addWorksheet('Base de Dados')
   worksheet.columns = [
-    { header: 'Squad', key: 'squad', width: 24 },
-    { header: 'Supervisor', key: 'supervisor', width: 26 },
-    { header: 'Colaborador', key: 'colaborador', width: 30 },
-    { header: 'Cargo', key: 'cargo', width: 20 },
-    { header: 'Data do Apontamento', key: 'dataApontamento', width: 18 },
-    { header: 'Cliente', key: 'cliente', width: 26 },
-    { header: 'Projeto', key: 'projeto', width: 30 },
-    { header: 'Atividade', key: 'atividade', width: 34 },
-    { header: 'Horas Lançadas', key: 'horasLancadas', width: 16 },
+    { key: 'squad', width: 24 },
+    { key: 'supervisor', width: 26 },
+    { key: 'colaborador', width: 30 },
+    { key: 'cargo', width: 20 },
+    { key: 'dataApontamento', width: 18 },
+    { key: 'cliente', width: 26 },
+    { key: 'projeto', width: 30 },
+    { key: 'atividade', width: 34 },
+    { key: 'horasLancadas', width: 16 },
   ]
+  applyCorporateHeader(workbook, worksheet, 'Apontamento de Horas', 9)
+  worksheet.getRow(2).values = [null, 'Squad', 'Supervisor', 'Colaborador', 'Cargo', 'Data do Apontamento', 'Cliente', 'Projeto', 'Atividade', 'Horas Lançadas']
+  worksheet.getRow(2).height = 26
   rows.forEach((row, index) => {
     const addedRow = worksheet.addRow(row)
     if (index % 2 === 1) {
@@ -247,11 +300,11 @@ export async function exportGeneralHoursReport({ organograma, monthKey = getMont
       })
     }
   })
-  applyHeaderStyle(worksheet)
-  applyBodyStyle(worksheet, [5, 9])
+  applyHeaderStyle(worksheet, 2)
+  applyBodyStyle(worksheet, [5, 9], 3)
   autoFitColumns(worksheet)
-  worksheet.autoFilter = 'A1:I1'
-  worksheet.views = [{ state: 'frozen', ySplit: 1 }]
+  worksheet.autoFilter = 'A2:I2'
+  worksheet.views = [{ state: 'frozen', ySplit: 2 }]
 
   await writeWorkbook(workbook, `Relatorio_Horas_Geral_${monthKey}.xlsx`)
 }
@@ -280,14 +333,17 @@ export async function exportSquadHoursReport({ organograma, squadName, monthKey 
 
   const worksheet = workbook.addWorksheet('Apontamentos da Equipe')
   worksheet.columns = [
-    { header: 'Colaborador', key: 'colaborador', width: 30 },
-    { header: 'Cargo', key: 'cargo', width: 20 },
-    { header: 'Data do Apontamento', key: 'dataApontamento', width: 18 },
-    { header: 'Cliente', key: 'cliente', width: 26 },
-    { header: 'Projeto', key: 'projeto', width: 30 },
-    { header: 'Atividade', key: 'atividade', width: 34 },
-    { header: 'Horas Lançadas', key: 'horasLancadas', width: 16 },
+    { key: 'colaborador', width: 30 },
+    { key: 'cargo', width: 20 },
+    { key: 'dataApontamento', width: 18 },
+    { key: 'cliente', width: 26 },
+    { key: 'projeto', width: 30 },
+    { key: 'atividade', width: 34 },
+    { key: 'horasLancadas', width: 16 },
   ]
+  applyCorporateHeader(workbook, worksheet, 'Apontamento de Horas', 7)
+  worksheet.getRow(2).values = [null, 'Colaborador', 'Cargo', 'Data do Apontamento', 'Cliente', 'Projeto', 'Atividade', 'Horas Lançadas']
+  worksheet.getRow(2).height = 26
   rows.forEach((row, index) => {
     const addedRow = worksheet.addRow(row)
     if (index % 2 === 1) {
@@ -296,11 +352,11 @@ export async function exportSquadHoursReport({ organograma, squadName, monthKey 
       })
     }
   })
-  applyHeaderStyle(worksheet)
-  applyBodyStyle(worksheet, [3, 7])
+  applyHeaderStyle(worksheet, 2)
+  applyBodyStyle(worksheet, [3, 7], 3)
   autoFitColumns(worksheet)
-  worksheet.autoFilter = 'A1:G1'
-  worksheet.views = [{ state: 'frozen', ySplit: 1 }]
+  worksheet.autoFilter = 'A2:G2'
+  worksheet.views = [{ state: 'frozen', ySplit: 2 }]
 
   const safeSquadName = squad?.nome ?? squadName
   await writeWorkbook(workbook, `Relatorio_Horas_${safeSquadName.replace(/[^a-z0-9]+/gi, '_')}_${monthKey}.xlsx`)
