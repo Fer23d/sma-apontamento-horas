@@ -3,6 +3,7 @@ import { demoActivities, demoClients } from '../../mocks/demoData'
 import type { CreateTimeEntryData } from '../../shared/types/domain'
 import {
   areValidDurationParts,
+  expandTimeEntryDates,
   formatMinutes,
   formatSignedMinutes,
   isValidDuration,
@@ -128,4 +129,10 @@ describe('validações e formatação', () => {
 
   it('formata minutos positivos em HH:MM', () => expect(formatMinutes(125)).toBe('02:05'))
   it('formata saldo negativo', () => expect(formatSignedMinutes(-90)).toBe('-01:30'))
+
+  it('expande períodos em dias úteis e preserva lançamento único', () => {
+    expect(expandTimeEntryDates('2026-07-13', '2026-07-13')).toEqual(['2026-07-13'])
+    expect(expandTimeEntryDates('2026-07-13', '2026-07-19')).toEqual(['2026-07-13', '2026-07-14', '2026-07-15', '2026-07-16', '2026-07-17'])
+    expect(expandTimeEntryDates('2026-07-13', '2026-07-19', false)).toHaveLength(7)
+  })
 })

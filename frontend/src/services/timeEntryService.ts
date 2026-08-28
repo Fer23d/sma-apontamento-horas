@@ -4,6 +4,7 @@ import type { DailySummary } from '../features/calendar/types'
 import type { AuditEvent } from '../features/audit/types'
 import type { AssignmentSnapshot } from '../features/squads/types'
 import type { CreateTimeEntryData, DisciplineCode, DocumentTypeCode, TimeEntry } from '../features/time-entries/types'
+import { expandTimeEntryDates } from '../features/time-entries/domain'
 import type { WorkloadVersion } from '../features/workloads/types'
 import { isIsoDate } from '../shared/utils/date'
 import { createBrowserStorage, type StorageLike } from './storage'
@@ -98,9 +99,12 @@ const documentTypeCodes: readonly DocumentTypeCode[] = [
 ]
 
 function normalizeCreateData(data: CreateTimeEntryData): CreateTimeEntryData {
+  const { endDate: _endDate, weekdaysOnly: _weekdaysOnly, ...baseData } = data
   const projectCode = data.projectCode.trim()
   const details = data.details.trim()
   if (!isIsoDate(data.entryDate)) throw new Error('Informe uma data válida.')
+  if (data.endDate && !isIsoDate(data.endDate)) throw new Error('Informe uma data final válida.')
+  if (data.endDate && data.endDate < data.entryDate) throw new Error('A data final deve ser igual ou posterior à data inicial.')
   if (!data.clientId) throw new Error('Informe o cliente.')
   if (!projectCode || projectCode.length > MAX_PROJECT_CODE_LENGTH) throw new Error('Informe um código de projeto válido.')
   if (!data.activityId) throw new Error('Informe a atividade.')
@@ -110,7 +114,7 @@ function normalizeCreateData(data: CreateTimeEntryData): CreateTimeEntryData {
     throw new Error('Informe uma duração válida.')
   }
   if (!details) throw new Error('Informe o detalhamento.')
-  return { ...data, projectCode, details }
+  return { ...baseData, projectCode, details }
 }
 
 function emptyStorage(): TimeEntryStorageV3 {
@@ -298,29 +302,38 @@ export class LocalStorageTimeEntryService implements TimeEntryService {
   }
 
   async create(collaboratorId: string, data: CreateTimeEntryData) {
+    const endDate = data.endDate ?? data.entryDate
+    const weekdaysOnly = data.weekdaysOnly ?? true
     const normalized = normalizeCreateData(data)
-    await this.ensureMutable(collaboratorId, normalized.entryDate)
-    await this.ensureDateAvailable(collaboratorId, normalized.entryDate)
+    const dates = expandTimeEntryDates(normalized.entryDate, endDate, weekdaysOnly)
+    if (dates.length === 0) {
+      throw new Error('O período selecionado não contém dias válidos para lançamento.')
+    }
+    for (const date of dates) {
+      await this.ensureMutable(collaboratorId, date)
+      await this.ensureDateAvailable(collaboratorId, date)
+    }
     const assignmentSnapshot = this.resolveAssignment(collaboratorId)
     if (!assignmentSnapshot) throw new Error('Não existe squad ativa para vincular o apontamento.')
     const readResult = this.read()
     if (!readResult.canWrite) throw new Error('Não foi possível preparar o armazenamento local para gravação.')
     const timestamp = this.now()
-    const entry: TimeEntry = {
+    const createdEntries: TimeEntry[] = dates.map((date) => ({
       id: this.createId(),
       collaboratorId,
       ...normalized,
+      entryDate: date,
       assignmentSnapshot,
       status: 'ACTIVE',
       version: 1,
       createdAt: timestamp,
       updatedAt: timestamp,
-    }
+    }))
     const current = readResult.data.entriesByCollaborator[collaboratorId] ?? []
-    readResult.data.entriesByCollaborator[collaboratorId] = [...current, entry]
+    readResult.data.entriesByCollaborator[collaboratorId] = [...current, ...createdEntries]
     this.writeAndValidate(readResult.data)
-    await this.record('TIME_ENTRY_CREATED', collaboratorId, entry, { newValue: entry })
-    return entry
+    await Promise.all(createdEntries.map((entry) => this.record('TIME_ENTRY_CREATED', collaboratorId, entry, { newValue: entry })))
+    return createdEntries[0]
   }
 
   async update(collaboratorId: string, id: string, expectedVersion: number, data: CreateTimeEntryData, reason: string) {

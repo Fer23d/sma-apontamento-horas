@@ -315,6 +315,21 @@ describe('comandos e consultas de apontamento', () => {
     expect(storage.getItem('sma:time-entries:v3')).toBeNull()
   })
 
+  it('cria múltiplos registros para um período e preserva o lançamento único', async () => {
+    const storage = new MemoryStorage()
+    let nextId = 0
+    const service = buildService(storage, { createId: () => `batch-${++nextId}` })
+
+    await service.create(collaboratorId, { ...validData, entryDate: '2026-07-13', endDate: '2026-07-15' })
+    const batchEntries = await service.listByRange(collaboratorId, '2026-07-13', '2026-07-15')
+
+    expect(batchEntries.map((entry) => entry.entryDate)).toEqual(['2026-07-13', '2026-07-14', '2026-07-15'])
+
+    const single = await service.create(collaboratorId, { ...validData, entryDate: '2026-07-18', endDate: '2026-07-18' })
+    expect(single.entryDate).toBe('2026-07-18')
+    expect(await service.listByDate(collaboratorId, '2026-07-18')).toHaveLength(1)
+  })
+
   it('migra leitura da chave v3 antiga para apontamentos_sma', async () => {
     const storage = new MemoryStorage()
     storage.setItem('sma:time-entries:v3', JSON.stringify({

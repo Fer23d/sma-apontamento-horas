@@ -13,6 +13,7 @@ type TimeEntryFieldsProps = {
   values: TimeEntryFormValues
   errors: TimeEntryValidationErrors
   maxDate: string
+  allowBatchMode?: boolean
   onChange: <Key extends keyof TimeEntryFormValues>(field: Key, value: TimeEntryFormValues[Key]) => void
 }
 
@@ -25,13 +26,28 @@ const documentTypes = [
   ['CF', 'CF — Arquitetura de Rede'],
 ] as const
 
-export function TimeEntryFields({ values, errors, maxDate, onChange }: TimeEntryFieldsProps) {
+export function TimeEntryFields({ values, errors, maxDate, allowBatchMode = true, onChange }: TimeEntryFieldsProps) {
   return (
     <div className="grid gap-5 md:grid-cols-2">
-      <div>
-        <label htmlFor="entry-date" className="text-sm font-bold ui-text">Data</label>
-        <input id="entry-date" name="entryDate" type="date" max={maxDate} value={values.entryDate} onChange={(event) => onChange('entryDate', event.target.value)} className={fieldClassName} aria-invalid={Boolean(errors.entryDate)} aria-describedby={errors.entryDate ? 'entry-date-error' : undefined} />
-        <FieldError id="entry-date-error" message={errors.entryDate} />
+      <div className="md:col-span-2">
+        <div className="grid gap-4 md:grid-cols-2">
+          <div>
+            <label htmlFor="entry-start-date" className="text-sm font-bold ui-text">Data Inicial</label>
+            <input id="entry-start-date" name="startDate" type="date" max={maxDate} value={values.startDate} onChange={(event) => onChange('startDate', event.target.value)} className={fieldClassName} aria-invalid={Boolean(errors.entryDate)} aria-describedby={errors.entryDate ? 'entry-start-date-error' : undefined} />
+            <FieldError id="entry-start-date-error" message={errors.entryDate} />
+          </div>
+          <div>
+            <label htmlFor="entry-end-date" className="text-sm font-bold ui-text">Data Final</label>
+            <input id="entry-end-date" name="endDate" type="date" min={values.startDate} max={maxDate} value={values.endDate} onChange={(event) => onChange('endDate', event.target.value)} className={fieldClassName} disabled={!allowBatchMode} />
+          </div>
+        </div>
+        <p className="mt-2 text-xs ui-text-subtle">
+          Se a data final for diferente, o sistema criará automaticamente lançamentos individuais para cada dia do período.
+        </p>
+        <label className={`mt-3 inline-flex items-center gap-2 text-sm font-semibold ui-text ${allowBatchMode ? '' : 'opacity-60'}`}>
+          <input type="checkbox" checked={values.weekdaysOnly} onChange={(event) => onChange('weekdaysOnly', event.target.checked)} disabled={!allowBatchMode} className="h-4 w-4 rounded border-[var(--color-border)] bg-[var(--color-surface)] accent-[var(--color-primary)]" />
+          Somente dias úteis
+        </label>
       </div>
 
       <div>

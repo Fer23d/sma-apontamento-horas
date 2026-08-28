@@ -32,12 +32,12 @@ export function TimeEntryForm({ entryId }: { entryId?: string }) {
       {controller.successMessage && (
         <div role="status" className="rounded-xl border border-emerald-300 bg-emerald-50 p-4 text-sm text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-100">
           <p className="font-bold">{controller.successMessage}</p>
-          <Link className="mt-2 inline-block font-bold underline" to={`/colaborador?date=${controller.values.entryDate}`}>Ver resumo atualizado do dia</Link>
+          <Link className="mt-2 inline-block font-bold underline" to={`/colaborador?date=${controller.values.startDate}`}>Ver resumo atualizado do período</Link>
         </div>
       )}
       {controller.submitError && <p role="alert" className="rounded-xl border border-red-300 bg-red-50 p-4 text-sm font-semibold text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200">{controller.submitError}</p>}
 
-      <TimeEntryFields values={controller.values} errors={controller.errors} maxDate={getCorporateToday()} onChange={controller.setField} />
+      <TimeEntryFields values={controller.values} errors={controller.errors} maxDate={getCorporateToday()} allowBatchMode={controller.mode === 'CREATE'} onChange={controller.setField} />
 
       <fieldset>
         <legend className="text-sm font-bold ui-text">Duração em horas e minutos</legend>

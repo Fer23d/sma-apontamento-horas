@@ -4,7 +4,7 @@ import type {
   CreateTimeEntryData,
   TimeEntryValidationErrors,
 } from '../../shared/types/domain'
-import { compareIsoDates } from '../../shared/utils/date'
+import { compareIsoDates, eachIsoDate, isIsoDate, isWeekend } from '../../shared/utils/date'
 
 export const MAX_ENTRY_MINUTES = 24 * 60
 export const MAX_PROJECT_CODE_LENGTH = 80
@@ -40,10 +40,13 @@ export function isValidDuration(durationMinutes: number) {
 }
 
 function isValidIsoDate(value: string) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false
-  const [year, month, day] = value.split('-').map(Number)
-  const date = new Date(year, month - 1, day, 12)
-  return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day
+  return isIsoDate(value)
+}
+
+export function expandTimeEntryDates(startDate: string, endDate: string, weekdaysOnly = true) {
+  if (!isIsoDate(startDate) || !isIsoDate(endDate) || compareIsoDates(startDate, endDate) > 0) return []
+  if (startDate === endDate) return [startDate]
+  return eachIsoDate(startDate, endDate).filter((date) => !weekdaysOnly || !isWeekend(date))
 }
 
 export function validateTimeEntry(

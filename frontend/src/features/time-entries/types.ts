@@ -54,6 +54,9 @@ export type CreateTimeEntryData = Pick<
   | 'documentTypeCode'
   | 'durationMinutes'
   | 'details'
->
+> & {
+  endDate?: string
+  weekdaysOnly?: boolean
+}
 
 export type TimeEntryValidationErrors = Partial<Record<keyof CreateTimeEntryData, string>>

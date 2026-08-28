@@ -4,12 +4,15 @@ import { dayApprovalService } from '../../services/dayApprovalService'
 import { entryDateAvailabilityService } from '../../services/entryDateAvailabilityService'
 import { timeEntryService } from '../../services/timeEntryService'
 import type { CreateTimeEntryData, TimeEntry, TimeEntryValidationErrors } from './types'
+import { expandTimeEntryDates } from './domain'
 import { getCorporateToday, isIsoDate } from '../../shared/utils/date'
 import { useSession } from '../session/useSession'
 import { areValidDurationParts, hoursAndMinutesToMinutes, validateTimeEntry } from './domain'
 
 export type TimeEntryFormValues = {
-  entryDate: string
+  startDate: string
+  endDate: string
+  weekdaysOnly: boolean
   clientId: string
   projectCode: string
   activityId: string
@@ -22,7 +25,9 @@ export type TimeEntryFormValues = {
 }
 
 const emptyValues = (entryDate: string): TimeEntryFormValues => ({
-  entryDate,
+  startDate: entryDate,
+  endDate: entryDate,
+  weekdaysOnly: true,
   clientId: '',
   projectCode: '',
   activityId: '',
@@ -36,7 +41,9 @@ const emptyValues = (entryDate: string): TimeEntryFormValues => ({
 
 function valuesFromEntry(entry: TimeEntry): TimeEntryFormValues {
   return {
-    entryDate: entry.entryDate,
+    startDate: entry.entryDate,
+    endDate: entry.entryDate,
+    weekdaysOnly: true,
     clientId: entry.clientId,
     projectCode: entry.projectCode,
     activityId: entry.activityId,
@@ -95,8 +102,15 @@ export function useTimeEntryForm({ initialDate, entryId, duplicateId }: { initia
     setSuccessMessage(null)
     const durationHours = Number(values.hours || 0)
     const durationRemainderMinutes = Number(values.minutes || 0)
+    const effectiveEndDate = mode === 'CREATE' ? values.endDate : values.startDate
+    const effectiveWeekdaysOnly = mode === 'CREATE' ? values.weekdaysOnly : true
+    const periodDates = mode === 'CREATE'
+      ? expandTimeEntryDates(values.startDate, effectiveEndDate, effectiveWeekdaysOnly)
+      : [values.startDate]
     const data: CreateTimeEntryData = {
-      entryDate: values.entryDate,
+      entryDate: values.startDate,
+      endDate: effectiveEndDate,
+      weekdaysOnly: effectiveWeekdaysOnly,
       clientId: values.clientId,
       projectCode: values.projectCode,
       activityId: values.activityId,
@@ -123,6 +137,16 @@ export function useTimeEntryForm({ initialDate, entryId, duplicateId }: { initia
     if (!areValidDurationParts(durationHours, durationRemainderMinutes)) {
       validationErrors.durationMinutes = 'Informe horas inteiras entre 0 e 24 e minutos inteiros entre 0 e 59, com total máximo de 24 horas.'
     }
+    if (mode === 'CREATE') {
+      if (!isIsoDate(values.endDate)) {
+        validationErrors.entryDate = validationErrors.entryDate ?? 'Informe uma data final válida.'
+      } else if (values.endDate < values.startDate) {
+        validationErrors.entryDate = validationErrors.entryDate ?? 'A data final deve ser igual ou posterior à data inicial.'
+      } else if (values.startDate !== values.endDate && periodDates.length === 0) {
+        setSubmitError('O período selecionado não contém dias úteis para lançamento.')
+        return false
+      }
+    }
     const reasonError = mode === 'EDIT' && !values.editReason.trim() ? 'Informe o motivo da edição.' : null
     setErrors(validationErrors)
     setEditReasonError(reasonError)
@@ -144,7 +168,9 @@ export function useTimeEntryForm({ initialDate, entryId, duplicateId }: { initia
         setSuccessMessage('Apontamento duplicado com sucesso.')
       } else {
         await timeEntryService.create(profile.id, data)
-        setSuccessMessage('Apontamento salvo com sucesso.')
+        setSuccessMessage(periodDates.length > 1
+          ? `${periodDates.length} lançamentos salvos com sucesso para o período selecionado.`
+          : 'Apontamento salvo com sucesso.')
       }
       setErrors({})
       setEditReasonError(null)
