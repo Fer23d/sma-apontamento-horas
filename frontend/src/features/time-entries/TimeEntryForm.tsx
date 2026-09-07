@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { getCorporateToday } from '../../shared/utils/date'
 import { FieldError, fieldClassName, TimeEntryFields } from './TimeEntryFields'
 import { useTimeEntryForm } from './useTimeEntryForm'
+import { LdSection } from '../document-list/LdSection'
 
 export function TimeEntryForm({ entryId }: { entryId?: string }) {
   const [searchParams] = useSearchParams()
@@ -37,6 +38,8 @@ export function TimeEntryForm({ entryId }: { entryId?: string }) {
       )}
       {controller.submitError && <p role="alert" className="rounded-xl border border-red-300 bg-red-50 p-4 text-sm font-semibold text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200">{controller.submitError}</p>}
 
+      <LdSection selected={controller.values.ldDocument} onSelect={controller.selectLdDocument} onClear={controller.clearLdDocument} />
+      <FieldError id="ld-document-error" message={controller.errors.ldDocument} />
       <TimeEntryFields values={controller.values} errors={controller.errors} maxDate={getCorporateToday()} allowBatchMode={controller.mode === 'CREATE'} onChange={controller.setField} />
 
       <fieldset>
