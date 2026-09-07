@@ -12,6 +12,8 @@ export type TimeEntryFormValues = {
   entryDate: string
   clientId: string
   projectCode: string
+  contractorNumber?: string
+  ldDocument?: CreateTimeEntryData['ldDocument']
   activityId: string
   disciplineCode: CreateTimeEntryData['disciplineCode'] | ''
   documentTypeCode: CreateTimeEntryData['documentTypeCode'] | ''
@@ -25,6 +27,7 @@ const emptyValues = (entryDate: string): TimeEntryFormValues => ({
   entryDate,
   clientId: '',
   projectCode: '',
+  contractorNumber: '',
   activityId: '',
   disciplineCode: '',
   documentTypeCode: '',
@@ -39,6 +42,8 @@ function valuesFromEntry(entry: TimeEntry): TimeEntryFormValues {
     entryDate: entry.entryDate,
     clientId: entry.clientId,
     projectCode: entry.projectCode,
+    contractorNumber: entry.contractorNumber ?? '',
+    ldDocument: entry.ldDocument,
     activityId: entry.activityId,
     disciplineCode: entry.disciplineCode,
     documentTypeCode: entry.documentTypeCode,
@@ -99,6 +104,8 @@ export function useTimeEntryForm({ initialDate, entryId, duplicateId }: { initia
       entryDate: values.entryDate,
       clientId: values.clientId,
       projectCode: values.projectCode,
+      contractorNumber: values.contractorNumber,
+      ldDocument: values.ldDocument,
       activityId: values.activityId,
       disciplineCode: values.disciplineCode as CreateTimeEntryData['disciplineCode'],
       documentTypeCode: values.documentTypeCode as CreateTimeEntryData['documentTypeCode'],

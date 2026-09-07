@@ -17,6 +17,12 @@ const filters: HistoryFiltersValue = {
 }
 
 describe('markup acessível de apontamentos e histórico', () => {
+  it('oferece contratada manual, Geral e Mecânica', () => {
+    const markup = renderToStaticMarkup(<TimeEntryFields values={values} errors={{}} maxDate="2026-07-20" onChange={vi.fn()} />)
+    expect(markup).toContain('Número da contratada')
+    expect(markup).toContain('value="G"')
+    expect(markup).toContain('Mecânica')
+  })
   it('associa labels aos campos obrigatórios e limita a data ao dia corporativo', () => {
     const markup = renderToStaticMarkup(<TimeEntryFields values={values} errors={{}} maxDate="2026-07-20" onChange={vi.fn()} />)
     expect(markup).toContain('for="entry-date"')

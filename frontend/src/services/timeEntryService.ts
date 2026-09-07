@@ -12,6 +12,7 @@ import { dayApprovalService } from './dayApprovalService'
 import { profileService } from './profileService'
 import type { EntryDateBlock } from '../features/calendar/entryDatePolicy'
 import { entryDateAvailabilityService } from './entryDateAvailabilityService'
+import { isAllowedDocumentType, isDisciplineCode, isLdDocumentSnapshot } from '../features/time-entries/documentCatalog'
 import {
   LEGACY_V1_TIME_ENTRY_STORAGE_KEY,
   LEGACY_V2_TIME_ENTRY_STORAGE_KEY,
@@ -91,11 +92,6 @@ type ReadResult = {
   canWrite: boolean
 }
 
-const disciplineCodes: readonly DisciplineCode[] = ['—', 'A', 'E']
-const documentTypeCodes: readonly DocumentTypeCode[] = [
-  '—', 'RN', 'GR', 'G', 'FD', 'DE', 'LM', 'DI', 'LC', 'LI', 'ET', 'MC', 'MO', 'MD', 'FG', 'LA', 'ES', 'CF',
-]
-
 function normalizeCreateData(data: CreateTimeEntryData): CreateTimeEntryData {
   const projectCode = data.projectCode.trim()
   const details = data.details.trim()
@@ -103,13 +99,14 @@ function normalizeCreateData(data: CreateTimeEntryData): CreateTimeEntryData {
   if (!data.clientId) throw new Error('Informe o cliente.')
   if (!projectCode || projectCode.length > MAX_PROJECT_CODE_LENGTH) throw new Error('Informe um código de projeto válido.')
   if (!data.activityId) throw new Error('Informe a atividade.')
-  if (!disciplineCodes.includes(data.disciplineCode)) throw new Error('Informe a disciplina.')
-  if (!documentTypeCodes.includes(data.documentTypeCode)) throw new Error('Informe o tipo de documento.')
+  if (!isDisciplineCode(data.disciplineCode)) throw new Error('Informe a disciplina.')
+  if (!isAllowedDocumentType(data.documentTypeCode, data.ldDocument)) throw new Error('Informe o tipo de documento.')
+  if (data.ldDocument !== undefined && !isLdDocumentSnapshot(data.ldDocument)) throw new Error('Documento da LD inválido.')
+  if (data.contractorNumber !== undefined && (typeof data.contractorNumber !== 'string' || data.contractorNumber.trim().length > 160)) throw new Error('Número da contratada inválido.')
   if (!Number.isInteger(data.durationMinutes) || data.durationMinutes <= 0 || data.durationMinutes > MAX_ENTRY_MINUTES) {
     throw new Error('Informe uma duração válida.')
   }
-  if (!details) throw new Error('Informe o detalhamento.')
-  return { ...data, projectCode, details }
+  return { ...data, projectCode, details, contractorNumber: data.contractorNumber?.trim() }
 }
 
 function emptyStorage(): TimeEntryStorageV3 {
@@ -192,7 +189,11 @@ export class LocalStorageTimeEntryService implements TimeEntryService {
   }
 
   private writeAndValidate(data: TimeEntryStorageV3) {
-    const serialized = JSON.stringify(data)
+    const canonical = this.parseV3(JSON.stringify(data))
+    if (Object.entries(data.entriesByCollaborator).some(([id, entries]) => canonical.entriesByCollaborator[id]?.length !== entries.length)) {
+      throw new Error('Um registro inválido impediu a gravação local.')
+    }
+    const serialized = JSON.stringify(canonical)
     this.storage.setItem(TIME_ENTRY_STORAGE_KEY, serialized)
     const persistedRaw = this.storage.getItem(TIME_ENTRY_STORAGE_KEY)
     if (persistedRaw === null) throw new Error('A gravação local não pôde ser confirmada.')
@@ -335,6 +336,8 @@ export class LocalStorageTimeEntryService implements TimeEntryService {
       entryDate: overrides.entryDate ?? entry.entryDate,
       clientId: overrides.clientId ?? entry.clientId,
       projectCode: overrides.projectCode ?? entry.projectCode,
+      contractorNumber: overrides.contractorNumber ?? entry.contractorNumber,
+      ldDocument: Object.hasOwn(overrides, 'ldDocument') ? overrides.ldDocument : entry.ldDocument,
       activityId: overrides.activityId ?? entry.activityId,
       disciplineCode: overrides.disciplineCode ?? entry.disciplineCode,
       documentTypeCode: overrides.documentTypeCode ?? entry.documentTypeCode,

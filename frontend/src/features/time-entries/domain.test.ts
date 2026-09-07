@@ -122,8 +122,12 @@ describe('validações e formatação', () => {
     expect(notApplicable.documentTypeCode).toBeUndefined()
   })
 
-  it('exige detalhamento não vazio', () => {
-    expect(validateTimeEntry({ ...validData, details: '   ' }, demoClients, demoActivities).details).toBe('Descreva o trabalho realizado.')
+  it('aceita detalhamento vazio inclusive em Outros', () => {
+    expect(validateTimeEntry({ ...validData, details: '   ', activityId: 'activity-other' }, demoClients, demoActivities)).toEqual({})
+  })
+
+  it.each(['G', 'M'] as const)('aceita disciplina %s', (disciplineCode) => {
+    expect(validateTimeEntry({ ...validData, disciplineCode }, demoClients, demoActivities)).toEqual({})
   })
 
   it('formata minutos positivos em HH:MM', () => expect(formatMinutes(125)).toBe('02:05'))

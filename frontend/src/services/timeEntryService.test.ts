@@ -57,6 +57,31 @@ const validData: CreateTimeEntryData = {
   details: 'Teste de persistência',
 }
 
+describe('dados opcionais de LD e contratada', () => {
+  it('preserva contratada, LD e detalhamento vazio na criação, recarga, edição e duplicação', async () => {
+    const storage = new MemoryStorage()
+    let id = 0
+    const service = buildService(storage, { createId: () => `ld-${++id}` })
+    const ldDocument = { valeNumber: 'ZZ-001', title: 'Título elétrico', documentTypeCode: 'ZZ-2', disciplineName: 'MECÂNICA', fileName: 'teste.xlsm' }
+    const entry = await service.create(collaboratorId, { ...validData, contractorNumber: '  ab-00/1  02.3  ', disciplineCode: 'M', documentTypeCode: 'ZZ-2', ldDocument, details: '' })
+    expect(entry.contractorNumber).toBe('ab-00/1  02.3')
+    expect((await buildService(storage).getById(collaboratorId, entry.id))?.ldDocument).toEqual(ldDocument)
+    const edited = await service.update(collaboratorId, entry.id, 1, { ...entry, disciplineCode: 'G' }, 'Ajustar disciplina')
+    const copy = await service.duplicate(collaboratorId, entry.id, edited.version, {})
+    expect(copy.contractorNumber).toBe('ab-00/1  02.3')
+    expect(copy.ldDocument).toEqual(ldDocument)
+    expect(copy.details).toBe('')
+    expect(copy.disciplineCode).toBe('G')
+    expect((await buildService(storage).listByDate(collaboratorId, validData.entryDate))).toHaveLength(2)
+  })
+
+  it('rejeita tipo fora do catálogo sem origem LD e contratada longa', async () => {
+    const service = buildService(new MemoryStorage())
+    await expect(service.create(collaboratorId, { ...validData, documentTypeCode: 'ZZ' })).rejects.toThrow()
+    await expect(service.create(collaboratorId, { ...validData, contractorNumber: 'a'.repeat(161) })).rejects.toThrow()
+  })
+})
+
 function v2Entry(overrides: Record<string, unknown> = {}) {
   return {
     id: 'legacy-v2-entry-1',
