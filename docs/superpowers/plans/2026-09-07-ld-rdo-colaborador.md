@@ -8,6 +8,8 @@
 
 **Referência visual:** RDO de sete páginas com cabeçalho, contratada/contrato/data/objeto, quadro profissional/horas, atividades e assinaturas. O novo PDF adapta essa hierarquia e omite horários, Data OS, QQP e assinaturas não disponíveis. Não incorpora dados preenchidos da referência.
 
+**Confirmação adicional do teste real:** há 237 linhas candidatas; a linha 33 não possui título. Ela é informada como inválida e ignorada, restando 236 documentos completos selecionáveis.
+
 ## Restrições e decisões
 
 - Número da contratada opcional, preservando caracteres e espaços internos; somente trim externo, limite de 160 caracteres.

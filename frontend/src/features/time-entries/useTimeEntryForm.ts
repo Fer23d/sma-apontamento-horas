@@ -7,6 +7,8 @@ import type { CreateTimeEntryData, TimeEntry, TimeEntryValidationErrors } from '
 import { getCorporateToday, isIsoDate } from '../../shared/utils/date'
 import { useSession } from '../session/useSession'
 import { areValidDurationParts, hoursAndMinutesToMinutes, validateTimeEntry } from './domain'
+import { applyLdDocument, type LdDocument } from '../document-list/ldImport'
+import { isManualDocumentType } from './documentCatalog'
 
 export type TimeEntryFormValues = {
   entryDate: string
@@ -175,6 +177,8 @@ export function useTimeEntryForm({ initialDate, entryId, duplicateId }: { initia
     submitError,
     successMessage,
     setField,
+    selectLdDocument: (document: LdDocument) => { setValues((current) => applyLdDocument(current, document)); setErrors({}) },
+    clearLdDocument: () => setValues((current) => ({ ...current, ldDocument: undefined, documentTypeCode: isManualDocumentType(current.documentTypeCode) ? current.documentTypeCode : '' })),
     submit,
   }
 }
