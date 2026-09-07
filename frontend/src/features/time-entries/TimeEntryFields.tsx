@@ -1,6 +1,7 @@
 import { demoActivities, demoClients } from '../../mocks/demoData'
 import type { TimeEntryValidationErrors } from './types'
 import type { TimeEntryFormValues } from './useTimeEntryForm'
+import { disciplines, documentTypes, isManualDocumentType } from './documentCatalog'
 
 export const fieldClassName = 'mt-2 w-full ui-field rounded-xl px-3 py-2.5 text-sm ui-text shadow-sm outline-none transition focus:ring-2 disabled:cursor-not-allowed disabled:bg-[var(--color-surface-subtle)]'
 
@@ -16,15 +17,6 @@ type TimeEntryFieldsProps = {
   allowBatchMode?: boolean
   onChange: <Key extends keyof TimeEntryFormValues>(field: Key, value: TimeEntryFormValues[Key]) => void
 }
-
-const documentTypes = [
-  ['—', '— — Não se aplica'], ['RN', 'RN — Reunião'], ['GR', 'GR — Gerenciamento'], ['G', 'G — Geral'],
-  ['FD', 'FD — Folha de Dados'], ['DE', 'DE — Desenho'], ['LM', 'LM — Lista de Material'], ['DI', 'DI — Diagrama'],
-  ['LC', 'LC — Lista de Cabos'], ['LI', 'LI — Lista de Instrumentos'], ['ET', 'ET — Especificação Técnica'],
-  ['MC', 'MC — Memória de Cálculo'], ['MO', 'MO — Modelo 3D'], ['MD', 'MD — Memorial Descritivo'],
-  ['FG', 'FG — Fluxograma'], ['LA', 'LA — Lista de Cargas'], ['ES', 'ES — Relação de Entradas e Saídas'],
-  ['CF', 'CF — Arquitetura de Rede'],
-] as const
 
 export function TimeEntryFields({ values, errors, maxDate, allowBatchMode = true, onChange }: TimeEntryFieldsProps) {
   return (
@@ -67,6 +59,13 @@ export function TimeEntryFields({ values, errors, maxDate, allowBatchMode = true
       </div>
 
       <div>
+        <label htmlFor="contractor-number" className="text-sm font-bold ui-text">Número da contratada</label>
+        <input id="contractor-number" name="contractorNumber" value={values.contractorNumber ?? ''} onChange={(event) => onChange('contractorNumber', event.target.value)} autoCapitalize="none" autoCorrect="off" spellCheck={false} className={fieldClassName} aria-invalid={Boolean(errors.contractorNumber)} aria-describedby="contractor-number-help contractor-number-error" />
+        <p id="contractor-number-help" className="mt-1.5 text-xs ui-text-subtle">Opcional. Preencha manualmente ou selecione um documento da LD.</p>
+        <FieldError id="contractor-number-error" message={errors.contractorNumber} />
+      </div>
+
+      <div>
         <label htmlFor="activity" className="text-sm font-bold ui-text">Atividade realizada</label>
         <select id="activity" name="activityId" value={values.activityId} onChange={(event) => onChange('activityId', event.target.value)} className={fieldClassName} aria-invalid={Boolean(errors.activityId)} aria-describedby={errors.activityId ? 'activity-error' : undefined}>
           <option value="">Selecione uma atividade</option>
@@ -79,9 +78,7 @@ export function TimeEntryFields({ values, errors, maxDate, allowBatchMode = true
         <label htmlFor="discipline" className="text-sm font-bold ui-text">Disciplina</label>
         <select id="discipline" name="disciplineCode" value={values.disciplineCode} onChange={(event) => onChange('disciplineCode', event.target.value as TimeEntryFormValues['disciplineCode'])} className={fieldClassName} aria-invalid={Boolean(errors.disciplineCode)} aria-describedby={errors.disciplineCode ? 'discipline-error' : undefined}>
           <option value="">Selecione uma disciplina</option>
-          <option value="—">— — Não se aplica</option>
-          <option value="A">A — Automação</option>
-          <option value="E">E — Elétrica</option>
+          {disciplines.map(([code, label]) => <option key={code} value={code}>{code} — {label}</option>)}
         </select>
         <FieldError id="discipline-error" message={errors.disciplineCode} />
       </div>
@@ -90,7 +87,8 @@ export function TimeEntryFields({ values, errors, maxDate, allowBatchMode = true
         <label htmlFor="document-type" className="text-sm font-bold ui-text">Tipo de documento</label>
         <select id="document-type" name="documentTypeCode" value={values.documentTypeCode} onChange={(event) => onChange('documentTypeCode', event.target.value as TimeEntryFormValues['documentTypeCode'])} className={fieldClassName} aria-invalid={Boolean(errors.documentTypeCode)} aria-describedby={errors.documentTypeCode ? 'document-type-error' : undefined}>
           <option value="">Selecione um tipo</option>
-          {documentTypes.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+          {values.ldDocument && !isManualDocumentType(values.ldDocument.documentTypeCode) && <option value={values.ldDocument.documentTypeCode}>{values.ldDocument.documentTypeCode} — Importado da LD</option>}
+          {documentTypes.map(([value, label]) => <option key={value} value={value}>{value} — {label}</option>)}
         </select>
         <FieldError id="document-type-error" message={errors.documentTypeCode} />
       </div>

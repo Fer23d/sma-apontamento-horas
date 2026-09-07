@@ -2,6 +2,7 @@ import { demoActivities, demoClients } from '../../mocks/demoData'
 import type { TimeEntry } from '../../shared/types/domain'
 import { formatMinutes } from '../time-entries/domain'
 import { EntryRevisionBadge } from '../time-entries/EntryRevisionBadge'
+import { EntryDocumentDetails } from '../time-entries/EntryDocumentDetails'
 
 export function DailyEntryList({ entries }: { entries: TimeEntry[] }) {
   const activeEntries = entries.filter((entry) => entry.status === 'ACTIVE')
@@ -34,6 +35,7 @@ export function DailyEntryList({ entries }: { entries: TimeEntry[] }) {
                       <EntryRevisionBadge version={entry.version} />
                     </div>
                     <p className="mt-1 text-sm ui-text-subtle">{client?.name} · {activity?.name}</p>
+                    <EntryDocumentDetails entry={entry} />
                     <p className="mt-3 text-sm leading-6 ui-text">{entry.details}</p>
                   </div>
                   <span className="shrink-0 rounded-lg ui-surface-subtle px-3 py-2 text-sm font-extrabold ui-heading">{formatMinutes(entry.durationMinutes)}</span>

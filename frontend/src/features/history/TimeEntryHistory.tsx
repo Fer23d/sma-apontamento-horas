@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { EntryDocumentDetails } from '../time-entries/EntryDocumentDetails'
 import { Link } from 'react-router-dom'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { demoActivities, demoClients } from '../../mocks/demoData'
@@ -67,6 +68,7 @@ export function TimeEntryHistory() {
                       <EntryRevisionBadge version={entry.version} />
                     </div>
                     <p className="mt-2 text-sm ui-text-subtle">{client} · {activity} · {formatMinutes(entry.durationMinutes)}</p>
+                    <EntryDocumentDetails entry={entry} />
                     <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
                       <div><dt className="font-bold ui-text-subtle">Disciplina</dt><dd>{entry.disciplineCode}</dd></div>
                       <div><dt className="font-bold ui-text-subtle">Tipo de documento</dt><dd>{entry.documentTypeCode}</dd></div>

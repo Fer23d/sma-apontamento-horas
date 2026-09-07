@@ -58,7 +58,7 @@ export function TimeEntryForm({ entryId }: { entryId?: string }) {
       <div>
         <label htmlFor="details" className="text-sm font-bold ui-text">Detalhamento das atividades</label>
         <textarea id="details" name="details" rows={5} value={controller.values.details} onChange={(event) => controller.setField('details', event.target.value)} className={fieldClassName} placeholder="Descreva objetivamente o trabalho realizado" aria-invalid={Boolean(controller.errors.details)} aria-describedby={controller.errors.details ? 'details-error' : 'details-help'} />
-        <p id="details-help" className="mt-1.5 text-xs ui-text-subtle">Obrigatório. Não inclua senhas, dados pessoais ou informações sensíveis.</p>
+        <p id="details-help" className="mt-1.5 text-xs ui-text-subtle">Opcional. Não inclua senhas, dados pessoais ou informações sensíveis.</p>
         <FieldError id="details-error" message={controller.errors.details} />
       </div>
 

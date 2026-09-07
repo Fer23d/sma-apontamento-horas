@@ -2,6 +2,7 @@ import { MAX_ENTRY_MINUTES, MAX_PROJECT_CODE_LENGTH } from '../config/business'
 import type { AssignmentSnapshot } from '../features/squads/types'
 import type { DisciplineCode, DocumentTypeCode, TimeEntry } from '../features/time-entries/types'
 import { isIsoDate } from '../shared/utils/date'
+import { isAllowedDocumentType, isDisciplineCode, isLdDocumentSnapshot } from '../features/time-entries/documentCatalog'
 
 export const LEGACY_V1_TIME_ENTRY_STORAGE_KEY = 'sma:time-entries:v1'
 export const LEGACY_V2_TIME_ENTRY_STORAGE_KEY = 'sma:time-entries:v2'
@@ -80,7 +81,6 @@ function isLegacyEntry(value: unknown, collaboratorId: string, projectField: 'pr
     && Number(entry.durationMinutes) > 0
     && Number(entry.durationMinutes) <= MAX_ENTRY_MINUTES
     && typeof entry.details === 'string'
-    && Boolean(entry.details.trim())
     && (entry.status === 'ACTIVE' || entry.status === 'CANCELLED')
     && Number.isInteger(entry.version)
     && Number(entry.version) > 0
@@ -132,13 +132,14 @@ export function normalizeTimeEntry(value: unknown, collaboratorId: string): Time
     || entry.projectCode !== entry.projectCode.trim()
     || entry.projectCode.length > MAX_PROJECT_CODE_LENGTH
     || typeof entry.activityId !== 'string'
-    || !disciplineCodes.includes(entry.disciplineCode as DisciplineCode)
-    || !documentTypeCodes.includes(entry.documentTypeCode as DocumentTypeCode)
+    || !isDisciplineCode(entry.disciplineCode)
+    || !isAllowedDocumentType(entry.documentTypeCode, entry.ldDocument)
+    || (entry.ldDocument !== undefined && !isLdDocumentSnapshot(entry.ldDocument))
+    || (entry.contractorNumber !== undefined && (typeof entry.contractorNumber !== 'string' || entry.contractorNumber.trim().length > 160))
     || !Number.isInteger(entry.durationMinutes)
     || Number(entry.durationMinutes) <= 0
     || Number(entry.durationMinutes) > MAX_ENTRY_MINUTES
     || typeof entry.details !== 'string'
-    || !entry.details.trim()
     || (entry.assignmentSnapshot !== null && !isAssignmentSnapshot(entry.assignmentSnapshot))
     || (entry.status !== 'ACTIVE' && entry.status !== 'CANCELLED')
     || !Number.isInteger(entry.version)
@@ -151,6 +152,8 @@ export function normalizeTimeEntry(value: unknown, collaboratorId: string): Time
     entryDate: String(entry.entryDate),
     clientId: entry.clientId,
     projectCode: entry.projectCode,
+    contractorNumber: typeof entry.contractorNumber === 'string' ? entry.contractorNumber.trim() : undefined,
+    ldDocument: isLdDocumentSnapshot(entry.ldDocument) ? entry.ldDocument : undefined,
     activityId: entry.activityId,
     disciplineCode: entry.disciplineCode as DisciplineCode,
     documentTypeCode: entry.documentTypeCode as DocumentTypeCode,

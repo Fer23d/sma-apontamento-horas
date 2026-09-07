@@ -5,6 +5,7 @@ import type {
   TimeEntryValidationErrors,
 } from '../../shared/types/domain'
 import { compareIsoDates, eachIsoDate, isIsoDate, isWeekend } from '../../shared/utils/date'
+import { isAllowedDocumentType, isDisciplineCode, isLdDocumentSnapshot } from './documentCatalog'
 
 export const MAX_ENTRY_MINUTES = 24 * 60
 export const MAX_PROJECT_CODE_LENGTH = 80
@@ -64,11 +65,12 @@ export function validateTimeEntry(
   if (!projectCode) errors.projectCode = 'Informe o número do projeto.'
   else if (projectCode.length > MAX_PROJECT_CODE_LENGTH) errors.projectCode = 'O número do projeto deve ter no máximo 80 caracteres.'
   if (!activities.some((activity) => activity.id === data.activityId && activity.active)) errors.activityId = 'Selecione uma atividade ativa.'
-  if (!['—', 'A', 'E'].includes(data.disciplineCode)) errors.disciplineCode = 'Selecione uma disciplina.'
-  if (!['—', 'RN', 'GR', 'G', 'FD', 'DE', 'LM', 'DI', 'LC', 'LI', 'ET', 'MC', 'MO', 'MD', 'FG', 'LA', 'ES', 'CF'].includes(data.documentTypeCode)) {
+  if (!isDisciplineCode(data.disciplineCode)) errors.disciplineCode = 'Selecione uma disciplina.'
+  if (!isAllowedDocumentType(data.documentTypeCode, data.ldDocument)) {
     errors.documentTypeCode = 'Selecione um tipo de documento.'
   }
   if (!isValidDuration(data.durationMinutes)) errors.durationMinutes = 'A duração deve ser maior que zero e de no máximo 24 horas.'
-  if (!data.details.trim()) errors.details = 'Descreva o trabalho realizado.'
+  if ((data.contractorNumber?.trim().length ?? 0) > 160) errors.contractorNumber = 'Use no máximo 160 caracteres.'
+  if (data.ldDocument !== undefined && !isLdDocumentSnapshot(data.ldDocument)) errors.ldDocument = 'Os dados do documento da LD são inválidos.'
   return errors
 }

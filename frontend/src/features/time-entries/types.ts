@@ -1,8 +1,8 @@
 import type { AssignmentSnapshot } from '../squads/types'
 
 export type TimeEntryStatus = 'ACTIVE' | 'CANCELLED'
-export type DisciplineCode = '—' | 'A' | 'E'
-export type DocumentTypeCode =
+export type DisciplineCode = '—' | 'A' | 'E' | 'G' | 'M'
+export type ManualDocumentTypeCode =
   | '—'
   | 'RN'
   | 'GR'
@@ -22,12 +22,24 @@ export type DocumentTypeCode =
   | 'ES'
   | 'CF'
 
+export type DocumentTypeCode = string
+
+export interface LdDocumentSnapshot {
+  valeNumber: string
+  title: string
+  documentTypeCode: string
+  disciplineName: string
+  fileName: string
+}
+
 export interface TimeEntry {
   id: string
   collaboratorId: string
   entryDate: string
   clientId: string
   projectCode: string
+  contractorNumber?: string
+  ldDocument?: LdDocumentSnapshot
   activityId: string
   disciplineCode: DisciplineCode
   documentTypeCode: DocumentTypeCode
@@ -49,6 +61,8 @@ export type CreateTimeEntryData = Pick<
   | 'entryDate'
   | 'clientId'
   | 'projectCode'
+  | 'contractorNumber'
+  | 'ldDocument'
   | 'activityId'
   | 'disciplineCode'
   | 'documentTypeCode'
