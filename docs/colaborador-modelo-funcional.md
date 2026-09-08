@@ -325,7 +325,7 @@ Enquanto não houver backend:
 
 ### 12.1 Estado persistido atual
 
-- chave atual `sma:time-entries:v4`;
+- chave compartilhada atual `apontamentos_sma`, com payload versionado em `v4`;
 - migração encadeada e idempotente `v1 → v2 → v3 → v4`, executada somente quando a versão seguinte ainda não existe validamente;
 - conversão de `projectId` antigo pelo mapa temporário de compatibilidade; quando desconhecido, o próprio valor antigo é preservado como `projectCode`;
 - cada etapa só conclui após gravar, reler e validar integralmente o conteúdo persistido; falhas retornam coleção vazia controlada;

@@ -67,13 +67,13 @@ describe('LocalStorageSupervisorService', () => {
   it('lista apontamentos reais gravados na mesma chave local do colaborador', async () => {
     const storage = createMemoryStorage()
     storage.setItem(TIME_ENTRY_STORAGE_KEY, JSON.stringify({
-      version: 3,
+      version: 4,
       entriesByCollaborator: {
         'collaborator-real-001': [{
           id: 'real-entry-001',
           collaboratorId: 'collaborator-real-001',
           entryDate: '2026-07-31',
-          clientId: 'client-real',
+          clientName: 'Cliente Real',
           projectCode: 'SM&A-REAL-001',
           activityId: 'activity-real',
           disciplineCode: 'A',

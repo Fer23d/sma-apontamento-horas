@@ -28,7 +28,7 @@ import {
 export { LEGACY_V1_TIME_ENTRY_STORAGE_KEY, LEGACY_V2_TIME_ENTRY_STORAGE_KEY, LEGACY_V3_TIME_ENTRY_STORAGE_KEY } from './timeEntryMigration'
 export type { StorageLike } from './storage'
 
-export const TIME_ENTRY_STORAGE_KEY = 'sma:time-entries:v4'
+export const TIME_ENTRY_STORAGE_KEY = 'apontamentos_sma'
 
 export type TimeEntryFilters = {
   clientName?: string
@@ -113,7 +113,6 @@ function normalizeCreateData(data: CreateTimeEntryData): CreateTimeEntryData {
   if (!Number.isInteger(data.durationMinutes) || data.durationMinutes <= 0 || data.durationMinutes > MAX_ENTRY_MINUTES) {
     throw new Error('Informe uma duração válida.')
   }
-  if (!details) throw new Error('Informe o detalhamento.')
   return { ...baseData, clientName, projectCode, details, contractorNumber: data.contractorNumber?.trim() }
 }
 

@@ -7,7 +7,7 @@ import type {
 } from '../features/supervisor/types'
 import { demoAssignmentSnapshot, demoCollaborator } from '../mocks/demoData'
 import { TIME_ENTRY_STORAGE_KEY } from './timeEntryService'
-import { normalizeTimeEntry, type TimeEntryStorageV3 } from './timeEntryMigration'
+import { normalizeTimeEntry, type TimeEntryStorageV4 } from './timeEntryMigration'
 import { TIME_OFF_STORAGE_KEY, timeOffService, type TimeOffStorage } from './timeOffService'
 import { createBrowserStorage, type StorageLike } from './storage'
 
@@ -145,11 +145,11 @@ export class LocalStorageSupervisorService implements SupervisorService {
     this.storage.setItem(SUPERVISOR_APPROVAL_STORAGE_KEY, JSON.stringify(data))
   }
 
-  private readTimeEntryStorage(): TimeEntryStorageV3 {
+  private readTimeEntryStorage(): TimeEntryStorageV4 {
     try {
       const raw = this.storage.getItem(TIME_ENTRY_STORAGE_KEY)
-      if (!raw) return { version: 3, entriesByCollaborator: {} }
-      const parsed = JSON.parse(raw) as Partial<TimeEntryStorageV3> | Array<Record<string, unknown>>
+      if (!raw) return { version: 4, entriesByCollaborator: {} }
+      const parsed = JSON.parse(raw) as Partial<TimeEntryStorageV4> | Array<Record<string, unknown>>
       if (Array.isArray(parsed)) {
         const entriesByCollaborator = parsed.reduce<Record<string, unknown[]>>((grouped, entry) => {
           const collaboratorId = entry.collaboratorId
@@ -158,7 +158,7 @@ export class LocalStorageSupervisorService implements SupervisorService {
           return grouped
         }, {})
         return {
-          version: 3,
+          version: 4,
           entriesByCollaborator: Object.fromEntries(
             Object.entries(entriesByCollaborator).map(([collaboratorId, entries]) => [
               collaboratorId,
@@ -170,8 +170,8 @@ export class LocalStorageSupervisorService implements SupervisorService {
           ),
         }
       }
-      if (parsed.version !== 3 || !parsed.entriesByCollaborator || typeof parsed.entriesByCollaborator !== 'object') {
-        return { version: 3, entriesByCollaborator: {} }
+      if (parsed.version !== 4 || !parsed.entriesByCollaborator || typeof parsed.entriesByCollaborator !== 'object') {
+        return { version: 4, entriesByCollaborator: {} }
       }
       const entriesByCollaborator = Object.fromEntries(
         Object.entries(parsed.entriesByCollaborator).map(([collaboratorId, entries]) => [
@@ -184,9 +184,9 @@ export class LocalStorageSupervisorService implements SupervisorService {
             : [],
         ]),
       )
-      return { version: 3, entriesByCollaborator }
+      return { version: 4, entriesByCollaborator }
     } catch {
-      return { version: 3, entriesByCollaborator: {} }
+      return { version: 4, entriesByCollaborator: {} }
     }
   }
 

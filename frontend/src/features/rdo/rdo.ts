@@ -4,19 +4,31 @@ import { areValidDurationParts, formatMinutes } from '../time-entries/domain'
 import type { LdDocumentSnapshot } from '../time-entries/types'
 import { formatDatePtBr, isIsoDate } from '../../shared/utils/date'
 
-type RdoFormData = { entryDate: string; projectCode: string; contractorNumber?: string; disciplineCode: string; documentTypeCode: string; hours: string; minutes: string; details: string; ldDocument?: LdDocumentSnapshot }
+type RdoFormData = {
+  entryDate?: string
+  startDate?: string
+  projectCode: string
+  contractorNumber?: string
+  disciplineCode: string
+  documentTypeCode: string
+  hours: string
+  minutes: string
+  details: string
+  ldDocument?: LdDocumentSnapshot
+}
 type RdoContext = { name: string; jobTitle?: string; clientName?: string; activityName?: string }
 export type RdoData = ReturnType<typeof buildRdoData>
 
 export function buildRdoData(values: RdoFormData, context: RdoContext) {
-  if (!isIsoDate(values.entryDate)) throw new Error('Informe uma data válida para criar o RDO.')
+  const entryDate = values.entryDate ?? values.startDate ?? ''
+  if (!isIsoDate(entryDate)) throw new Error('Informe uma data válida para criar o RDO.')
   const hours = Number(values.hours || 0), minutes = Number(values.minutes || 0)
   if (!areValidDurationParts(hours, minutes)) throw new Error('Informe uma duração válida para criar o RDO.')
   if (!values.projectCode.trim()) throw new Error('Informe o número do projeto para criar o RDO.')
   return {
     contractor: 'SM&A Sistemas Elétricos e Automação',
     contractorNumber: values.contractorNumber?.trim() ?? '',
-    date: values.entryDate, professional: context.name, category: context.jobTitle ?? '',
+    date: entryDate, professional: context.name, category: context.jobTitle ?? '',
     duration: formatMinutes(hours * 60 + minutes), object: values.ldDocument?.title ?? '',
     valeNumber: values.ldDocument?.valeNumber ?? '',
     discipline: disciplines.find(([code]) => code === values.disciplineCode)?.[1] ?? '',

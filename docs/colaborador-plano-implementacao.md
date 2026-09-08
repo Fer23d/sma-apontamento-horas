@@ -422,7 +422,7 @@ Esses pontos são **Fora do escopo da fase do Colaborador** e não devem gerar i
 - duração é inteiro em minutos e limitada provisoriamente a 1.440;
 - `TimeEntry` usa somente `projectCode`; não possui `projectId` ou `projectName` nesta fase;
 - `projectCode` preserva o conteúdo informado e remove somente espaços externos, com limite provisório de 80 caracteres;
-- o storage atual usa `sma:time-entries:v4`; a migração encadeada `v1 → v2 → v3 → v4` relê e valida cada etapa, mantém backups anteriores e nunca combina versões nas consultas;
+- o storage compartilhado atual usa `apontamentos_sma` com payload `v4`; a migração encadeada `v1 → v2 → v3 → v4` relê e valida cada etapa, mantém backups anteriores e nunca combina versões nas consultas;
 - a migração `v3 → v4` substitui `clientId` por `clientName`, converte IDs demonstrativos conhecidos e preserva IDs desconhecidos como texto;
 - o mapa de projetos antigos existe somente no módulo de migração como compatibilidade temporária, não como catálogo oficial;
 - perfil e catálogos são mocks sem nomes reais;
@@ -459,4 +459,4 @@ A sequência corretiva que levou ao estado consolidado acima, detalhada em `docs
 7. destacar versões editadas sem alterar status de aprovação;
 8. verificar todas as páginas, temas, breakpoints, console e suíte integral.
 
-Essa rodada preservou `sma:time-entries:v3` e seus backups; a evolução posterior para `sma:time-entries:v4` mantém a `v3` inalterada como backup e migra o cliente para nome textual. Não cria autenticação, backend, fonte oficial de feriados, Supervisor ou Diretor.
+Essa rodada preservou `sma:time-entries:v3` e seus backups; a evolução posterior para `apontamentos_sma` com payload `v4` mantém a `v3` inalterada como backup e migra o cliente para nome textual. Não cria autenticação, backend, fonte oficial de feriados, Supervisor ou Diretor.

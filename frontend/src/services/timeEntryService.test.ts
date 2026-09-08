@@ -147,7 +147,7 @@ describe('migração segura de apontamentos até v4', () => {
     const firstRead = await buildService(storage).listByDate(collaboratorId, '2026-07-13')
     const secondRead = await buildService(storage).listByDate(collaboratorId, '2026-07-13')
 
-    expect(TIME_ENTRY_STORAGE_KEY).toBe('sma:time-entries:v4')
+    expect(TIME_ENTRY_STORAGE_KEY).toBe('apontamentos_sma')
     expect(firstRead).toHaveLength(1)
     expect(firstRead[0]).toMatchObject({ clientName: 'Cliente Industrial Alfa' })
     expect(firstRead[0]).not.toHaveProperty('clientId')
