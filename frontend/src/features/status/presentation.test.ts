@@ -36,6 +36,9 @@ describe('catálogo de apresentação dos status', () => {
 
   it('classifica cancelamento e edição sem criar estados de domínio', () => {
     expect(timeEntryStatusPresentation).toEqual({
+      PENDING: { label: 'Pendente de aprovação', tone: 'pending' },
+      APPROVED: { label: 'Aprovado', tone: 'success' },
+      REJECTED: { label: 'Rejeitado', tone: 'danger' },
       ACTIVE: { label: 'Ativo', tone: 'neutral' },
       CANCELLED: { label: 'Cancelado', tone: 'cancelled' },
     })

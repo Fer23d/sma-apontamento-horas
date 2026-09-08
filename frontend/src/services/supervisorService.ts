@@ -1,4 +1,5 @@
 import type { TimeOffRequest } from '../features/time-off/types'
+import type { TimeEntryStatus } from '../features/time-entries/types'
 import type {
   SupervisorDashboardSummary,
   SupervisorPendingEntry,
@@ -28,6 +29,10 @@ type SupervisorApprovalStorage = {
 type TeamMember = {
   id: string
   name: string
+}
+
+type SupervisorEntrySource = Omit<SupervisorPendingEntry, 'status'> & {
+  sourceStatus?: TimeEntryStatus
 }
 
 export interface SupervisorService {
@@ -143,6 +148,10 @@ export class LocalStorageSupervisorService implements SupervisorService {
 
   private write(data: SupervisorApprovalStorage) {
     this.storage.setItem(SUPERVISOR_APPROVAL_STORAGE_KEY, JSON.stringify(data))
+  }
+
+  private writeTimeEntryStorage(data: TimeEntryStorageV4) {
+    this.storage.setItem(TIME_ENTRY_STORAGE_KEY, JSON.stringify(data))
   }
 
   private readTimeEntryStorage(): TimeEntryStorageV4 {
@@ -272,12 +281,32 @@ export class LocalStorageSupervisorService implements SupervisorService {
     const data = this.read()
     data.approvalsByEntryId[entryId] = approval
     this.write(data)
+
+    const timeEntryStorage = this.readTimeEntryStorage()
+    const nextStatus = approval.status === 'APPROVED'
+      ? 'APPROVED'
+      : approval.status === 'REJECTED'
+        ? 'REJECTED'
+        : 'PENDING'
+    let changed = false
+    timeEntryStorage.entriesByCollaborator = Object.fromEntries(
+      Object.entries(timeEntryStorage.entriesByCollaborator).map(([collaboratorId, collaboratorEntries]) => [
+        collaboratorId,
+        collaboratorEntries.map((entry) => {
+          if (entry.id !== entryId) return entry
+          changed = true
+          return { ...entry, status: nextStatus, updatedAt: this.now() }
+        }),
+      ]),
+    )
+    if (changed) this.writeTimeEntryStorage(timeEntryStorage)
+
     return { ...current, ...approval }
   }
 
   async listEntries() {
     const stored = this.read().approvalsByEntryId
-    const realEntries = Object.values(this.readTimeEntryStorage().entriesByCollaborator).flat().map<Omit<SupervisorPendingEntry, 'status'>>((entry) => ({
+    const realEntries = Object.values(this.readTimeEntryStorage().entriesByCollaborator).flat().map<SupervisorEntrySource>((entry) => ({
       id: entry.id,
       collaboratorId: entry.collaboratorId,
       collaboratorName: COLLABORATOR_NAME_BY_ID.get(entry.collaboratorId) ?? entry.collaboratorId,
@@ -285,13 +314,19 @@ export class LocalStorageSupervisorService implements SupervisorService {
       projectCode: entry.projectCode,
       durationMinutes: entry.durationMinutes,
       activityName: entry.activityId,
+      sourceStatus: entry.status,
       rejectionReason: entry.status === 'CANCELLED' ? entry.cancelReason ?? 'Apontamento cancelado pelo colaborador.' : undefined,
     }))
-    const entriesById = new Map([...this.seedEntries, ...realEntries].map((entry) => [entry.id, entry]))
+    const entriesById = new Map<string, SupervisorEntrySource>([...this.seedEntries, ...realEntries].map((entry) => [entry.id, entry]))
     return Array.from(entriesById.values())
       .map((entry) => ({
         ...entry,
-        status: stored[entry.id]?.status ?? (entry.rejectionReason ? 'REJECTED' : 'PENDING'),
+        status: stored[entry.id]?.status
+          ?? (entry.rejectionReason
+            ? 'REJECTED'
+            : entry.sourceStatus === 'APPROVED' || entry.sourceStatus === 'REJECTED' || entry.sourceStatus === 'PENDING'
+              ? entry.sourceStatus
+              : 'PENDING'),
         rejectionReason: stored[entry.id]?.rejectionReason ?? entry.rejectionReason,
         decidedAt: stored[entry.id]?.decidedAt,
         decidedBy: stored[entry.id]?.decidedBy,

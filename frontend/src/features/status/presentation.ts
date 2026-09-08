@@ -38,6 +38,9 @@ export const timeOffStatusPresentation = {
 } as const satisfies Readonly<Record<TimeOffRequestStatus, StatusPresentation>>
 
 export const timeEntryStatusPresentation = {
+  PENDING: { label: 'Pendente de aprovação', tone: 'pending' },
+  APPROVED: { label: 'Aprovado', tone: 'success' },
+  REJECTED: { label: 'Rejeitado', tone: 'danger' },
   ACTIVE: { label: 'Ativo', tone: 'neutral' },
   CANCELLED: { label: 'Cancelado', tone: 'cancelled' },
 } as const satisfies Readonly<Record<TimeEntryStatus, StatusPresentation>>

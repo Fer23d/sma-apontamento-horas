@@ -128,4 +128,43 @@ describe('LocalStorageSupervisorService', () => {
       }),
     ]))
   })
+
+  it('sincroniza a decisão do supervisor com o registro de apontamento do colaborador', async () => {
+    const storage = createMemoryStorage()
+    storage.setItem(TIME_ENTRY_STORAGE_KEY, JSON.stringify({
+      version: 4,
+      entriesByCollaborator: {
+        'collaborator-real-001': [{
+          id: 'real-entry-002',
+          collaboratorId: 'collaborator-real-001',
+          entryDate: '2026-07-31',
+          clientName: 'Cliente Real',
+          projectCode: 'SM&A-REAL-002',
+          activityId: 'activity-real',
+          disciplineCode: 'A',
+          documentTypeCode: 'RN',
+          durationMinutes: 300,
+          details: 'Apontamento pendente',
+          assignmentSnapshot: null,
+          status: 'PENDING',
+          version: 1,
+          createdAt: '2026-07-31T12:00:00.000Z',
+          updatedAt: '2026-07-31T12:00:00.000Z',
+        }],
+      },
+    }))
+    const service = new LocalStorageSupervisorService(storage, () => '2026-07-31T13:00:00.000Z', [])
+
+    await service.approve('real-entry-002', 'supervisor-001')
+
+    const persisted = JSON.parse(storage.getItem(TIME_ENTRY_STORAGE_KEY) ?? '{}')
+    expect(persisted.entriesByCollaborator['collaborator-real-001'][0]).toMatchObject({
+      id: 'real-entry-002',
+      status: 'APPROVED',
+      updatedAt: '2026-07-31T13:00:00.000Z',
+    })
+    await expect(service.listEntries()).resolves.toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'real-entry-002', status: 'APPROVED' }),
+    ]))
+  })
 })

@@ -6,6 +6,7 @@ import type {
 import { MAX_CLIENT_NAME_LENGTH } from '../../config/business'
 import { compareIsoDates, eachIsoDate, isIsoDate, isWeekend } from '../../shared/utils/date'
 import { isAllowedDocumentType, isDisciplineCode, isLdDocumentSnapshot } from './documentCatalog'
+import type { TimeEntryStatus } from './types'
 
 export const MAX_ENTRY_MINUTES = 24 * 60
 export const MAX_PROJECT_CODE_LENGTH = 80
@@ -38,6 +39,10 @@ export function formatSignedMinutes(totalMinutes: number) {
 
 export function isValidDuration(durationMinutes: number) {
   return Number.isInteger(durationMinutes) && durationMinutes > 0 && durationMinutes <= MAX_ENTRY_MINUTES
+}
+
+export function isCountableTimeEntryStatus(status: TimeEntryStatus) {
+  return status === 'PENDING' || status === 'APPROVED' || status === 'REJECTED' || status === 'ACTIVE'
 }
 
 function isValidIsoDate(value: string) {

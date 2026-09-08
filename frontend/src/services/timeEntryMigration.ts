@@ -50,6 +50,7 @@ const disciplineCodes: readonly DisciplineCode[] = ['—', 'A', 'E']
 const documentTypeCodes: readonly DocumentTypeCode[] = [
   '—', 'RN', 'GR', 'G', 'FD', 'DE', 'LM', 'DI', 'LC', 'LI', 'ET', 'MC', 'MO', 'MD', 'FG', 'LA', 'ES', 'CF',
 ]
+const timeEntryStatuses: readonly TimeEntry['status'][] = ['PENDING', 'APPROVED', 'REJECTED', 'ACTIVE', 'CANCELLED']
 
 function isAssignmentSnapshot(value: unknown): value is AssignmentSnapshot {
   if (!value || typeof value !== 'object') return false
@@ -76,7 +77,7 @@ function isLegacyEntry(value: unknown, collaboratorId: string, projectField: 'pr
     && Number(entry.durationMinutes) > 0
     && Number(entry.durationMinutes) <= MAX_ENTRY_MINUTES
     && typeof entry.details === 'string'
-    && (entry.status === 'ACTIVE' || entry.status === 'CANCELLED')
+    && timeEntryStatuses.includes(entry.status as TimeEntry['status'])
     && Number.isInteger(entry.version)
     && Number(entry.version) > 0
     && typeof entry.createdAt === 'string'
@@ -104,7 +105,7 @@ function commonEntryIsInvalid(entry: Record<string, unknown>, collaboratorId: st
     || Number(entry.durationMinutes) > MAX_ENTRY_MINUTES
     || typeof entry.details !== 'string'
     || (entry.assignmentSnapshot !== null && !isAssignmentSnapshot(entry.assignmentSnapshot))
-    || (entry.status !== 'ACTIVE' && entry.status !== 'CANCELLED')
+    || !timeEntryStatuses.includes(entry.status as TimeEntry['status'])
     || !Number.isInteger(entry.version)
     || Number(entry.version) <= 0
     || typeof entry.createdAt !== 'string'

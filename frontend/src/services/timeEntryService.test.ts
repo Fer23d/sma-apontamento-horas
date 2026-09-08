@@ -417,7 +417,7 @@ describe('comandos e consultas de apontamento', () => {
       projectCode: 'Ab-00  1/2.03',
       details: 'Entrega concluída',
       assignmentSnapshot: assignment,
-      status: 'ACTIVE',
+      status: 'PENDING',
       version: 1,
     })
   })
@@ -444,7 +444,7 @@ describe('comandos e consultas de apontamento', () => {
       durationMinutes: 120,
       version: 2,
       lastEditReason: 'Detalhamento corrigido',
-      status: 'ACTIVE',
+      status: 'PENDING',
     })
   })
 
@@ -467,7 +467,7 @@ describe('comandos e consultas de apontamento', () => {
     })
 
     expect(duplicate.id).not.toBe(created.id)
-    expect(duplicate).toMatchObject({ sourceEntryId: created.id, entryDate: '2026-07-14', durationMinutes: 90, version: 1, status: 'ACTIVE', assignmentSnapshot: assignment })
+    expect(duplicate).toMatchObject({ sourceEntryId: created.id, entryDate: '2026-07-14', durationMinutes: 90, version: 1, status: 'PENDING', assignmentSnapshot: assignment })
   })
 
   it('cancela logicamente, preserva o registro e o retira do saldo', async () => {
@@ -520,7 +520,7 @@ describe('comandos e consultas de apontamento', () => {
     await expect(service.update(collaboratorId, created.id, created.version, validData, 'Correção')).rejects.toThrow('férias integrais')
     await expect(service.duplicate(collaboratorId, created.id, created.version, {})).rejects.toThrow('férias integrais')
     await expect(service.cancel(collaboratorId, created.id, created.version, 'Conflito')).rejects.toThrow('férias integrais')
-    await expect(service.getById(collaboratorId, created.id)).resolves.toMatchObject({ status: 'ACTIVE', version: 1, durationMinutes: 60 })
+    await expect(service.getById(collaboratorId, created.id)).resolves.toMatchObject({ status: 'PENDING', version: 1, durationMinutes: 60 })
   })
 
   it('isola propriedade e não permite editar registro de outro colaborador', async () => {

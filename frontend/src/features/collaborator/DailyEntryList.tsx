@@ -1,11 +1,11 @@
 import { demoActivities } from '../../mocks/demoData'
 import type { TimeEntry } from '../../shared/types/domain'
-import { formatMinutes } from '../time-entries/domain'
+import { formatMinutes, isCountableTimeEntryStatus } from '../time-entries/domain'
 import { EntryRevisionBadge } from '../time-entries/EntryRevisionBadge'
 import { EntryDocumentDetails } from '../time-entries/EntryDocumentDetails'
 
 export function DailyEntryList({ entries }: { entries: TimeEntry[] }) {
-  const activeEntries = entries.filter((entry) => entry.status === 'ACTIVE')
+  const activeEntries = entries.filter((entry) => isCountableTimeEntryStatus(entry.status))
 
   return (
     <section className="rounded-2xl border ui-border ui-surface shadow-sm" aria-labelledby="daily-entries-title">

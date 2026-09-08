@@ -266,7 +266,7 @@ export class LocalStorageTimeEntryService implements TimeEntryService {
       .filter((entry) => !filters.activityId || entry.activityId === filters.activityId)
       .filter((entry) => !filters.disciplineCode || entry.disciplineCode === filters.disciplineCode)
       .filter((entry) => !filters.documentTypeCode || entry.documentTypeCode === filters.documentTypeCode)
-      .filter((entry) => !filters.status || entry.status === filters.status)
+      .filter((entry) => !filters.status || (filters.status === 'ACTIVE' ? entry.status !== 'CANCELLED' : entry.status === filters.status))
       .sort((left, right) => right.entryDate.localeCompare(left.entryDate) || right.createdAt.localeCompare(left.createdAt))
     const items = entries.slice(offset, offset + pageSize)
     const nextOffset = offset + items.length
@@ -312,7 +312,7 @@ export class LocalStorageTimeEntryService implements TimeEntryService {
       ...normalized,
       entryDate: date,
       assignmentSnapshot,
-      status: 'ACTIVE',
+      status: 'PENDING',
       version: 1,
       createdAt: timestamp,
       updatedAt: timestamp,
@@ -378,7 +378,7 @@ export class LocalStorageTimeEntryService implements TimeEntryService {
       collaboratorId: collaborId,
       ...normalized,
       assignmentSnapshot,
-      status: 'ACTIVE',
+      status: 'PENDING',
       version: 1,
       createdAt: timestamp,
       updatedAt: timestamp,

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { calculateDaySummary, calculatePeriodSummary } from '../calendar/domain'
+import { isCountableTimeEntryStatus } from '../time-entries/domain'
 import type { CalendarEvent, DailySummary, PeriodSummary } from '../calendar/types'
 import type { DayApproval } from '../approvals/types'
 import { isDayApprovalApplicable } from '../approvals/domain'
@@ -117,7 +118,7 @@ export function useCollaboratorDashboard(selectedDate: string, monthKey: string,
         return [dayApprovalService.getForDate(
           profile.id,
           date,
-          entries.some((entry) => entry.status === 'ACTIVE'),
+          entries.some((entry) => isCountableTimeEntryStatus(entry.status)),
           entries[0]?.assignmentSnapshot ?? currentAssignment,
           true,
         )]
@@ -127,7 +128,7 @@ export function useCollaboratorDashboard(selectedDate: string, monthKey: string,
           ?? await dayApprovalService.getForDate(
             profile.id,
             selectedDate,
-            selectedEntries.some((entry) => entry.status === 'ACTIVE'),
+            selectedEntries.some((entry) => isCountableTimeEntryStatus(entry.status)),
             selectedEntries[0]?.assignmentSnapshot ?? currentAssignment,
             true,
           )
