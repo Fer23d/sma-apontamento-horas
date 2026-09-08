@@ -1,4 +1,4 @@
-import { demoActivities, demoClients } from '../../mocks/demoData'
+import { demoActivities } from '../../mocks/demoData'
 import type { TimeEntry } from '../../shared/types/domain'
 import { formatMinutes } from '../time-entries/domain'
 import { EntryRevisionBadge } from '../time-entries/EntryRevisionBadge'
@@ -24,7 +24,6 @@ export function DailyEntryList({ entries }: { entries: TimeEntry[] }) {
       ) : (
         <ul className="divide-y ui-divide">
           {activeEntries.map((entry) => {
-            const client = demoClients.find((item) => item.id === entry.clientId)
             const activity = demoActivities.find((item) => item.id === entry.activityId)
             return (
               <li key={entry.id} className="p-5">
@@ -34,7 +33,7 @@ export function DailyEntryList({ entries }: { entries: TimeEntry[] }) {
                       <p className="font-bold ui-heading">Número do projeto: {entry.projectCode}</p>
                       <EntryRevisionBadge version={entry.version} />
                     </div>
-                    <p className="mt-1 text-sm ui-text-subtle">{client?.name} · {activity?.name}</p>
+                    <p className="mt-1 text-sm ui-text-subtle">{entry.clientName} · {activity?.name}</p>
                     <EntryDocumentDetails entry={entry} />
                     <p className="mt-3 text-sm leading-6 ui-text">{entry.details}</p>
                   </div>

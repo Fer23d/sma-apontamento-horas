@@ -8,7 +8,7 @@ describe('importação por cabeçalhos da LD', () => {
   it('ignora título, linha técnica, legenda e vazios e extrai valores reais', () => {
     const result = parseLdRows([['LISTA DE DOCUMENTOS'], ['numero_vale'], headers, [], row], 'base.xlsm')
     expect(result.documents).toHaveLength(1)
-    expect(result.documents[0]).toMatchObject({ valeNumber: 'VA-001', contractorNumber: 'ab-00/1  02', documentTypeCode: 'ZZ-2', disciplineCode: 'M', title: 'Título com acentuação', rowNumber: 5 })
+    expect(result.documents[0]).toMatchObject({ clientName: 'VALE', valeNumber: 'VA-001', contractorNumber: 'ab-00/1  02', documentTypeCode: 'ZZ-2', disciplineCode: 'M', title: 'Título com acentuação', rowNumber: 5 })
   })
   it('localiza cabeçalhos normalizados mesmo com colunas deslocadas', () => {
     const result = parseLdRows([['TÍTULO', null, 'Nº CONTRATADA', 'ESPECIALIDADES\nDE ENGENHARIA', 'Nº VALE', 'SIGLA DE DESENHO'], ['Geral', null, '0001', 'GERAL', 'LD-001', 'LD']], 'base.xlsx')
@@ -25,10 +25,10 @@ describe('importação por cabeçalhos da LD', () => {
     expect(result.issues[1].message).toMatch(/disciplina/i)
     expect(result.issues[2].message).toMatch(/sigla/i)
   })
-  it('preenche somente os dados relacionados e preserva projeto e cliente', () => {
+  it('preenche o cliente identificado pela LD e preserva o projeto', () => {
     const document = parseLdRows([headers, row], 'base.xlsm').documents[0]
-    const result = applyLdDocument({ projectCode: 'Meu Projeto', clientId: 'cliente', details: '' }, document)
-    expect(result).toMatchObject({ projectCode: 'Meu Projeto', clientId: 'cliente', details: '', contractorNumber: 'ab-00/1  02', disciplineCode: 'M', documentTypeCode: 'ZZ-2', ldDocument: { fileName: 'base.xlsm', valeNumber: 'VA-001' } })
+    const result = applyLdDocument({ projectCode: 'Meu Projeto', clientName: 'Cliente anterior', details: '' }, document)
+    expect(result).toMatchObject({ projectCode: 'Meu Projeto', clientName: 'VALE', details: '', contractorNumber: 'ab-00/1  02', disciplineCode: 'M', documentTypeCode: 'ZZ-2', ldDocument: { fileName: 'base.xlsm', valeNumber: 'VA-001' } })
   })
   it('rejeita extensão, conteúdo vazio e tamanho excessivo', () => {
     expect(() => validateLdFile({ name: 'arquivo.csv', size: 100 })).toThrow(/xlsx/i)

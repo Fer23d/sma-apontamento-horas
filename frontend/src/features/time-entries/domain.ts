@@ -1,10 +1,10 @@
 import type {
   Activity,
-  Client,
   CreateTimeEntryData,
   TimeEntryValidationErrors,
 } from '../../shared/types/domain'
 import { compareIsoDates } from '../../shared/utils/date'
+import { MAX_CLIENT_NAME_LENGTH } from '../../config/business'
 import { isAllowedDocumentType, isDisciplineCode, isLdDocumentSnapshot } from './documentCatalog'
 
 export const MAX_ENTRY_MINUTES = 24 * 60
@@ -49,7 +49,6 @@ function isValidIsoDate(value: string) {
 
 export function validateTimeEntry(
   data: CreateTimeEntryData,
-  clients: Client[],
   activities: Activity[],
   context?: { today: string; canMutateDate: boolean },
 ): TimeEntryValidationErrors {
@@ -57,7 +56,9 @@ export function validateTimeEntry(
   if (!isValidIsoDate(data.entryDate)) errors.entryDate = 'Informe uma data válida.'
   else if (context && compareIsoDates(data.entryDate, context.today) > 0) errors.entryDate = 'Não é permitido apontar horas em uma data futura.'
   else if (context && !context.canMutateDate) errors.entryDate = 'Esta data está aprovada ou fora de uma competência aberta.'
-  if (!clients.some((client) => client.id === data.clientId && client.active)) errors.clientId = 'Selecione um cliente ativo.'
+  const clientName = data.clientName.trim()
+  if (!clientName) errors.clientName = 'Informe o cliente.'
+  else if (clientName.length > MAX_CLIENT_NAME_LENGTH) errors.clientName = `O cliente deve ter no máximo ${MAX_CLIENT_NAME_LENGTH} caracteres.`
   const projectCode = data.projectCode.trim()
   if (!projectCode) errors.projectCode = 'Informe o número do projeto.'
   else if (projectCode.length > MAX_PROJECT_CODE_LENGTH) errors.projectCode = 'O número do projeto deve ter no máximo 80 caracteres.'

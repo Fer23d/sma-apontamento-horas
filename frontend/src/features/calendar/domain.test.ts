@@ -22,7 +22,7 @@ function entry(date: string, durationMinutes: number, overrides: Partial<TimeEnt
     id: `entry-${date}-${durationMinutes}`,
     collaboratorId,
     entryDate: date,
-    clientId: 'client-1',
+    clientName: 'Cliente 1',
     projectCode: 'SMA-001',
     activityId: 'activity-1',
     disciplineCode: '—',

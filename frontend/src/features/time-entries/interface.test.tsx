@@ -7,13 +7,13 @@ import { TimeEntryFields } from './TimeEntryFields'
 import type { TimeEntryFormValues } from './useTimeEntryForm'
 
 const values: TimeEntryFormValues = {
-  entryDate: '2026-07-20', clientId: '', projectCode: '', activityId: '', disciplineCode: '', documentTypeCode: '',
+  entryDate: '2026-07-20', clientName: '', projectCode: '', activityId: '', disciplineCode: '', documentTypeCode: '',
   hours: '', minutes: '', details: '', editReason: '',
 }
 
 const filters: HistoryFiltersValue = {
   mode: 'MONTH', day: '2026-07-20', month: '2026-07', startDate: '2026-07-01', endDate: '2026-07-20',
-  clientId: '', projectCode: '', activityId: '', disciplineCode: '', documentTypeCode: '', status: 'ACTIVE',
+  clientName: '', projectCode: '', activityId: '', disciplineCode: '', documentTypeCode: '', status: 'ACTIVE',
 }
 
 describe('markup acessível de apontamentos e histórico', () => {
@@ -31,6 +31,20 @@ describe('markup acessível de apontamentos e histórico', () => {
     expect(markup).toContain('for="project-code"')
     expect(markup).toContain('for="discipline"')
     expect(markup).toContain('for="document-type"')
+  })
+
+  it('usa campo textual para cliente em vez do catálogo demonstrativo', () => {
+    const markup = renderToStaticMarkup(<TimeEntryFields values={values} errors={{}} maxDate="2026-07-20" onChange={vi.fn()} />)
+    expect(markup).toContain('name="clientName"')
+    expect(markup).not.toContain('<select id="client"')
+    expect(markup).not.toContain('Selecione um cliente')
+  })
+
+  it('torna o cliente somente leitura quando ele veio da LD', () => {
+    const markup = renderToStaticMarkup(<TimeEntryFields values={{ ...values, clientName: 'VALE', ldDocument: { valeNumber: 'VA-001', title: 'Documento', documentTypeCode: 'LD', disciplineName: 'GERAL', fileName: 'base.xlsm' } }} errors={{}} maxDate="2026-07-20" onChange={vi.fn()} />)
+    expect(markup).toContain('name="clientName"')
+    expect(markup).toContain('readOnly=""')
+    expect(markup).toContain('Identificado automaticamente pela LD')
   })
 
   it('preserva o texto do número do projeto, a atividade Outros e remove campos descontinuados', () => {
