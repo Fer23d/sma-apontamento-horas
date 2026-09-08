@@ -24,7 +24,7 @@ Definir o comportamento esperado da área do Colaborador e registrar as decisõe
 3. Abrir o dashboard individual para ver período, jornada prevista, total apontado e saldo calculado.
 4. Selecionar uma data pelo calendário ou pela rota de novo apontamento.
 5. Escolher o cliente, digitar exatamente o número do projeto atual e escolher a atividade.
-6. Preencher somente os campos aplicáveis à atividade; o cliente não filtra projetos nesta fase.
+6. Opcionalmente, importar uma LD em `.xlsx`/`.xlsm`, pesquisar um documento e usar seus dados para preencher número da contratada, disciplina e tipo documental. O cliente não filtra projetos nesta fase.
 7. Informar duração em horas/minutos; a aplicação converte para minutos.
 8. Visualizar uma prévia do total diário e da situação da jornada.
 9. Registrar o apontamento como `ACTIVE`; rascunho persistido não existe nesta fatia.
@@ -43,11 +43,13 @@ Definir o comportamento esperado da área do Colaborador e registrar as decisõe
 | `entryDate` | data ISO `YYYY-MM-DD` | **Obrigatório** | Data civil do trabalho; datas futuras e datas bloqueadas não aceitam mutação. |
 | `clientId` | identificador de cliente | **Obrigatório** | Deve apontar para um cliente ativo do catálogo demonstrativo. |
 | `projectCode` | texto, máximo provisório de 80 caracteres | **Obrigatório** | Informado pelo Colaborador. Aplicar somente `trim()` externo antes de validar/persistir; preservar capitalização, zeros, pontos, barras, hífens e espaços internos. |
+| `contractorNumber` | texto, máximo provisório de 160 caracteres | **Opcional** | Preenchido manualmente ou a partir de `Nº CONTRATADA` da LD; aplica somente `trim()` externo. |
 | `activityId` | identificador da atividade | **Obrigatório** | Atividade tipada define categoria e aplicabilidade dos demais campos. |
-| `disciplineCode` | enum `— | A | E` | **Obrigatório** | `—` representa “não aplicável” no contrato atual; não é ausência de valor. |
-| `documentTypeCode` | enum do catálogo mínimo | **Obrigatório** | `—` representa “não aplicável”; os demais códigos identificam o tipo documental selecionado. |
+| `disciplineCode` | enum `— | A | E | G | M` | **Obrigatório** | `—` representa “não aplicável”; os demais códigos representam Automação, Elétrica, Geral e Mecânica. |
+| `documentTypeCode` | código textual | **Obrigatório** | No modo manual usa o catálogo atual. Com LD aceita e preserva a sigla válida de `SIGLA DE DESENHO`, ainda que não exista no catálogo manual. |
 | `durationMinutes` | inteiro entre 1 e 1.440 | **Obrigatório** | Armazenamento canônico em minutos inteiros. |
-| `details` | texto | **Obrigatório** | Recebe `trim()` externo e não aceita conteúdo vazio. |
+| `details` | texto | **Opcional** | Recebe `trim()` externo e pode permanecer vazio, inclusive para a atividade “Outros”. |
+| `ldDocument` | snapshot | **Opcional, somente leitura após a seleção** | Quando há LD, preserva somente Nº VALE, título, sigla, disciplina original e nome do arquivo. A planilha completa nunca é salva no apontamento. |
 | `assignmentSnapshot` | snapshot de squad/supervisor ou `null` | **Automático, somente leitura** | Preserva a atribuição resolvida no lançamento; `null` é aceito para compatibilidade legada. |
 | `status` | enum | **Automático, somente leitura** | `ACTIVE` na criação; muda para `CANCELLED` no cancelamento lógico. |
 | `createdAt` | timestamp | **Automático, somente leitura** | Mantido por toda a vida do registro. |
@@ -58,24 +60,42 @@ Definir o comportamento esperado da área do Colaborador e registrar as decisõe
 | `cancelledAt` | timestamp | **Automático, somente leitura, condicional** | Preenchido no cancelamento lógico. |
 | `sourceEntryId` | identificador | **Automático, somente leitura** | Rastreia a origem de um apontamento duplicado. |
 
-Nomes de cliente e atividade são resolvidos pelos catálogos e não são armazenados em `TimeEntry`. O contrato atual também não possui colaborador por nome, documento da LD, percentual de avanço ou observação separada.
+Nomes de cliente e atividade são resolvidos pelos catálogos e não são armazenados em `TimeEntry`. O contrato atual não possui colaborador por nome, percentual de avanço ou observação separada.
 
-`TimeEntry` não possui `projectId` nem `projectName` nesta fase, porque não existe catálogo oficial ou identificador estável. Quando catálogo e backend existirem, poderá receber uma referência estável `projectId`, e o nome será obtido pelo relacionamento. Um eventual snapshot histórico do nome só deverá ser criado após necessidade explícita e regra de atualização definidas. Documento da LD, avanço e observação separada também exigem decisão funcional explícita antes de ampliar o contrato.
+`TimeEntry` não possui `projectId` nem `projectName` nesta fase, porque não existe catálogo oficial ou identificador estável. Quando catálogo e backend existirem, poderá receber uma referência estável `projectId`, e o nome será obtido pelo relacionamento. Um eventual snapshot histórico do nome só deverá ser criado após necessidade explícita e regra de atualização definidas. Avanço e observação separada também exigem decisão funcional explícita antes de ampliar o contrato.
 
 ### 4.2 Aplicabilidade por cenário
 
 | Cenário | Cliente/projeto | Disciplina | Tipo documental | Detalhamento | Entidade/efeito atual |
 |---|---|---|---|---|---|
-| Trabalho em projeto de cliente com entregável | Obrigatórios | Código aplicável | Código aplicável | Obrigatório | `TimeEntry`; minutos entram no `DailySummary`. |
-| Trabalho em projeto sem documento | Obrigatórios | Código aplicável ou `—` | `—` | Obrigatório | `TimeEntry`; minutos entram no `DailySummary`. |
-| Projeto interno SM&A | Cliente interno do catálogo e projeto obrigatórios | Código aplicável ou `—` | Código aplicável ou `—` | Obrigatório | `TimeEntry`; minutos entram no `DailySummary`. |
-| Atividade administrativa | Cliente e projeto continuam obrigatórios no contrato uniforme atual | `—` quando não aplicável | `—` quando não aplicável | Obrigatório | `TimeEntry`; flexibilização futura depende de decisão de produto. |
+| Trabalho em projeto de cliente com entregável | Obrigatórios | Código aplicável | Código aplicável | Opcional | `TimeEntry`; LD opcional pode preencher metadados documentais. |
+| Trabalho em projeto sem documento | Obrigatórios | Código aplicável ou `—` | `—` | Opcional | `TimeEntry`; minutos entram no `DailySummary`. |
+| Projeto interno SM&A | Cliente interno do catálogo e projeto obrigatórios | Código aplicável ou `—` | Código aplicável ou `—` | Opcional | `TimeEntry`; minutos entram no `DailySummary`. |
+| Atividade administrativa | Cliente e projeto continuam obrigatórios no contrato uniforme atual | `—` quando não aplicável | `—` quando não aplicável | Opcional | `TimeEntry`; flexibilização futura depende de decisão de produto. |
 | Folga de compensação | Não aplicáveis | Não aplicável | Não aplicável | Motivo próprio da solicitação | `TimeOffRequest`; não é `TimeEntry`. |
 | Férias | Não aplicáveis | Não aplicável | Não aplicável | Não exigido no apontamento | `CalendarEvent`; não é `TimeEntry`. |
 | Afastamento médico | Não aplicáveis | Não aplicável | Não aplicável | Sem dado médico sensível desnecessário | `CalendarEvent`; não é `TimeEntry`. |
 | Feriado | Não aplicáveis | Não aplicável | Não aplicável | Não exigido | `CalendarEvent`; trabalho no feriado, quando permitido, é `TimeEntry` separado. |
 
 Para disciplina e tipo documental, o contrato atual usa explicitamente o código `—` para “não aplicável”. Demais dados que pertencem a outras entidades não devem ser simulados dentro de `TimeEntry`.
+
+### 4.3 Importação opcional da LD
+
+A importação opera somente no navegador e não é requisito para salvar um apontamento manual. O leitor procura a aba `LD` e identifica colunas pelos cabeçalhos normalizados, sem depender da posição física. Na referência real revalidada, o cabeçalho está na linha 16 e o mapeamento é:
+
+| Dado | Cabeçalho real | Coluna na referência |
+|---|---|---|
+| Identificação do documento | `Nº VALE` | B |
+| Número da contratada | `Nº CONTRATADA` | D |
+| Tipo documental | `SIGLA DE DESENHO` | I |
+| Disciplina | `ESPECIALIDADES DE ENGENHARIA` | L |
+| Título | `TÍTULO` | M |
+
+A planilha possui 236 documentos completos selecionáveis e uma linha candidata incompleta (linha 33, sem título), que é reportada e ignorada sem impedir o uso das linhas válidas. As siglas encontradas foram `DG`, `DI`, `DT`, `ET`, `FD`, `LB`, `LD`, `LE`, `LM`, `MC`, `MD`, `PQ` e `RL`; as disciplinas foram `AUTOMAÇÃO`, `ELÉTRICA`, `GERAL` e `MECÂNICA`. O mapa de cabeçalhos continua sendo a fonte de verdade para LDs futuras com colunas deslocadas.
+
+### 4.4 Geração opcional de RDO
+
+“Criar RDO” usa os valores atuais do formulário e baixa um PDF A4 paisagem sem salvar ou modificar o apontamento, saldo, aprovação ou histórico. O template foi adaptado da referência real de sete páginas: mantém cabeçalho, identificação, quadro profissional e grade de atividade, mas usa somente dados disponíveis no sistema. Hora de início, hora de término, Data OS, QQP, assinaturas e dados preenchidos da referência não são inferidos nem copiados. Sem LD, os campos documentais permanecem vazios; com LD, o PDF usa o título e o Nº VALE selecionados. Textos longos continuam em páginas adicionais com cabeçalho e identificação repetidos.
 
 ## 5. Distribuição diária das horas
 
@@ -316,7 +336,7 @@ Enquanto não houver backend:
 - carga horária demonstrativa versionada, inicialmente de 480 minutos de segunda a sexta e zero no fim de semana;
 - duração máxima provisória de 1.440 minutos;
 - feriados, férias, afastamentos e folgas usam fontes/coleções demonstrativas próprias;
-- edição, duplicação, cancelamento lógico, histórico paginado e calendário mensal estão implementados; rascunho, documentos da LD, avanço, exportação, agregado de squad e homologação corporativa permanecem fora do escopo.
+- edição, duplicação, cancelamento lógico, histórico paginado, calendário mensal, importação opcional de LD e geração opcional de RDO estão implementados; rascunho, avanço, exportação individual estruturada, agregado de squad e homologação corporativa permanecem fora do escopo.
 
 ## 13. Privacidade e visão agregada da squad
 

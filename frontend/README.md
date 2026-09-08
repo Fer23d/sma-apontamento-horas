@@ -8,6 +8,8 @@ Frontend demonstrativo da SM&A com perfis de Colaborador, Supervisor e Diretor/A
 - dashboard com saldos reais consolidados por dia, mês, intervalo e total, sempre limitados ao dia atual;
 - calendário mensal com feriados e eventos demonstrativos;
 - criação, edição, duplicação e cancelamento lógico de apontamentos;
+- importação opcional de Lista de Documentos em `.xlsx`/`.xlsm`, com busca e autopreenchimento de metadados;
+- geração opcional de RDO em PDF A4 paisagem sem salvar o formulário;
 - histórico individual paginado, filtros e eventos do período;
 - solicitações de folga e de alteração de carga horária;
 - placeholders honestos para as áreas de Supervisor e Diretor/Administração, ainda em desenvolvimento;
@@ -33,6 +35,8 @@ npm run dev
 
 O Vite exibirá no terminal o endereço local da aplicação.
 
+Para executar o teste opt-in contra a LD real sem copiar o anexo para o repositório, defina `SMA_LD_REFERENCE` com o caminho externo do arquivo antes de `npm test`. Os demais testes usam apenas dados sintéticos.
+
 ## Persistência demonstrativa
 
 Os repositórios locais escondem o acesso ao `localStorage`, de modo que possam ser substituídos por uma API. A sessão atual usa `sma:demo-session:v2`. Na primeira execução sem uma sessão `v2` válida, a sessão legada `v1` é invalidada de forma idempotente e a aplicação volta a `/login`; essa migração não apaga apontamentos, perfil, folgas, cargas, aprovações ou tema.
@@ -51,3 +55,5 @@ npm run build
 ```
 
 O build é gerado em `dist/`, que permanece ignorado pelo Git. `node_modules/` também não é versionado.
+
+`read-excel-file` é usado para interpretar o OOXML da LD no navegador. `jspdf` gera e baixa o RDO sem depender de backend; ambos são carregados somente quando o fluxo correspondente é acionado.
