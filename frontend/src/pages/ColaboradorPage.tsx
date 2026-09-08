@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { PageContainer } from '../components/PageContainer'
 import { DailyEntryList } from '../features/collaborator/DailyEntryList'
 import { BalanceSummaryCards } from '../features/collaborator/BalanceSummaryCards'
@@ -13,6 +13,7 @@ import { getCorporateToday, getMonthKey, getMonthRange, isIsoDate } from '../sha
 
 export function ColaboradorPage() {
   const { profile } = useSession()
+  const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const selectedDate = searchParams.get('date') ?? getCorporateToday()
   const monthKey = getMonthKey(selectedDate)
@@ -41,6 +42,14 @@ export function ColaboradorPage() {
     setRangeError(null)
     setRange(getMonthRange(monthKey))
     setSearchParams({ date: selectedDate })
+  }
+
+  function openDateWorkflow(date: string, hasEntries: boolean) {
+    if (hasEntries) {
+      navigate(`/colaborador/historico?date=${date}`)
+      return
+    }
+    navigate(`/colaborador/apontamentos/novo?date=${date}`)
   }
 
   if (!profile) return null
@@ -93,6 +102,7 @@ export function ColaboradorPage() {
               days={dashboard.data.calendarDays}
               onMonthChange={(nextMonth) => setSearchParams({ date: `${nextMonth}-01` })}
               onSelectDate={(date) => setSearchParams(hasCustomRange ? { date, start: customStart!, end: customEnd! } : { date })}
+              onOpenDate={openDateWorkflow}
             />
             <DayDetails summary={dashboard.data.selectedSummary} events={dashboard.data.selectedEvents} timeOffRequests={dashboard.data.selectedTimeOffRequests} approval={dashboard.data.selectedApproval} />
             <DailyEntryList entries={dashboard.data.selectedEntries} />

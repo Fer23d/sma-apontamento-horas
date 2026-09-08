@@ -98,7 +98,11 @@ export function useTimeEntryForm({ initialDate, entryId, duplicateId }: { initia
   }, [profile, sourceId])
 
   const setField = useCallback(<Key extends keyof TimeEntryFormValues>(field: Key, value: TimeEntryFormValues[Key]) => {
-    setValues((current) => ({ ...current, [field]: value }))
+    setValues((current) => {
+      if (field !== 'startDate' || typeof value !== 'string') return { ...current, [field]: value }
+      const shouldResetEndDate = !current.endDate || current.endDate < value || current.endDate === current.startDate
+      return { ...current, startDate: value, endDate: shouldResetEndDate ? value : current.endDate }
+    })
     if (field === 'editReason') setEditReasonError(null)
     else setErrors((current) => ({ ...current, [field]: undefined }))
   }, [])
