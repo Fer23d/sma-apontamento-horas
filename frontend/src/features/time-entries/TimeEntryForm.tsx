@@ -4,6 +4,7 @@ import { getCorporateToday } from '../../shared/utils/date'
 import { FieldError, fieldClassName, TimeEntryFields } from './TimeEntryFields'
 import { useTimeEntryForm } from './useTimeEntryForm'
 import { LdSection } from '../document-list/LdSection'
+import { CreateRdoButton } from '../rdo/CreateRdoButton'
 
 export function TimeEntryForm({ entryId }: { entryId?: string }) {
   const [searchParams] = useSearchParams()
@@ -79,6 +80,7 @@ export function TimeEntryForm({ entryId }: { entryId?: string }) {
           {controller.isSubmitting ? 'Salvando…' : submitLabel}
         </button>
       </div>
+      <CreateRdoButton values={controller.values} />
     </form>
   )
 }
