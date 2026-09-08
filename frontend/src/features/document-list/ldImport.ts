@@ -3,6 +3,7 @@ import { isDocumentAcronym, isLdDocumentSnapshot } from '../time-entries/documen
 
 export interface LdDocument extends LdDocumentSnapshot {
   rowNumber: number
+  clientName: string
   contractorNumber: string
   disciplineCode: DisciplineCode
 }
@@ -16,6 +17,7 @@ const normalize = (value: unknown) => String(value ?? '').normalize('NFD').repla
 const text = (value: unknown) => typeof value === 'string' || typeof value === 'number' ? String(value).trim() : ''
 const headers = { valeNumber: ['NVALE', 'NOVALE', 'NUMEROVALE'], contractorNumber: ['NCONTRATADA', 'NOCONTRATADA', 'NUMEROCONTRATADA'], documentTypeCode: ['SIGLADEDESENHO'], disciplineName: ['ESPECIALIDADESDEENGENHARIA'], title: ['TITULO'] } as const
 const disciplineByName: Record<string, DisciplineCode> = { GERAL: 'G', ELETRICA: 'E', AUTOMACAO: 'A', MECANICA: 'M' }
+const VALE_CLIENT_NAME = 'VALE'
 
 export function validateLdFile(file: { name: string; size: number }) {
   if (!/\.(xlsx|xlsm)$/i.test(file.name)) throw new Error('Selecione uma LD em .xlsx ou .xlsm.')
@@ -54,7 +56,7 @@ export function parseLdRows(rows: readonly (readonly unknown[])[], fileName: str
     else if (!disciplineCode) message = `Disciplina desconhecida: ${disciplineName || 'não informada'}.`
     else if (!valeNumber || !contractorNumber || !title || contractorNumber.length > 160 || !isLdDocumentSnapshot(snapshot)) message = 'Linha incompleta ou com identificação/título acima do limite.'
     if (message) { issues.push({ rowNumber: i + 1, message }); continue }
-    documents.push({ ...snapshot, contractorNumber, disciplineCode, rowNumber: i + 1 })
+    documents.push({ ...snapshot, clientName: VALE_CLIENT_NAME, contractorNumber, disciplineCode, rowNumber: i + 1 })
   }
   if (!documents.length) throw new Error(`A LD não contém documentos válidos.${issues.length ? ` ${issues.length} linha(s) inválida(s). ${issues[0].message}` : ''}`)
   return { headerRow: headerIndex + 1, columns, documents, issues }
@@ -62,7 +64,7 @@ export function parseLdRows(rows: readonly (readonly unknown[])[], fileName: str
 
 export function applyLdDocument<T extends object>(values: T, document: LdDocument) {
   const { valeNumber, title, documentTypeCode, disciplineName, fileName } = document
-  return { ...values, contractorNumber: document.contractorNumber, disciplineCode: document.disciplineCode, documentTypeCode,
+  return { ...values, clientName: document.clientName, contractorNumber: document.contractorNumber, disciplineCode: document.disciplineCode, documentTypeCode,
     ldDocument: { valeNumber, title, documentTypeCode, disciplineName, fileName } }
 }
 

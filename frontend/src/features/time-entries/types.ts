@@ -36,7 +36,7 @@ export interface TimeEntry {
   id: string
   collaboratorId: string
   entryDate: string
-  clientId: string
+  clientName: string
   projectCode: string
   contractorNumber?: string
   ldDocument?: LdDocumentSnapshot
@@ -59,7 +59,7 @@ export interface TimeEntry {
 export type CreateTimeEntryData = Pick<
   TimeEntry,
   | 'entryDate'
-  | 'clientId'
+  | 'clientName'
   | 'projectCode'
   | 'contractorNumber'
   | 'ldDocument'

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { EntryDocumentDetails } from '../time-entries/EntryDocumentDetails'
 import { Link } from 'react-router-dom'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
-import { demoActivities, demoClients } from '../../mocks/demoData'
+import { demoActivities } from '../../mocks/demoData'
 import { formatDatePtBr } from '../../shared/utils/date'
 import { formatMinutes } from '../time-entries/domain'
 import type { HistoryRow } from './useTimeEntryHistory'
@@ -49,7 +49,6 @@ export function TimeEntryHistory() {
           {history.rows.map((row) => {
             const { entry, approval } = row
             const approvalPresentation = approval ? approvalStatusPresentation[approval.status] : nonApplicableApprovalPresentation
-            const client = demoClients.find((item) => item.id === entry.clientId)?.name ?? 'Cliente não disponível'
             const activity = demoActivities.find((item) => item.id === entry.activityId)?.name ?? 'Atividade não disponível'
             const actions = getHistoryEntryActions({
               entryStatus: entry.status,
@@ -67,7 +66,7 @@ export function TimeEntryHistory() {
                       <StatusBadge tone={approvalPresentation.tone}>{approvalPresentation.label}</StatusBadge>
                       <EntryRevisionBadge version={entry.version} />
                     </div>
-                    <p className="mt-2 text-sm ui-text-subtle">{client} · {activity} · {formatMinutes(entry.durationMinutes)}</p>
+                    <p className="mt-2 text-sm ui-text-subtle">{entry.clientName} · {activity} · {formatMinutes(entry.durationMinutes)}</p>
                     <EntryDocumentDetails entry={entry} />
                     <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
                       <div><dt className="font-bold ui-text-subtle">Disciplina</dt><dd>{entry.disciplineCode}</dd></div>

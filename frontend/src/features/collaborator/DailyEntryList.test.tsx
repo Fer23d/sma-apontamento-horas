@@ -7,7 +7,7 @@ const historicalEntry: TimeEntry = {
   id: 'historical-entry-1',
   collaboratorId: 'demo-collaborator-001',
   entryDate: '2026-07-20',
-  clientId: 'client-industrial-alpha',
+  clientName: 'Cliente Industrial Alfa',
   projectCode: 'SMA-001',
   activityId: 'activity-project-design',
   disciplineCode: '—',
@@ -34,6 +34,7 @@ describe('lista diária de apontamentos', () => {
     const markup = renderToStaticMarkup(<DailyEntryList entries={[historicalEntry]} />)
 
     expect(markup).toContain('Elaboração de projeto')
+    expect(markup).toContain('Cliente Industrial Alfa')
     expect(markup).toContain('Registro criado antes da ampliação do catálogo.')
   })
 

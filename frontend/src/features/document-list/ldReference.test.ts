@@ -15,5 +15,6 @@ describe.skipIf(!process.env.SMA_LD_REFERENCE)('LD real fornecida pelo produto',
     expect([...new Set(result.documents.map((doc) => doc.disciplineName))].sort()).toEqual(['AUTOMAÇÃO', 'ELÉTRICA', 'GERAL', 'MECÂNICA'])
     expect(result.documents[0].valeNumber).toBe('LD-2000KS-G-500016')
     expect(result.documents[0].contractorNumber).toBe('LD-G-19N066E-001')
+    expect(new Set(result.documents.map((doc) => doc.clientName))).toEqual(new Set(['VALE']))
   })
 })

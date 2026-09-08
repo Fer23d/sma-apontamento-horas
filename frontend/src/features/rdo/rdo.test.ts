@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { buildRdoData, downloadRdo, generateRdo, rdoFileName } from './rdo'
 
-const values = { entryDate: '2026-09-07', projectCode: 'Ab/001', clientId: 'client', activityId: 'activity', disciplineCode: 'M', documentTypeCode: 'MD', contractorNumber: '  00-Ab/1  ', hours: '1', minutes: '30', details: '' }
+const values = { entryDate: '2026-09-07', projectCode: 'Ab/001', clientName: 'Cliente de Teste', activityId: 'activity', disciplineCode: 'M', documentTypeCode: 'MD', contractorNumber: '  00-Ab/1  ', hours: '1', minutes: '30', details: '' }
 const context = { name: 'Profissional de Teste', jobTitle: 'Engenheira', clientName: 'Cliente de Teste', activityName: 'Análise de documento' }
 const logo = new Uint8Array(readFileSync(new URL('../../assets/brand/sma-logo.jpg', import.meta.url)))
 

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useSession } from '../session/useSession'
-import { demoActivities, demoClients } from '../../mocks/demoData'
+import { demoActivities } from '../../mocks/demoData'
 import type { TimeEntryFormValues } from '../time-entries/useTimeEntryForm'
 import logoUrl from '../../assets/brand/sma-logo.jpg'
 
@@ -15,7 +15,7 @@ export function CreateRdoButton({ values }: { values: TimeEntryFormValues }) {
     try {
       const { buildRdoData, generateRdo, rdoFileName, downloadRdo } = await import('./rdo')
       const data = buildRdoData(values, { name: profile.name, jobTitle: profile.jobTitle,
-        clientName: demoClients.find((client) => client.id === values.clientId)?.name,
+        clientName: values.clientName,
         activityName: demoActivities.find((activity) => activity.id === values.activityId)?.name })
       const response = await fetch(logoUrl)
       if (!response.ok) throw new Error('Não foi possível carregar a logo do RDO.')

@@ -29,7 +29,7 @@ export type HistoryFiltersValue = {
   month: string
   startDate: string
   endDate: string
-  clientId: string
+  clientName: string
   projectCode: string
   activityId: string
   disciplineCode: DisciplineCode | ''
@@ -49,7 +49,7 @@ export type HistoryRow = {
 const today = getCorporateToday()
 const initialFilters: HistoryFiltersValue = {
   mode: 'MONTH', day: today, month: getMonthKey(today), startDate: `${getMonthKey(today)}-01`, endDate: today,
-  clientId: '', projectCode: '', activityId: '', disciplineCode: '', documentTypeCode: '', status: 'ACTIVE',
+  clientName: '', projectCode: '', activityId: '', disciplineCode: '', documentTypeCode: '', status: 'ACTIVE',
 }
 
 function holidaysToEvents(collaboratorId: string, holidays: Awaited<ReturnType<typeof holidayProvider.list>>): CalendarEvent[] {
@@ -93,7 +93,7 @@ export function useTimeEntryHistory() {
         pageSize: 10,
         cursor,
         filters: {
-          clientId: filters.clientId || undefined,
+          clientName: filters.clientName.trim() || undefined,
           projectCode: filters.projectCode.trim() || undefined,
           activityId: filters.activityId || undefined,
           disciplineCode: filters.disciplineCode || undefined,

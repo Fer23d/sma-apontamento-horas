@@ -41,7 +41,7 @@ Definir o comportamento esperado da área do Colaborador e registrar as decisõe
 | `id` | UUID/string opaca | **Automático, somente leitura** | Gerado uma vez e preservado em edições. |
 | `collaboratorId` | identificador do perfil | **Automático, somente leitura** | Sempre obtido da sessão; nunca aceito de um seletor. |
 | `entryDate` | data ISO `YYYY-MM-DD` | **Obrigatório** | Data civil do trabalho; datas futuras e datas bloqueadas não aceitam mutação. |
-| `clientId` | identificador de cliente | **Obrigatório** | Deve apontar para um cliente ativo do catálogo corporativo. |
+| `clientName` | texto, máximo provisório de 120 caracteres | **Obrigatório** | Sem LD é informado manualmente e recebe `trim()` externo. Com LD do formato VALE é preenchido como `VALE` e fica somente leitura enquanto o documento estiver vinculado. |
 | `projectCode` | texto, máximo provisório de 80 caracteres | **Obrigatório** | Informado pelo Colaborador. Aplicar somente `trim()` externo antes de validar/persistir; preservar capitalização, zeros, pontos, barras, hífens e espaços internos. |
 | `contractorNumber` | texto, máximo provisório de 160 caracteres | **Opcional** | Preenchido manualmente ou a partir de `Nº CONTRATADA` da LD; aplica somente `trim()` externo. |
 | `activityId` | identificador da atividade | **Obrigatório** | Atividade tipada define categoria e aplicabilidade dos demais campos. |
@@ -60,7 +60,7 @@ Definir o comportamento esperado da área do Colaborador e registrar as decisõe
 | `cancelledAt` | timestamp | **Automático, somente leitura, condicional** | Preenchido no cancelamento lógico. |
 | `sourceEntryId` | identificador | **Automático, somente leitura** | Rastreia a origem de um apontamento duplicado. |
 
-Nomes de cliente e atividade são resolvidos pelos catálogos e não são armazenados em `TimeEntry`. O contrato atual não possui colaborador por nome, percentual de avanço ou observação separada.
+O nome do cliente é armazenado em `TimeEntry`; o nome da atividade continua resolvido pelo catálogo demonstrativo. O contrato atual não possui colaborador por nome, percentual de avanço ou observação separada.
 
 `TimeEntry` não possui `projectId` nem `projectName` nesta fase, porque não existe catálogo oficial ou identificador estável. Quando catálogo e backend existirem, poderá receber uma referência estável `projectId`, e o nome será obtido pelo relacionamento. Um eventual snapshot histórico do nome só deverá ser criado após necessidade explícita e regra de atualização definidas. Avanço e observação separada também exigem decisão funcional explícita antes de ampliar o contrato.
 
@@ -325,11 +325,12 @@ Enquanto não houver backend:
 
 ### 12.1 Estado persistido atual
 
-- chave atual `sma:time-entries:v3`;
-- migração encadeada e idempotente `v1 → v2 → v3`, executada somente quando a versão seguinte ainda não existe validamente;
+- chave atual `sma:time-entries:v4`;
+- migração encadeada e idempotente `v1 → v2 → v3 → v4`, executada somente quando a versão seguinte ainda não existe validamente;
 - conversão de `projectId` antigo pelo mapa temporário de compatibilidade; quando desconhecido, o próprio valor antigo é preservado como `projectCode`;
 - cada etapa só conclui após gravar, reler e validar integralmente o conteúdo persistido; falhas retornam coleção vazia controlada;
-- `v1` e `v2` permanecem como backups inalterados, enquanto consultas normais usam exclusivamente a `v3` validada;
+- `v1`, `v2` e `v3` permanecem como backups inalterados, enquanto consultas normais usam exclusivamente a `v4` validada;
+- a migração `v3 → v4` converte IDs demonstrativos conhecidos em nomes e preserva um `clientId` desconhecido como `clientName`, sem descartar o registro;
 - registros agrupados e consultados por `collaboratorId`;
 - sessão corporativa restaurada localmente e separada do service de apontamentos;
 - leitura defensiva: JSON inválido gera erro de desenvolvimento e coleção vazia segura;

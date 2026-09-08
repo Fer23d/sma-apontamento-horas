@@ -298,3 +298,9 @@ As decisões abaixo substituem as limitações de implementação registradas an
 - o histórico inicia em “Somente ativos” e permite consultar separadamente cancelados ou todos.
 
 A especificação detalhada desta atualização está em `docs/superpowers/specs/2026-07-20-rodada-corretiva-colaborador-design.md`.
+
+## 14. Atualização de cliente a partir da LD
+
+A LD real validada não contém uma célula textual denominada “Cliente”. A identificação de `VALE` é sustentada pela marca incorporada no arquivo e pelos cabeçalhos `Nº VALE`. Para o formato atualmente homologado, a importação aplica uma regra explícita de compatibilidade: documentos extraídos desse esquema recebem `clientName: "VALE"`.
+
+O formulário deixa de usar o catálogo demonstrativo de clientes. Sem LD, `clientName` é textual, obrigatório e editável; com um documento da LD selecionado, é preenchido automaticamente e fica somente leitura até o vínculo ser removido. Uma LD futura sem identificação reconhecida não deve produzir um nome fictício. A persistência evolui de `v3` para `v4`, preservando a `v3` como backup e convertendo `clientId` conhecido para o nome correspondente; valores desconhecidos são mantidos como texto para não perder registros históricos.

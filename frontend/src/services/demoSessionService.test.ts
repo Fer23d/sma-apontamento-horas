@@ -8,6 +8,7 @@ const MIGRATION_KEY = 'sma:demo-session:migration:v2'
 const NOW = '2026-07-21T15:30:00.000Z'
 
 const DOMAIN_DATA = {
+  'sma:time-entries:v4': '{"version":4,"entriesByCollaborator":{}}',
   'sma:time-entries:v3': '[{"id":"entry-1"}]',
   'sma:collaborator-profile:v1': '{"name":"Perfil editado"}',
   'sma:time-off-requests:v1': '[{"id":"leave-1"}]',

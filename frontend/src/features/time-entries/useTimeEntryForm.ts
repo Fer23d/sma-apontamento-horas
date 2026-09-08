@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { demoActivities, demoClients } from '../../mocks/demoData'
+import { demoActivities } from '../../mocks/demoData'
 import { dayApprovalService } from '../../services/dayApprovalService'
 import { entryDateAvailabilityService } from '../../services/entryDateAvailabilityService'
 import { timeEntryService } from '../../services/timeEntryService'
@@ -15,7 +15,7 @@ export type TimeEntryFormValues = {
   startDate: string
   endDate: string
   weekdaysOnly: boolean
-  clientId: string
+  clientName: string
   projectCode: string
   contractorNumber?: string
   ldDocument?: CreateTimeEntryData['ldDocument']
@@ -32,7 +32,7 @@ const emptyValues = (entryDate: string): TimeEntryFormValues => ({
   startDate: entryDate,
   endDate: entryDate,
   weekdaysOnly: true,
-  clientId: '',
+  clientName: '',
   projectCode: '',
   contractorNumber: '',
   activityId: '',
@@ -49,7 +49,7 @@ function valuesFromEntry(entry: TimeEntry): TimeEntryFormValues {
     startDate: entry.entryDate,
     endDate: entry.entryDate,
     weekdaysOnly: true,
-    clientId: entry.clientId,
+    clientName: entry.clientName,
     projectCode: entry.projectCode,
     contractorNumber: entry.contractorNumber ?? '',
     ldDocument: entry.ldDocument,
@@ -118,7 +118,7 @@ export function useTimeEntryForm({ initialDate, entryId, duplicateId }: { initia
       entryDate: values.startDate,
       endDate: effectiveEndDate,
       weekdaysOnly: effectiveWeekdaysOnly,
-      clientId: values.clientId,
+      clientName: values.clientName,
       projectCode: values.projectCode,
       contractorNumber: values.contractorNumber,
       ldDocument: values.ldDocument,
@@ -141,7 +141,7 @@ export function useTimeEntryForm({ initialDate, entryId, duplicateId }: { initia
         return false
       }
     }
-    const validationErrors = validateTimeEntry(data, demoClients, demoActivities, { today: getCorporateToday(), canMutateDate })
+    const validationErrors = validateTimeEntry(data, demoActivities, { today: getCorporateToday(), canMutateDate })
     if (dateBlock.blocked) validationErrors.entryDate = dateBlock.message
     if (!areValidDurationParts(durationHours, durationRemainderMinutes)) {
       validationErrors.durationMinutes = 'Informe horas inteiras entre 0 e 24 e minutos inteiros entre 0 e 59, com total máximo de 24 horas.'
@@ -204,7 +204,7 @@ export function useTimeEntryForm({ initialDate, entryId, duplicateId }: { initia
     successMessage,
     setField,
     selectLdDocument: (document: LdDocument) => { setValues((current) => applyLdDocument(current, document)); setErrors({}) },
-    clearLdDocument: () => setValues((current) => ({ ...current, ldDocument: undefined, documentTypeCode: isManualDocumentType(current.documentTypeCode) ? current.documentTypeCode : '' })),
+    clearLdDocument: () => setValues((current) => ({ ...current, clientName: '', ldDocument: undefined, documentTypeCode: isManualDocumentType(current.documentTypeCode) ? current.documentTypeCode : '' })),
     submit,
   }
 }

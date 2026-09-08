@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { demoActivities, demoClients } from '../../mocks/demoData'
+import { demoActivities } from '../../mocks/demoData'
 import type { CreateTimeEntryData } from '../../shared/types/domain'
 import {
   areValidDurationParts,
@@ -56,7 +56,7 @@ describe('validações e formatação', () => {
 
   const validData = {
     entryDate: monday,
-    clientId: 'client-industrial-alpha',
+    clientName: 'Cliente Industrial Alfa',
     projectCode: 'Ab-001/2.03',
     activityId: 'activity-project-design',
     disciplineCode: '—',
@@ -65,10 +65,19 @@ describe('validações e formatação', () => {
     details: 'Atividade corporativa',
   } as CreateTimeEntryData
 
+  it('rejeita cliente vazio após remover espaços externos', () => {
+    const errors = validateTimeEntry({ ...validData, clientName: '   ' }, demoActivities)
+    expect(errors.clientName).toBe('Informe o cliente.')
+  })
+
+  it('aceita cliente textual informado manualmente', () => {
+    const errors = validateTimeEntry({ ...validData, clientName: '  Cliente Manual  ' }, demoActivities)
+    expect(errors.clientName).toBeUndefined()
+  })
+
   it('rejeita número do projeto composto somente por espaços', () => {
     const errors = validateTimeEntry(
       { ...validData, projectCode: '   ' },
-      demoClients,
       demoActivities,
     )
     expect(errors.projectCode).toBe('Informe o número do projeto.')
@@ -77,7 +86,6 @@ describe('validações e formatação', () => {
   it('aceita número do projeto com 80 caracteres após trim', () => {
     const errors = validateTimeEntry(
       { ...validData, projectCode: `  ${'A'.repeat(80)}  ` },
-      demoClients,
       demoActivities,
     )
     expect(errors.projectCode).toBeUndefined()
@@ -86,7 +94,6 @@ describe('validações e formatação', () => {
   it('rejeita número do projeto acima de 80 caracteres após trim', () => {
     const errors = validateTimeEntry(
       { ...validData, projectCode: `  ${'A'.repeat(81)}  ` },
-      demoClients,
       demoActivities,
     )
     expect(errors.projectCode).toBe('O número do projeto deve ter no máximo 80 caracteres.')
@@ -95,7 +102,6 @@ describe('validações e formatação', () => {
   it('bloqueia data futura no fuso corporativo', () => {
     const errors = validateTimeEntry(
       { ...validData, entryDate: '2026-07-21' },
-      demoClients,
       demoActivities,
       { today: '2026-07-20', canMutateDate: true },
     )
@@ -103,32 +109,32 @@ describe('validações e formatação', () => {
   })
 
   it('bloqueia competência fechada e permite período reaberto', () => {
-    const blocked = validateTimeEntry(validData, demoClients, demoActivities, { today: '2026-07-20', canMutateDate: false })
-    const reopened = validateTimeEntry(validData, demoClients, demoActivities, { today: '2026-07-20', canMutateDate: true })
+    const blocked = validateTimeEntry(validData, demoActivities, { today: '2026-07-20', canMutateDate: false })
+    const reopened = validateTimeEntry(validData, demoActivities, { today: '2026-07-20', canMutateDate: true })
     expect(blocked.entryDate).toBe('Esta data está aprovada ou fora de uma competência aberta.')
     expect(reopened.entryDate).toBeUndefined()
   })
 
   it('exige seleção explícita de disciplina e aceita não se aplica', () => {
-    const missing = validateTimeEntry({ ...validData, disciplineCode: '' as '—' }, demoClients, demoActivities)
-    const notApplicable = validateTimeEntry({ ...validData, disciplineCode: '—' }, demoClients, demoActivities)
+    const missing = validateTimeEntry({ ...validData, disciplineCode: '' as '—' }, demoActivities)
+    const notApplicable = validateTimeEntry({ ...validData, disciplineCode: '—' }, demoActivities)
     expect(missing.disciplineCode).toBe('Selecione uma disciplina.')
     expect(notApplicable.disciplineCode).toBeUndefined()
   })
 
   it('exige seleção explícita de tipo de documento e aceita não se aplica', () => {
-    const missing = validateTimeEntry({ ...validData, documentTypeCode: '' as '—' }, demoClients, demoActivities)
-    const notApplicable = validateTimeEntry({ ...validData, documentTypeCode: '—' }, demoClients, demoActivities)
+    const missing = validateTimeEntry({ ...validData, documentTypeCode: '' as '—' }, demoActivities)
+    const notApplicable = validateTimeEntry({ ...validData, documentTypeCode: '—' }, demoActivities)
     expect(missing.documentTypeCode).toBe('Selecione um tipo de documento.')
     expect(notApplicable.documentTypeCode).toBeUndefined()
   })
 
   it('aceita detalhamento vazio inclusive em Outros', () => {
-    expect(validateTimeEntry({ ...validData, details: '   ', activityId: 'activity-other' }, demoClients, demoActivities)).toEqual({})
+    expect(validateTimeEntry({ ...validData, details: '   ', activityId: 'activity-other' }, demoActivities)).toEqual({})
   })
 
   it.each(['G', 'M'] as const)('aceita disciplina %s', (disciplineCode) => {
-    expect(validateTimeEntry({ ...validData, disciplineCode }, demoClients, demoActivities)).toEqual({})
+    expect(validateTimeEntry({ ...validData, disciplineCode }, demoActivities)).toEqual({})
   })
 
   it('formata minutos positivos em HH:MM', () => expect(formatMinutes(125)).toBe('02:05'))

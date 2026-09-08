@@ -5,6 +5,7 @@ import type { CreateTimeEntryData } from '../features/time-entries/types'
 import {
   LEGACY_V1_TIME_ENTRY_STORAGE_KEY,
   LEGACY_V2_TIME_ENTRY_STORAGE_KEY,
+  LEGACY_V3_TIME_ENTRY_STORAGE_KEY,
   LocalStorageTimeEntryService,
   TIME_ENTRY_STORAGE_KEY,
   type StorageLike,
@@ -24,9 +25,9 @@ class MemoryStorage implements StorageLike {
   }
 }
 
-class CorruptingV3Storage extends MemoryStorage {
+class CorruptingV4Storage extends MemoryStorage {
   setItem(key: string, value: string) {
-    super.setItem(key, key === TIME_ENTRY_STORAGE_KEY ? '{invalid-v3' : value)
+    super.setItem(key, key === TIME_ENTRY_STORAGE_KEY ? '{invalid-v4' : value)
   }
 }
 
@@ -48,7 +49,7 @@ const assignment: AssignmentSnapshot = {
 
 const validData: CreateTimeEntryData = {
   entryDate: '2026-07-13',
-  clientId: 'client-industrial-alpha',
+  clientName: 'Cliente Industrial Alfa',
   projectCode: 'Ab-001/2.03',
   activityId: 'activity-project-design',
   disciplineCode: '—',
@@ -121,6 +122,11 @@ function v3Entry(overrides: Record<string, unknown> = {}) {
   }
 }
 
+function v4Entry(overrides: Record<string, unknown> = {}) {
+  const { clientId, ...entry } = v3Entry(overrides)
+  return { ...entry, clientName: clientId === 'client-energy-beta' ? 'Cliente Energia Beta' : clientId === 'client-industrial-alpha' ? 'Cliente Industrial Alfa' : clientId }
+}
+
 function buildService(storage: StorageLike, overrides: Record<string, unknown> = {}) {
   return new LocalStorageTimeEntryService({
     storage,
@@ -132,7 +138,32 @@ function buildService(storage: StorageLike, overrides: Record<string, unknown> =
   })
 }
 
-describe('migração segura de apontamentos v2 para v3', () => {
+describe('migração segura de apontamentos até v4', () => {
+  it('migra o clientId conhecido da v3 para clientName na v4 e preserva a v3', async () => {
+    const storage = new MemoryStorage()
+    const originalV3 = JSON.stringify({ version: 3, entriesByCollaborator: { [collaboratorId]: [v3Entry()] } })
+    storage.setItem(LEGACY_V3_TIME_ENTRY_STORAGE_KEY, originalV3)
+
+    const firstRead = await buildService(storage).listByDate(collaboratorId, '2026-07-13')
+    const secondRead = await buildService(storage).listByDate(collaboratorId, '2026-07-13')
+
+    expect(TIME_ENTRY_STORAGE_KEY).toBe('sma:time-entries:v4')
+    expect(firstRead).toHaveLength(1)
+    expect(firstRead[0]).toMatchObject({ clientName: 'Cliente Industrial Alfa' })
+    expect(firstRead[0]).not.toHaveProperty('clientId')
+    expect(secondRead).toEqual(firstRead)
+    expect(storage.getItem(LEGACY_V3_TIME_ENTRY_STORAGE_KEY)).toBe(originalV3)
+    expect(storage.writes.get(TIME_ENTRY_STORAGE_KEY)).toBe(1)
+  })
+
+  it('preserva clientId desconhecido como clientName ao migrar a v3', async () => {
+    const storage = new MemoryStorage()
+    storage.setItem(LEGACY_V3_TIME_ENTRY_STORAGE_KEY, JSON.stringify({ version: 3, entriesByCollaborator: { [collaboratorId]: [v3Entry({ clientId: 'cliente-legado' })] } }))
+
+    const [entry] = await buildService(storage).listByDate(collaboratorId, '2026-07-13')
+
+    expect(entry.clientName).toBe('cliente-legado')
+  })
   it('migra diretamente de v1 para v2 e v3 uma única vez sem alterar o backup', async () => {
     const storage = new MemoryStorage()
     const originalV1 = JSON.stringify({
@@ -143,7 +174,8 @@ describe('migração segura de apontamentos v2 para v3', () => {
 
     const firstRead = await buildService(storage).listByDate(collaboratorId, '2026-07-13')
     const persistedV2 = storage.getItem(LEGACY_V2_TIME_ENTRY_STORAGE_KEY)
-    const persistedV3 = storage.getItem(TIME_ENTRY_STORAGE_KEY)
+    const persistedV3 = storage.getItem(LEGACY_V3_TIME_ENTRY_STORAGE_KEY)
+    const persistedV4 = storage.getItem(TIME_ENTRY_STORAGE_KEY)
     const secondRead = await buildService(storage).listByDate(collaboratorId, '2026-07-13')
 
     expect(firstRead).toHaveLength(1)
@@ -151,8 +183,10 @@ describe('migração segura de apontamentos v2 para v3', () => {
     expect(secondRead).toEqual(firstRead)
     expect(storage.getItem(LEGACY_V1_TIME_ENTRY_STORAGE_KEY)).toBe(originalV1)
     expect(storage.getItem(LEGACY_V2_TIME_ENTRY_STORAGE_KEY)).toBe(persistedV2)
-    expect(storage.getItem(TIME_ENTRY_STORAGE_KEY)).toBe(persistedV3)
+    expect(storage.getItem(LEGACY_V3_TIME_ENTRY_STORAGE_KEY)).toBe(persistedV3)
+    expect(storage.getItem(TIME_ENTRY_STORAGE_KEY)).toBe(persistedV4)
     expect(storage.writes.get(LEGACY_V2_TIME_ENTRY_STORAGE_KEY)).toBe(1)
+    expect(storage.writes.get(LEGACY_V3_TIME_ENTRY_STORAGE_KEY)).toBe(1)
     expect(storage.writes.get(TIME_ENTRY_STORAGE_KEY)).toBe(1)
   })
 
@@ -201,7 +235,7 @@ describe('migração segura de apontamentos v2 para v3', () => {
   it('preserva registro v3 antigo sem updatedAt usando fallback vazio', async () => {
     const storage = new MemoryStorage()
     const legacyWithoutUpdatedAt = v3Entry({ version: 2, updatedAt: undefined })
-    storage.setItem(TIME_ENTRY_STORAGE_KEY, JSON.stringify({
+    storage.setItem(LEGACY_V3_TIME_ENTRY_STORAGE_KEY, JSON.stringify({
       version: 3,
       entriesByCollaborator: { [collaboratorId]: [legacyWithoutUpdatedAt] },
     }))
@@ -243,30 +277,30 @@ describe('migração segura de apontamentos v2 para v3', () => {
     expect(migrated.assignmentSnapshot).toBeNull()
   })
 
-  it('é idempotente, não duplica e prioriza uma v3 válida preexistente', async () => {
+  it('é idempotente e não duplica ao criar a v4', async () => {
     const storage = new MemoryStorage()
     const originalV2 = JSON.stringify({ version: 2, entriesByCollaborator: { [collaboratorId]: [v2Entry()] } })
     storage.setItem(LEGACY_V2_TIME_ENTRY_STORAGE_KEY, originalV2)
 
     const firstRead = await buildService(storage).listByDate(collaboratorId, '2026-07-13')
-    const persistedV3 = storage.getItem(TIME_ENTRY_STORAGE_KEY)
+    const persistedV4 = storage.getItem(TIME_ENTRY_STORAGE_KEY)
     const secondRead = await buildService(storage).listByDate(collaboratorId, '2026-07-13')
 
     expect(firstRead).toHaveLength(1)
     expect(secondRead).toHaveLength(1)
-    expect(storage.getItem(TIME_ENTRY_STORAGE_KEY)).toBe(persistedV3)
+    expect(storage.getItem(TIME_ENTRY_STORAGE_KEY)).toBe(persistedV4)
     expect(storage.writes.get(TIME_ENTRY_STORAGE_KEY)).toBe(1)
     expect(storage.getItem(LEGACY_V2_TIME_ENTRY_STORAGE_KEY)).toBe(originalV2)
   })
 
-  it('não mistura registros de v2 quando v3 válida já existe', async () => {
+  it('não mistura registros legados quando v4 válida já existe', async () => {
     const storage = new MemoryStorage()
     storage.setItem(LEGACY_V2_TIME_ENTRY_STORAGE_KEY, JSON.stringify({ version: 2, entriesByCollaborator: { [collaboratorId]: [v2Entry()] } }))
-    storage.setItem(TIME_ENTRY_STORAGE_KEY, JSON.stringify({ version: 3, entriesByCollaborator: { [collaboratorId]: [v3Entry({ id: 'v3-only', projectCode: 'V3-ONLY' })] } }))
+    storage.setItem(TIME_ENTRY_STORAGE_KEY, JSON.stringify({ version: 4, entriesByCollaborator: { [collaboratorId]: [v4Entry({ id: 'v4-only', projectCode: 'V4-ONLY' })] } }))
 
     const entries = await buildService(storage).listByDate(collaboratorId, '2026-07-13')
 
-    expect(entries.map((entry) => entry.projectCode)).toEqual(['V3-ONLY'])
+    expect(entries.map((entry) => entry.projectCode)).toEqual(['V4-ONLY'])
     expect(storage.writes.get(TIME_ENTRY_STORAGE_KEY)).toBe(1)
   })
 
@@ -314,8 +348,8 @@ describe('migração segura de apontamentos v2 para v3', () => {
     expect(onStorageError).toHaveBeenCalledOnce()
   })
 
-  it('só conclui depois de gravar, reler e validar a v3', async () => {
-    const storage = new CorruptingV3Storage()
+  it('só conclui depois de gravar, reler e validar a v4', async () => {
+    const storage = new CorruptingV4Storage()
     const originalV2 = JSON.stringify({ version: 2, entriesByCollaborator: { [collaboratorId]: [v2Entry()] } })
     storage.setItem(LEGACY_V2_TIME_ENTRY_STORAGE_KEY, originalV2)
     const onStorageError = vi.fn()
@@ -503,11 +537,11 @@ describe('comandos e consultas de apontamento', () => {
     let nextId = 0
     const service = buildService(storage, { createId: () => `entry-${++nextId}` })
     await service.create(collaboratorId, validData)
-    await service.create(collaboratorId, { ...validData, entryDate: '2026-07-14', clientId: 'client-energy-beta', projectCode: 'BET-001' })
+    await service.create(collaboratorId, { ...validData, entryDate: '2026-07-14', clientName: 'Cliente Energia Beta', projectCode: 'BET-001' })
     await service.create(collaboratorId, { ...validData, entryDate: '2026-07-15', projectCode: 'SMA-003' })
 
     const firstPage = await service.list({ collaboratorId, startDate: '2026-07-01', endDate: '2026-07-31', pageSize: 2 })
-    const filtered = await service.list({ collaboratorId, startDate: '2026-07-01', endDate: '2026-07-31', pageSize: 10, filters: { clientId: 'client-energy-beta' } })
+    const filtered = await service.list({ collaboratorId, startDate: '2026-07-01', endDate: '2026-07-31', pageSize: 10, filters: { clientName: 'energia' } })
 
     expect(firstPage.items).toHaveLength(2)
     expect(firstPage.nextCursor).toBe('2')

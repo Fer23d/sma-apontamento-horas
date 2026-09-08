@@ -1,7 +1,8 @@
-import { demoActivities, demoClients } from '../../mocks/demoData'
+import { demoActivities } from '../../mocks/demoData'
 import type { TimeEntryValidationErrors } from './types'
 import type { TimeEntryFormValues } from './useTimeEntryForm'
 import { disciplines, documentTypes, isManualDocumentType } from './documentCatalog'
+import { MAX_CLIENT_NAME_LENGTH } from '../../config/business'
 
 export const fieldClassName = 'mt-2 w-full ui-field rounded-xl px-3 py-2.5 text-sm ui-text shadow-sm outline-none transition focus:ring-2 disabled:cursor-not-allowed disabled:bg-[var(--color-surface-subtle)]'
 
@@ -44,11 +45,9 @@ export function TimeEntryFields({ values, errors, maxDate, allowBatchMode = true
 
       <div>
         <label htmlFor="client" className="text-sm font-bold ui-text">Cliente</label>
-        <select id="client" name="clientId" value={values.clientId} onChange={(event) => onChange('clientId', event.target.value)} className={fieldClassName} aria-invalid={Boolean(errors.clientId)} aria-describedby={errors.clientId ? 'client-error' : undefined}>
-          <option value="">Selecione um cliente</option>
-          {demoClients.filter((client) => client.active).map((client) => <option key={client.id} value={client.id}>{client.name}</option>)}
-        </select>
-        <FieldError id="client-error" message={errors.clientId} />
+        <input id="client" name="clientName" type="text" maxLength={MAX_CLIENT_NAME_LENGTH} value={values.clientName} readOnly={Boolean(values.ldDocument)} onChange={(event) => onChange('clientName', event.target.value)} autoCorrect="off" spellCheck={false} className={fieldClassName} aria-invalid={Boolean(errors.clientName)} aria-describedby={values.ldDocument ? 'client-help client-error' : errors.clientName ? 'client-error' : undefined} />
+        {values.ldDocument && <p id="client-help" className="mt-1.5 text-xs ui-text-subtle">Identificado automaticamente pela LD.</p>}
+        <FieldError id="client-error" message={errors.clientName} />
       </div>
 
       <div>

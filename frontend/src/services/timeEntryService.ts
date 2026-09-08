@@ -1,4 +1,4 @@
-import { MAX_ENTRY_MINUTES, MAX_HISTORY_PAGE_SIZE, MAX_PROJECT_CODE_LENGTH } from '../config/business'
+import { MAX_CLIENT_NAME_LENGTH, MAX_ENTRY_MINUTES, MAX_HISTORY_PAGE_SIZE, MAX_PROJECT_CODE_LENGTH } from '../config/business'
 import { calculateDaySummary } from '../features/calendar/domain'
 import type { DailySummary } from '../features/calendar/types'
 import type { AuditEvent } from '../features/audit/types'
@@ -17,20 +17,21 @@ import { isAllowedDocumentType, isDisciplineCode, isLdDocumentSnapshot } from '.
 import {
   LEGACY_V1_TIME_ENTRY_STORAGE_KEY,
   LEGACY_V2_TIME_ENTRY_STORAGE_KEY,
+  LEGACY_V3_TIME_ENTRY_STORAGE_KEY,
   migrateV1TimeEntries,
   migrateV2TimeEntries,
+  migrateV3TimeEntries,
   normalizeTimeEntry,
-  type TimeEntryStorageV3,
+  type TimeEntryStorageV4,
 } from './timeEntryMigration'
 
-export { LEGACY_V1_TIME_ENTRY_STORAGE_KEY, LEGACY_V2_TIME_ENTRY_STORAGE_KEY } from './timeEntryMigration'
+export { LEGACY_V1_TIME_ENTRY_STORAGE_KEY, LEGACY_V2_TIME_ENTRY_STORAGE_KEY, LEGACY_V3_TIME_ENTRY_STORAGE_KEY } from './timeEntryMigration'
 export type { StorageLike } from './storage'
 
-export const TIME_ENTRY_STORAGE_KEY = 'apontamentos_sma'
-const LEGACY_V3_TIME_ENTRY_STORAGE_KEY = 'sma:time-entries:v3'
+export const TIME_ENTRY_STORAGE_KEY = 'sma:time-entries:v4'
 
 export type TimeEntryFilters = {
-  clientId?: string
+  clientName?: string
   projectCode?: string
   activityId?: string
   disciplineCode?: DisciplineCode
@@ -90,18 +91,19 @@ type ServiceDependencies = {
 }
 
 type ReadResult = {
-  data: TimeEntryStorageV3
+  data: TimeEntryStorageV4
   canWrite: boolean
 }
 
 function normalizeCreateData(data: CreateTimeEntryData): CreateTimeEntryData {
   const { endDate: _endDate, weekdaysOnly: _weekdaysOnly, ...baseData } = data
   const projectCode = data.projectCode.trim()
+  const clientName = data.clientName.trim()
   const details = data.details.trim()
   if (!isIsoDate(data.entryDate)) throw new Error('Informe uma data válida.')
   if (data.endDate && !isIsoDate(data.endDate)) throw new Error('Informe uma data final válida.')
   if (data.endDate && data.endDate < data.entryDate) throw new Error('A data final deve ser igual ou posterior à data inicial.')
-  if (!data.clientId) throw new Error('Informe o cliente.')
+  if (!clientName || clientName.length > MAX_CLIENT_NAME_LENGTH) throw new Error('Informe um cliente válido.')
   if (!projectCode || projectCode.length > MAX_PROJECT_CODE_LENGTH) throw new Error('Informe um código de projeto válido.')
   if (!data.activityId) throw new Error('Informe a atividade.')
   if (!isDisciplineCode(data.disciplineCode)) throw new Error('Informe a disciplina.')
@@ -112,11 +114,11 @@ function normalizeCreateData(data: CreateTimeEntryData): CreateTimeEntryData {
     throw new Error('Informe uma duração válida.')
   }
   if (!details) throw new Error('Informe o detalhamento.')
-  return { ...baseData, projectCode, details, contractorNumber: data.contractorNumber?.trim() }
+  return { ...baseData, clientName, projectCode, details, contractorNumber: data.contractorNumber?.trim() }
 }
 
-function emptyStorage(): TimeEntryStorageV3 {
-  return { version: 3, entriesByCollaborator: {} }
+function emptyStorage(): TimeEntryStorageV4 {
+  return { version: 4, entriesByCollaborator: {} }
 }
 
 export class LocalStorageTimeEntryService implements TimeEntryService {
@@ -142,73 +144,58 @@ export class LocalStorageTimeEntryService implements TimeEntryService {
     this.onAuditError = onAuditError ?? ((message, error) => console.error(message, error))
   }
 
-  private normalizeEntriesByCollaborator(entriesByCollaborator: Record<string, unknown>): TimeEntryStorageV3 {
-    return {
-      version: 3,
-      entriesByCollaborator: Object.fromEntries(
-        Object.entries(entriesByCollaborator).map(([collaboratorId, entries]) => [
-          collaboratorId,
-          Array.isArray(entries)
-            ? entries.flatMap((entry) => {
-                const normalized = normalizeTimeEntry(entry, collaboratorId)
-                return normalized ? [normalized] : []
-              })
-            : [],
-        ]),
-      ),
-    }
-  }
-
-  private parseV3(raw: string): TimeEntryStorageV3 {
+  private parseV4(raw: string): TimeEntryStorageV4 {
     const parsed = JSON.parse(raw) as unknown
-    if (!parsed || typeof parsed !== 'object') throw new Error('Estrutura v3 inválida.')
-    if (Array.isArray(parsed)) {
-      const entriesByCollaborator = parsed.reduce<Record<string, unknown[]>>((grouped, entry) => {
-        if (!entry || typeof entry !== 'object') return grouped
-        const collaboratorId = (entry as Record<string, unknown>).collaboratorId
-        if (typeof collaboratorId !== 'string') return grouped
-        grouped[collaboratorId] = [...(grouped[collaboratorId] ?? []), entry]
-        return grouped
-      }, {})
-      return this.normalizeEntriesByCollaborator(entriesByCollaborator)
+    if (!parsed || typeof parsed !== 'object') throw new Error('Estrutura v4 inválida.')
+    const candidate = parsed as Partial<TimeEntryStorageV4>
+    if (candidate.version !== 4 || !candidate.entriesByCollaborator || typeof candidate.entriesByCollaborator !== 'object') {
+      throw new Error('Versão ou coleção v4 inválida.')
     }
-    const candidate = parsed as Partial<TimeEntryStorageV3>
-    if (candidate.version !== 3 || !candidate.entriesByCollaborator || typeof candidate.entriesByCollaborator !== 'object') {
-      throw new Error('Versão ou coleção v3 inválida.')
-    }
-    return this.normalizeEntriesByCollaborator(candidate.entriesByCollaborator)
+    const entriesByCollaborator = Object.fromEntries(
+      Object.entries(candidate.entriesByCollaborator).map(([collaboratorId, entries]) => [
+        collaboratorId,
+        Array.isArray(entries)
+          ? entries.flatMap((entry) => {
+              const normalized = normalizeTimeEntry(entry, collaboratorId)
+              return normalized ? [normalized] : []
+            })
+          : [],
+      ]),
+    )
+    return { version: 4, entriesByCollaborator }
   }
 
   private read(): ReadResult {
     const empty = emptyStorage()
     try {
-      const rawV3 = this.storage.getItem(TIME_ENTRY_STORAGE_KEY)
-      if (rawV3 !== null) return { data: this.parseV3(rawV3), canWrite: true }
-      const legacyRawV3 = this.storage.getItem(LEGACY_V3_TIME_ENTRY_STORAGE_KEY)
-      if (legacyRawV3 !== null) {
-        const legacyData = this.parseV3(legacyRawV3)
-        this.writeAndValidate(legacyData)
-        return { data: legacyData, canWrite: true }
-      }
+      const rawV4 = this.storage.getItem(TIME_ENTRY_STORAGE_KEY)
+      if (rawV4 !== null) return { data: this.parseV4(rawV4), canWrite: true }
 
-      let rawV2 = this.storage.getItem(LEGACY_V2_TIME_ENTRY_STORAGE_KEY)
-      if (rawV2 === null) {
-        const rawV1 = this.storage.getItem(LEGACY_V1_TIME_ENTRY_STORAGE_KEY)
-        if (rawV1 === null) return { data: empty, canWrite: true }
-        const v1Migration = migrateV1TimeEntries(rawV1)
-        const serializedV2 = JSON.stringify(v1Migration.data)
-        this.storage.setItem(LEGACY_V2_TIME_ENTRY_STORAGE_KEY, serializedV2)
-        rawV2 = this.storage.getItem(LEGACY_V2_TIME_ENTRY_STORAGE_KEY)
-        if (rawV2 === null) throw new Error('A v2 não foi encontrada após a migração.')
-        if (rawV2 !== serializedV2) throw new Error('A v2 gravada diverge dos dados convertidos da v1.')
+      let rawV3 = this.storage.getItem(LEGACY_V3_TIME_ENTRY_STORAGE_KEY)
+      if (rawV3 === null) {
+        let rawV2 = this.storage.getItem(LEGACY_V2_TIME_ENTRY_STORAGE_KEY)
+        if (rawV2 === null) {
+          const rawV1 = this.storage.getItem(LEGACY_V1_TIME_ENTRY_STORAGE_KEY)
+          if (rawV1 === null) return { data: empty, canWrite: true }
+          const v1Migration = migrateV1TimeEntries(rawV1)
+          const serializedV2 = JSON.stringify(v1Migration.data)
+          this.storage.setItem(LEGACY_V2_TIME_ENTRY_STORAGE_KEY, serializedV2)
+          rawV2 = this.storage.getItem(LEGACY_V2_TIME_ENTRY_STORAGE_KEY)
+          if (rawV2 === null || rawV2 !== serializedV2) throw new Error('A validação da migração para v2 falhou.')
+        }
+        const v2Migration = migrateV2TimeEntries(rawV2)
+        const serializedV3 = JSON.stringify(v2Migration.data)
+        this.storage.setItem(LEGACY_V3_TIME_ENTRY_STORAGE_KEY, serializedV3)
+        rawV3 = this.storage.getItem(LEGACY_V3_TIME_ENTRY_STORAGE_KEY)
+        if (rawV3 === null || rawV3 !== serializedV3) throw new Error('A validação da migração para v3 falhou.')
       }
-      const migration = migrateV2TimeEntries(rawV2)
+      const migration = migrateV3TimeEntries(rawV3)
       const serialized = JSON.stringify(migration.data)
       this.storage.setItem(TIME_ENTRY_STORAGE_KEY, serialized)
       const persistedRaw = this.storage.getItem(TIME_ENTRY_STORAGE_KEY)
-      if (persistedRaw === null) throw new Error('A v3 não foi encontrada após a migração.')
-      const persisted = this.parseV3(persistedRaw)
-      if (JSON.stringify(persisted) !== serialized) throw new Error('A v3 gravada diverge dos dados migrados.')
+      if (persistedRaw === null) throw new Error('A v4 não foi encontrada após a migração.')
+      const persisted = this.parseV4(persistedRaw)
+      if (JSON.stringify(persisted) !== serialized) throw new Error('A v4 gravada diverge dos dados migrados.')
       return { data: persisted, canWrite: true }
     } catch (error) {
       this.onStorageError('Não foi possível ler os apontamentos locais. Uma coleção vazia será utilizada.', error)
@@ -216,8 +203,8 @@ export class LocalStorageTimeEntryService implements TimeEntryService {
     }
   }
 
-  private writeAndValidate(data: TimeEntryStorageV3) {
-    const canonical = this.parseV3(JSON.stringify(data))
+  private writeAndValidate(data: TimeEntryStorageV4) {
+    const canonical = this.parseV4(JSON.stringify(data))
     if (Object.entries(data.entriesByCollaborator).some(([id, entries]) => canonical.entriesByCollaborator[id]?.length !== entries.length)) {
       throw new Error('Um registro inválido impediu a gravação local.')
     }
@@ -225,7 +212,7 @@ export class LocalStorageTimeEntryService implements TimeEntryService {
     this.storage.setItem(TIME_ENTRY_STORAGE_KEY, serialized)
     const persistedRaw = this.storage.getItem(TIME_ENTRY_STORAGE_KEY)
     if (persistedRaw === null) throw new Error('A gravação local não pôde ser confirmada.')
-    const persisted = this.parseV3(persistedRaw)
+    const persisted = this.parseV4(persistedRaw)
     if (JSON.stringify(persisted) !== serialized) throw new Error('A validação da gravação local falhou.')
   }
 
@@ -240,7 +227,7 @@ export class LocalStorageTimeEntryService implements TimeEntryService {
     if (block.blocked) throw new Error(block.message)
   }
 
-  private getOwnEntry(data: TimeEntryStorageV3, collaboratorId: string, id: string) {
+  private getOwnEntry(data: TimeEntryStorageV4, collaboratorId: string, id: string) {
     const entries = data.entriesByCollaborator[collaboratorId] ?? []
     const index = entries.findIndex((entry) => entry.id === id)
     if (index < 0) throw new Error('Apontamento não encontrado para este colaborador.')
@@ -275,7 +262,7 @@ export class LocalStorageTimeEntryService implements TimeEntryService {
     const filters = query.filters ?? {}
     const entries = (this.read().data.entriesByCollaborator[query.collaboratorId] ?? [])
       .filter((entry) => entry.entryDate >= query.startDate && entry.entryDate <= query.endDate)
-      .filter((entry) => !filters.clientId || entry.clientId === filters.clientId)
+      .filter((entry) => !filters.clientName || entry.clientName.toLocaleLowerCase().includes(filters.clientName.toLocaleLowerCase()))
       .filter((entry) => !filters.projectCode || entry.projectCode.toLocaleLowerCase().includes(filters.projectCode.toLocaleLowerCase()))
       .filter((entry) => !filters.activityId || entry.activityId === filters.activityId)
       .filter((entry) => !filters.disciplineCode || entry.disciplineCode === filters.disciplineCode)
@@ -371,7 +358,7 @@ export class LocalStorageTimeEntryService implements TimeEntryService {
     this.assertVersion(entry, expectedVersion)
     const normalized = normalizeCreateData({
       entryDate: overrides.entryDate ?? entry.entryDate,
-      clientId: overrides.clientId ?? entry.clientId,
+      clientName: overrides.clientName ?? entry.clientName,
       projectCode: overrides.projectCode ?? entry.projectCode,
       contractorNumber: overrides.contractorNumber ?? entry.contractorNumber,
       ldDocument: Object.hasOwn(overrides, 'ldDocument') ? overrides.ldDocument : entry.ldDocument,
