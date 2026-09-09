@@ -7,6 +7,9 @@ import { useSession } from '../features/session/useSession'
 import { TIME_OFF_STORAGE_KEY } from '../services/timeOffService'
 import { TIME_ENTRY_STORAGE_KEY } from '../services/timeEntryService'
 import { getMonthKey } from '../shared/utils/date'
+import { diretoriaService } from '../services/diretoriaService'
+import type { SupervisorPendingEntry } from '../features/supervisor/types'
+import { formatMinutes } from '../features/time-entries/domain'
 
 type DiretoriaEntry = {
   id: string
@@ -91,6 +94,25 @@ function SummaryCard({ label, value, helper }: { label: string, value: string | 
   )
 }
 
+function EscalatedApprovals({ entries, directorId, onApproved }: { entries: SupervisorPendingEntry[], directorId: string, onApproved: () => void }) {
+  const [isMutating, setMutating] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  async function approve(entryId: string) {
+    setMutating(true)
+    setError(null)
+    try {
+      await diretoriaService.approveEscalated(entryId, directorId)
+      onApproved()
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : 'Não foi possível aprovar o apontamento escalado.')
+    } finally {
+      setMutating(false)
+    }
+  }
+
+  return <section className="rounded-2xl border border-[var(--color-danger)]/40 bg-[var(--color-surface)] p-5 shadow-sm" aria-labelledby="escalated-approvals-title"><div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-danger)]">Aprovações escaladas</p><h2 id="escalated-approvals-title" className="mt-1 text-xl font-extrabold text-[var(--color-text)]">Pendências transferidas para a Diretoria</h2></div><span className="text-sm text-[var(--color-text-muted)]">{entries.length} pendência(s)</span></div>{error && <p role="alert" className="mt-4 text-sm font-semibold text-[var(--color-danger)]">{error}</p>}{entries.length === 0 ? <p className="mt-4 text-sm text-[var(--color-text-muted)]">Nenhum apontamento foi escalado neste fechamento.</p> : <div className="mt-4 overflow-x-auto"><table className="w-full min-w-[620px] text-left text-sm"><thead className="border-b border-[var(--color-border)] text-xs uppercase tracking-wide text-[var(--color-text-muted)]"><tr><th className="px-3 py-3">Colaborador</th><th className="px-3 py-3">Data</th><th className="px-3 py-3">Projeto</th><th className="px-3 py-3">Horas</th><th className="px-3 py-3 text-right">Ação</th></tr></thead><tbody className="divide-y divide-[var(--color-border)]">{entries.map((entry) => <tr key={entry.id}><td className="px-3 py-3 font-bold">{entry.collaboratorName}</td><td className="px-3 py-3 text-[var(--color-text-muted)]">{entry.entryDate}</td><td className="px-3 py-3">{entry.projectCode}</td><td className="px-3 py-3">{formatMinutes(entry.durationMinutes)}</td><td className="px-3 py-3 text-right"><button type="button" className="ui-button-primary px-3 py-2" onClick={() => void approve(entry.id)} disabled={isMutating}>Aprovar</button></td></tr>)}</tbody></table></div>}</section>
+}
+
 function DiretoriaSidebar({ onSignOut }: { onSignOut: () => void }) {
   const linkClass = ({ isActive }: { isActive: boolean }) => `flex w-full items-center gap-3 rounded-xl border-l-4 px-3 py-3 text-left text-sm font-semibold transition ${
     isActive
@@ -137,6 +159,7 @@ export function DiretoriaPage() {
   const navigate = useNavigate()
   const [entries, setEntries] = useState<DiretoriaEntry[]>([])
   const [absences, setAbsences] = useState<DiretoriaAbsence[]>([])
+  const [escalatedEntries, setEscalatedEntries] = useState<SupervisorPendingEntry[]>([])
   const currentMonth = getMonthKey(new Date().toISOString().slice(0, 10))
 
   useEffect(() => {
@@ -150,6 +173,7 @@ export function DiretoriaPage() {
     })
     setEntries(storedEntries)
     setAbsences(storedAbsences)
+    void diretoriaService.listEscalatedEntries().then(setEscalatedEntries).catch(() => setEscalatedEntries([]))
   }, [])
 
   const projectHours = useMemo(() => {
@@ -207,6 +231,8 @@ export function DiretoriaPage() {
               <SummaryCard label="Apontamentos Registrados" value={entries.length} helper="Base persistida em localStorage" />
               <SummaryCard label="Pendências Gerais" value={pendingAbsences} helper="Ausências aguardando decisão" />
             </section>
+
+            <EscalatedApprovals entries={escalatedEntries} directorId={session?.id ?? 'diretoria'} onApproved={() => { void diretoriaService.listEscalatedEntries().then(setEscalatedEntries) }} />
 
             <section className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-sm" aria-labelledby="project-allocation-title">
               <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">

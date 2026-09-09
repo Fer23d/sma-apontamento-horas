@@ -3,10 +3,20 @@ import {
   compareIsoDates,
   eachIsoDate,
   getCorporateToday,
+  getDaysUntilMonthClosing,
+  getMonthClosingDate,
   getMonthRange,
   isIsoDate,
   isWeekend,
 } from './date'
+
+describe('prazos de fechamento', () => {
+  it('calcula o último dia do mês e os dias restantes', () => {
+    expect(getMonthClosingDate('2026-07-19')).toBe('2026-07-31')
+    expect(getDaysUntilMonthClosing('2026-07-24')).toBe(7)
+    expect(getDaysUntilMonthClosing('2026-07-30')).toBe(1)
+  })
+})
 
 describe('datas civis no fuso corporativo', () => {
   it('obtém o dia em São Paulo sem depender do fuso do navegador', () => {

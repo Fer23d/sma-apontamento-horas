@@ -12,6 +12,7 @@ export type SupervisorPendingEntry = {
   rejectionReason?: string
   decidedAt?: string
   decidedBy?: string
+  escalated?: boolean
 }
 
 export type SupervisorTimeOffRequest = {

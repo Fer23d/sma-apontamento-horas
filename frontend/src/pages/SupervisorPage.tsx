@@ -12,6 +12,7 @@ import { SupervisorEntriesTable } from '../features/supervisor/SupervisorEntries
 import { SupervisorRequestsTable } from '../features/supervisor/SupervisorRequestsTable'
 import type { SupervisorPendingEntry, SupervisorTimeOffRequest } from '../features/supervisor/types'
 import { useSupervisorDashboard } from '../features/supervisor/useSupervisorDashboard'
+import { ApprovalDeadlineBanner } from '../features/supervisor/ApprovalDeadlineBanner'
 import { useSession } from '../features/session/useSession'
 import { formatMinutes } from '../features/time-entries/domain'
 import { getCorporateToday, getMonthKey, getMonthRange, isIsoDate } from '../shared/utils/date'
@@ -314,11 +315,11 @@ export function SupervisorPage() {
 
   const selectedEntries = useMemo(() => {
     const selected = new Set(selectedIds)
-    return filteredEntries.filter((entry) => selected.has(entry.id) && entry.status === 'PENDING')
+    return filteredEntries.filter((entry) => selected.has(entry.id) && entry.status === 'PENDING' && !entry.escalated)
   }, [filteredEntries, selectedIds])
 
   useEffect(() => {
-    const visibleIds = new Set(filteredEntries.filter((entry) => entry.status === 'PENDING').map((entry) => entry.id))
+    const visibleIds = new Set(filteredEntries.filter((entry) => entry.status === 'PENDING' && !entry.escalated).map((entry) => entry.id))
     setSelectedIds((current) => current.filter((id) => visibleIds.has(id)))
   }, [filteredEntries])
 
@@ -409,7 +410,7 @@ export function SupervisorPage() {
   }
 
   function toggleAllVisibleEntries(checked: boolean) {
-    const visibleIds = filteredEntries.filter((entry) => entry.status === 'PENDING').map((entry) => entry.id)
+    const visibleIds = filteredEntries.filter((entry) => entry.status === 'PENDING' && !entry.escalated).map((entry) => entry.id)
     setSelectedIds((current) => {
       if (!checked) return current.filter((id) => !visibleIds.includes(id))
       return Array.from(new Set([...current, ...visibleIds]))
@@ -495,6 +496,7 @@ export function SupervisorPage() {
 
             {activeView === 'entries' && (
               <>
+                <ApprovalDeadlineBanner pendingCount={dashboard.entries.filter((entry) => entry.status === 'PENDING').length} />
                 <BalancePeriodFilter
                   startDate={range.startDate}
                   endDate={range.endDate}

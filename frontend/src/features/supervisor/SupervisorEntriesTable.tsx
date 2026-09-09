@@ -31,7 +31,7 @@ export function SupervisorEntriesTable({ entries, isMutating, selectedIds, onTog
       </div>
     )
   }
-  const pendingEntries = entries.filter((entry) => entry.status === 'PENDING')
+  const pendingEntries = entries.filter((entry) => entry.status === 'PENDING' && !entry.escalated)
   const allVisibleSelected = pendingEntries.length > 0 && pendingEntries.every((entry) => selectedIds.includes(entry.id))
 
   return (
@@ -69,7 +69,7 @@ export function SupervisorEntriesTable({ entries, isMutating, selectedIds, onTog
           <tbody className="divide-y ui-divide">
             {entries.map((entry) => {
               const status = statusView[entry.status]
-              const isPending = entry.status === 'PENDING'
+              const isPending = entry.status === 'PENDING' && !entry.escalated
               return (
                 <tr key={entry.id} className="transition hover:bg-[var(--color-surface-subtle)]">
                   <td className="px-5 py-4">
@@ -103,6 +103,8 @@ export function SupervisorEntriesTable({ entries, isMutating, selectedIds, onTog
                           Aprovar
                         </button>
                       </div>
+                    ) : entry.escalated ? (
+                      <p className="text-right text-xs font-bold text-[var(--color-danger)]">Escalonado para a Diretoria</p>
                     ) : (
                       <p className="text-right text-xs font-bold text-[var(--color-text-muted)]">Concluído</p>
                     )}
@@ -117,7 +119,7 @@ export function SupervisorEntriesTable({ entries, isMutating, selectedIds, onTog
       <div className="max-h-[600px] divide-y overflow-y-auto ui-divide md:hidden">
         {entries.map((entry) => {
           const status = statusView[entry.status]
-          const isPending = entry.status === 'PENDING'
+          const isPending = entry.status === 'PENDING' && !entry.escalated
           return (
             <article key={entry.id} className="p-5">
               <div className="flex items-start justify-between gap-3">
@@ -146,7 +148,7 @@ export function SupervisorEntriesTable({ entries, isMutating, selectedIds, onTog
                 </div>
               </dl>
               {entry.rejectionReason && <p className="mt-3 text-sm text-[var(--color-text-muted)]">{entry.rejectionReason}</p>}
-              {isPending && (
+              {entry.escalated ? <p className="mt-4 text-sm font-bold text-[var(--color-danger)]">Prazo encerrado: pendência transferida para a Diretoria.</p> : isPending && (
                 <div className="mt-4 grid grid-cols-2 gap-2">
                   <button type="button" className="ui-button-secondary" onClick={() => onReject(entry)} disabled={isMutating}>
                     Rejeitar

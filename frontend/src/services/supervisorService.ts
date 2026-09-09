@@ -11,6 +11,7 @@ import { TIME_ENTRY_STORAGE_KEY } from './timeEntryService'
 import { normalizeTimeEntry, type TimeEntryStorageV4 } from './timeEntryMigration'
 import { TIME_OFF_STORAGE_KEY, timeOffService, type TimeOffStorage } from './timeOffService'
 import { createBrowserStorage, type StorageLike } from './storage'
+import { getDaysUntilMonthClosing } from '../shared/utils/date'
 
 export const SUPERVISOR_APPROVAL_STORAGE_KEY = 'sma:supervisor-approvals:v1'
 
@@ -37,9 +38,11 @@ type SupervisorEntrySource = Omit<SupervisorPendingEntry, 'status'> & {
 
 export interface SupervisorService {
   listEntries(): Promise<SupervisorPendingEntry[]>
+  listEscalatedEntries(): Promise<SupervisorPendingEntry[]>
   listCollaborators(): Promise<TeamMember[]>
   approve(entryId: string, supervisorId: string): Promise<SupervisorPendingEntry>
   approveMany(entryIds: string[], supervisorId: string): Promise<SupervisorPendingEntry[]>
+  approveEscalated(entryId: string, directorId: string): Promise<SupervisorPendingEntry>
   reject(entryId: string, supervisorId: string, reason: string): Promise<SupervisorPendingEntry>
   rejectMany(entryIds: string[], supervisorId: string, reason: string): Promise<SupervisorPendingEntry[]>
   listTimeOffRequests(supervisorId: string): Promise<SupervisorTimeOffRequest[]>
@@ -307,6 +310,7 @@ export class LocalStorageSupervisorService implements SupervisorService {
   }
 
   async listEntries() {
+    const daysUntilClosing = getDaysUntilMonthClosing()
     const stored = this.read().approvalsByEntryId
     const realEntries = Object.values(this.readTimeEntryStorage().entriesByCollaborator).flat().map<SupervisorEntrySource>((entry) => ({
       id: entry.id,
@@ -321,19 +325,27 @@ export class LocalStorageSupervisorService implements SupervisorService {
     }))
     const entriesById = new Map<string, SupervisorEntrySource>([...this.seedEntries, ...realEntries].map((entry) => [entry.id, entry]))
     return Array.from(entriesById.values())
-      .map((entry) => ({
-        ...entry,
-        status: stored[entry.id]?.status
+      .map((entry) => {
+        const status = stored[entry.id]?.status
           ?? (entry.rejectionReason
             ? 'REJECTED'
             : entry.sourceStatus === 'APPROVED' || entry.sourceStatus === 'REJECTED' || entry.sourceStatus === 'PENDING'
               ? entry.sourceStatus
-              : 'PENDING'),
-        rejectionReason: stored[entry.id]?.rejectionReason ?? entry.rejectionReason,
-        decidedAt: stored[entry.id]?.decidedAt,
-        decidedBy: stored[entry.id]?.decidedBy,
-      }))
+              : 'PENDING')
+        return {
+          ...entry,
+          status,
+          rejectionReason: stored[entry.id]?.rejectionReason ?? entry.rejectionReason,
+          decidedAt: stored[entry.id]?.decidedAt,
+          decidedBy: stored[entry.id]?.decidedBy,
+          escalated: daysUntilClosing <= 1 && status === 'PENDING',
+        }
+      })
       .sort((left, right) => right.entryDate.localeCompare(left.entryDate) || left.collaboratorName.localeCompare(right.collaboratorName))
+  }
+
+  async listEscalatedEntries() {
+    return (await this.listEntries()).filter((entry) => entry.status === 'PENDING' && entry.escalated)
   }
 
   async listCollaborators() {
@@ -349,6 +361,12 @@ export class LocalStorageSupervisorService implements SupervisorService {
 
   approveMany(entryIds: string[], supervisorId: string) {
     return Promise.all(entryIds.map((entryId) => this.approve(entryId, supervisorId)))
+  }
+
+  async approveEscalated(entryId: string, directorId: string) {
+    const escalated = await this.listEscalatedEntries()
+    if (!escalated.some((entry) => entry.id === entryId)) throw new Error('Apontamento não está na fila escalada.')
+    return this.update(entryId, { status: 'APPROVED', decidedAt: this.now(), decidedBy: directorId })
   }
 
   reject(entryId: string, supervisorId: string, reason: string) {
