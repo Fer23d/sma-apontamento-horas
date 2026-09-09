@@ -31,7 +31,8 @@ export function SupervisorEntriesTable({ entries, isMutating, selectedIds, onTog
       </div>
     )
   }
-  const allVisibleSelected = entries.length > 0 && entries.every((entry) => selectedIds.includes(entry.id))
+  const pendingEntries = entries.filter((entry) => entry.status === 'PENDING')
+  const allVisibleSelected = pendingEntries.length > 0 && pendingEntries.every((entry) => selectedIds.includes(entry.id))
 
   return (
     <section className="ui-card overflow-hidden rounded-2xl" aria-labelledby="supervisor-entries-title">
@@ -52,6 +53,7 @@ export function SupervisorEntriesTable({ entries, isMutating, selectedIds, onTog
                   type="checkbox"
                   checked={allVisibleSelected}
                   onChange={(event) => onToggleAll(event.target.checked)}
+                  disabled={pendingEntries.length === 0 || isMutating}
                   className="h-4 w-4 rounded border-[var(--color-border)] bg-[var(--color-surface)] accent-[var(--color-primary)]"
                   aria-label="Selecionar todos os apontamentos visíveis"
                 />
@@ -75,6 +77,7 @@ export function SupervisorEntriesTable({ entries, isMutating, selectedIds, onTog
                       type="checkbox"
                       checked={selectedIds.includes(entry.id)}
                       onChange={(event) => onToggleEntry(entry.id, event.target.checked)}
+                      disabled={!isPending || isMutating}
                       className="h-4 w-4 rounded border-[var(--color-border)] bg-[var(--color-surface)] accent-[var(--color-primary)]"
                       aria-label={`Selecionar apontamento de ${entry.collaboratorName}`}
                     />
@@ -122,6 +125,7 @@ export function SupervisorEntriesTable({ entries, isMutating, selectedIds, onTog
                   type="checkbox"
                   checked={selectedIds.includes(entry.id)}
                   onChange={(event) => onToggleEntry(entry.id, event.target.checked)}
+                  disabled={!isPending || isMutating}
                   className="mt-1 h-4 w-4 rounded border-[var(--color-border)] bg-[var(--color-surface)] accent-[var(--color-primary)]"
                   aria-label={`Selecionar apontamento de ${entry.collaboratorName}`}
                 />

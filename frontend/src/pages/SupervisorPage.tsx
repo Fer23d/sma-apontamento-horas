@@ -314,11 +314,11 @@ export function SupervisorPage() {
 
   const selectedEntries = useMemo(() => {
     const selected = new Set(selectedIds)
-    return filteredEntries.filter((entry) => selected.has(entry.id))
+    return filteredEntries.filter((entry) => selected.has(entry.id) && entry.status === 'PENDING')
   }, [filteredEntries, selectedIds])
 
   useEffect(() => {
-    const visibleIds = new Set(filteredEntries.map((entry) => entry.id))
+    const visibleIds = new Set(filteredEntries.filter((entry) => entry.status === 'PENDING').map((entry) => entry.id))
     setSelectedIds((current) => current.filter((id) => visibleIds.has(id)))
   }, [filteredEntries])
 
@@ -409,7 +409,7 @@ export function SupervisorPage() {
   }
 
   function toggleAllVisibleEntries(checked: boolean) {
-    const visibleIds = filteredEntries.map((entry) => entry.id)
+    const visibleIds = filteredEntries.filter((entry) => entry.status === 'PENDING').map((entry) => entry.id)
     setSelectedIds((current) => {
       if (!checked) return current.filter((id) => !visibleIds.includes(id))
       return Array.from(new Set([...current, ...visibleIds]))
@@ -424,12 +424,12 @@ export function SupervisorPage() {
   }
 
   async function handleBulkApprove() {
-    for (const entry of selectedEntries) await dashboard.approve(entry)
+    await dashboard.approveMany(selectedEntries.map((entry) => entry.id))
     setSelectedIds([])
   }
 
   async function handleBulkReject() {
-    for (const entry of selectedEntries) await dashboard.reject(entry, 'Rejeitado em lote pela supervisão.')
+    await dashboard.rejectMany(selectedEntries.map((entry) => entry.id), 'Rejeitado em lote pela supervisão.')
     setSelectedIds([])
   }
 

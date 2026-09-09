@@ -58,6 +58,15 @@ describe('LocalStorageSupervisorService', () => {
     ]))
   })
 
+  it('aprova e rejeita apontamentos selecionados em lote', async () => {
+    const service = new LocalStorageSupervisorService(createMemoryStorage(), () => '2026-07-30T12:00:00.000Z', seedEntries)
+
+    await service.approveMany(['entry-001'], 'supervisor-001')
+    await service.rejectMany(['entry-002'], 'supervisor-001', 'Ajustar projeto informado.')
+
+    await expect(service.getSummary()).resolves.toEqual({ pending: 0, approved: 1, rejected: 1 })
+  })
+
   it('exige motivo para rejeitar', async () => {
     const service = new LocalStorageSupervisorService(createMemoryStorage(), () => '2026-07-30T12:00:00.000Z', seedEntries)
 

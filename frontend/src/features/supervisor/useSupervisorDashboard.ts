@@ -74,6 +74,20 @@ export function useSupervisorDashboard(supervisorId: string | undefined) {
     }
   }
 
+  const approveMany = async (entryIds: string[]) => {
+    if (!supervisorId || entryIds.length === 0) return
+    setMutating(true)
+    setError(null)
+    try {
+      await supervisorService.approveMany(entryIds, supervisorId)
+      await reload()
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : 'Não foi possível aprovar os apontamentos selecionados.')
+    } finally {
+      setMutating(false)
+    }
+  }
+
   const reject = async (entry: SupervisorPendingEntry, reason: string) => {
     if (!supervisorId) return
     setMutating(true)
@@ -81,6 +95,20 @@ export function useSupervisorDashboard(supervisorId: string | undefined) {
     try {
       await supervisorService.reject(entry.id, supervisorId, reason)
       await reload()
+    } finally {
+      setMutating(false)
+    }
+  }
+
+  const rejectMany = async (entryIds: string[], reason: string) => {
+    if (!supervisorId || entryIds.length === 0) return
+    setMutating(true)
+    setError(null)
+    try {
+      await supervisorService.rejectMany(entryIds, supervisorId, reason)
+      await reload()
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : 'Não foi possível rejeitar os apontamentos selecionados.')
     } finally {
       setMutating(false)
     }
@@ -118,7 +146,9 @@ export function useSupervisorDashboard(supervisorId: string | undefined) {
     isLoading,
     isMutating,
     approve,
+    approveMany,
     reject,
+    rejectMany,
     approveTimeOff,
     rejectTimeOff,
     reload,

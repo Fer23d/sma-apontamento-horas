@@ -39,7 +39,9 @@ export interface SupervisorService {
   listEntries(): Promise<SupervisorPendingEntry[]>
   listCollaborators(): Promise<TeamMember[]>
   approve(entryId: string, supervisorId: string): Promise<SupervisorPendingEntry>
+  approveMany(entryIds: string[], supervisorId: string): Promise<SupervisorPendingEntry[]>
   reject(entryId: string, supervisorId: string, reason: string): Promise<SupervisorPendingEntry>
+  rejectMany(entryIds: string[], supervisorId: string, reason: string): Promise<SupervisorPendingEntry[]>
   listTimeOffRequests(supervisorId: string): Promise<SupervisorTimeOffRequest[]>
   approveTimeOffRequest(requestId: string, supervisorId: string): Promise<SupervisorTimeOffRequest>
   rejectTimeOffRequest(requestId: string, supervisorId: string, reason: string): Promise<SupervisorTimeOffRequest>
@@ -345,10 +347,18 @@ export class LocalStorageSupervisorService implements SupervisorService {
     return this.update(entryId, { status: 'APPROVED', decidedAt: this.now(), decidedBy: supervisorId })
   }
 
+  approveMany(entryIds: string[], supervisorId: string) {
+    return Promise.all(entryIds.map((entryId) => this.approve(entryId, supervisorId)))
+  }
+
   reject(entryId: string, supervisorId: string, reason: string) {
     const rejectionReason = reason.trim()
     if (!rejectionReason) throw new Error('Informe o motivo da rejeição.')
     return this.update(entryId, { status: 'REJECTED', rejectionReason, decidedAt: this.now(), decidedBy: supervisorId })
+  }
+
+  rejectMany(entryIds: string[], supervisorId: string, reason: string) {
+    return Promise.all(entryIds.map((entryId) => this.reject(entryId, supervisorId, reason)))
   }
 
   async listTimeOffRequests(supervisorId: string) {
