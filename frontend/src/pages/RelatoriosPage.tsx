@@ -62,9 +62,13 @@ export function RelatoriosPage() {
     const names = Array.from(new Set([...organogramaDEP.flatMap((item) => item.squads.map((squad) => squad.supervisor)), ...groups.keys()]))
     return names.map((name) => {
       const supervisorEntries = groups.get(name) ?? []
-      const collaboratorMap = new Map<string, ReportEntry[]>()
-      supervisorEntries.forEach((entry) => collaboratorMap.set(entry.collaboratorId, [...(collaboratorMap.get(entry.collaboratorId) ?? []), entry]))
-      const collaborators = Array.from(collaboratorMap.entries()).map(([id, collaboratorEntries]) => { const workedMinutes = sumMinutes(collaboratorEntries, (entry) => entry.status === 'CANCELLED' ? 0 : entry.durationMinutes); return { id, name: id === 'demo-collaborator-001' ? 'Colaborador' : id, workedMinutes, extraMinutes: sumMinutes(collaboratorEntries, (entry) => entry.extraMinutes), nightMinutes: sumMinutes(collaboratorEntries, (entry) => entry.nightMinutes), bankMinutes: workedMinutes - expectedMinutes(startDate, endDate), entries: collaboratorEntries } })
+      const collaboratorMap = new Map<string, { name: string, jobTitle?: string, entries: ReportEntry[] }>()
+      organogramaDEP.flatMap((item) => item.squads.filter((squad) => squad.supervisor === name).flatMap((squad) => squad.colaboradores)).forEach((collaborator) => collaboratorMap.set(slug(collaborator.nome), { name: collaborator.nome, jobTitle: collaborator.cargo, entries: [] }))
+      supervisorEntries.forEach((entry) => {
+        const current = collaboratorMap.get(entry.collaboratorId) ?? { name: entry.collaboratorId === 'demo-collaborator-001' ? 'Colaborador' : entry.collaboratorId, entries: [] }
+        collaboratorMap.set(entry.collaboratorId, { ...current, entries: [...current.entries, entry] })
+      })
+      const collaborators = Array.from(collaboratorMap.entries()).map(([id, collaborator]) => { const workedMinutes = sumMinutes(collaborator.entries, (entry) => entry.status === 'CANCELLED' ? 0 : entry.durationMinutes); return { id, name: collaborator.name, jobTitle: collaborator.jobTitle, workedMinutes, extraMinutes: sumMinutes(collaborator.entries, (entry) => entry.extraMinutes), nightMinutes: sumMinutes(collaborator.entries, (entry) => entry.nightMinutes), bankMinutes: workedMinutes - expectedMinutes(startDate, endDate), entries: collaborator.entries } })
       const workedMinutes = sumMinutes(supervisorEntries, (entry) => entry.status === 'CANCELLED' ? 0 : entry.durationMinutes)
       return { id: slug(name), name, workedMinutes, extraMinutes: sumMinutes(supervisorEntries, (entry) => entry.extraMinutes), nightMinutes: sumMinutes(supervisorEntries, (entry) => entry.nightMinutes), bankMinutes: workedMinutes - expectedMinutes(startDate, endDate), collaborators }
     }).sort((a, b) => a.name.localeCompare(b.name))
