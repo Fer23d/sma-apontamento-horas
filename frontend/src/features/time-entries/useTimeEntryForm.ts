@@ -16,7 +16,6 @@ export type TimeEntryFormValues = {
   endDate: string
   weekdaysOnly: boolean
   clientName: string
-  projectCode: string
   contractorNumber?: string
   ldDocument?: CreateTimeEntryData['ldDocument']
   activityId: string
@@ -33,7 +32,6 @@ const emptyValues = (entryDate: string): TimeEntryFormValues => ({
   endDate: entryDate,
   weekdaysOnly: true,
   clientName: '',
-  projectCode: '',
   contractorNumber: '',
   activityId: '',
   disciplineCode: '',
@@ -50,7 +48,6 @@ function valuesFromEntry(entry: TimeEntry): TimeEntryFormValues {
     endDate: entry.entryDate,
     weekdaysOnly: true,
     clientName: entry.clientName,
-    projectCode: entry.projectCode,
     contractorNumber: entry.contractorNumber ?? '',
     ldDocument: entry.ldDocument,
     activityId: entry.activityId,
@@ -123,7 +120,7 @@ export function useTimeEntryForm({ initialDate, entryId, duplicateId }: { initia
       endDate: effectiveEndDate,
       weekdaysOnly: effectiveWeekdaysOnly,
       clientName: values.clientName,
-      projectCode: values.projectCode,
+      projectCode: values.contractorNumber?.trim() ?? '',
       contractorNumber: values.contractorNumber,
       ldDocument: values.ldDocument,
       activityId: values.activityId,
@@ -151,6 +148,10 @@ export function useTimeEntryForm({ initialDate, entryId, duplicateId }: { initia
       }
     }
     const validationErrors = validateTimeEntry(data, demoActivities, { today: getCorporateToday(), canMutateDate })
+    if (validationErrors.projectCode) {
+      validationErrors.contractorNumber = 'Informe o número da contratada.'
+      delete validationErrors.projectCode
+    }
     if (dateBlock.blocked) validationErrors.entryDate = dateBlock.message
     if (!areValidDurationParts(durationHours, durationRemainderMinutes)) {
       validationErrors.durationMinutes = 'Informe horas inteiras entre 0 e 24 e minutos inteiros entre 0 e 59, com total máximo de 24 horas.'

@@ -51,15 +51,8 @@ export function TimeEntryFields({ values, errors, maxDate, allowBatchMode = true
       </div>
 
       <div>
-        <label htmlFor="project-code" className="text-sm font-bold ui-text">Número do projeto</label>
-        <input id="project-code" name="projectCode" type="text" maxLength={80} value={values.projectCode} onChange={(event) => onChange('projectCode', event.target.value)} autoCapitalize="none" autoCorrect="off" spellCheck={false} className={fieldClassName} aria-invalid={Boolean(errors.projectCode)} aria-describedby={errors.projectCode ? 'project-code-help project-code-error' : 'project-code-help'} />
-        <p id="project-code-help" className="mt-1.5 text-xs ui-text-subtle">* Escreva exatamente a numeração do projeto atual, caso já possua.</p>
-        <FieldError id="project-code-error" message={errors.projectCode} />
-      </div>
-
-      <div>
         <label htmlFor="contractor-number" className="text-sm font-bold ui-text">Número da contratada</label>
-        <input id="contractor-number" name="contractorNumber" value={values.contractorNumber ?? ''} onChange={(event) => onChange('contractorNumber', event.target.value)} autoCapitalize="none" autoCorrect="off" spellCheck={false} className={fieldClassName} aria-invalid={Boolean(errors.contractorNumber)} aria-describedby="contractor-number-help contractor-number-error" />
+        <input id="contractor-number" name="contractorNumber" maxLength={160} value={values.contractorNumber ?? ''} onChange={(event) => onChange('contractorNumber', event.target.value)} autoCapitalize="none" autoCorrect="off" spellCheck={false} className={fieldClassName} aria-invalid={Boolean(errors.contractorNumber)} aria-describedby="contractor-number-help contractor-number-error" />
         <p id="contractor-number-help" className="mt-1.5 text-xs ui-text-subtle">Opcional. Preencha manualmente ou selecione um documento da LD.</p>
         <FieldError id="contractor-number-error" message={errors.contractorNumber} />
       </div>

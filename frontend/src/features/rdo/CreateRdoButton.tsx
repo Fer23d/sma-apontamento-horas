@@ -14,7 +14,7 @@ export function CreateRdoButton({ values }: { values: TimeEntryFormValues }) {
     setBusy(true); setError(''); setFeedback('')
     try {
       const { buildRdoData, generateRdo, rdoFileName, downloadRdo } = await import('./rdo')
-      const data = buildRdoData(values, { name: profile.name, jobTitle: profile.jobTitle,
+      const data = buildRdoData({ ...values, projectCode: values.contractorNumber ?? '' }, { name: profile.name, jobTitle: profile.jobTitle,
         clientName: values.clientName,
         activityName: demoActivities.find((activity) => activity.id === values.activityId)?.name })
       const response = await fetch(logoUrl)
