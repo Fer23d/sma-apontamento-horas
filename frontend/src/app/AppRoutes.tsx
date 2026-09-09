@@ -11,6 +11,7 @@ import { PublicOnlyRoute } from '../features/session/PublicOnlyRoute'
 import { SupervisorPage } from '../pages/SupervisorPage'
 import { DiretoriaPage } from '../pages/DiretoriaPage'
 import { EquipesPage } from '../pages/EquipesPage'
+import { RelatoriosPage } from '../pages/RelatoriosPage'
 
 export function AppRoutes() {
   return (
@@ -28,6 +29,7 @@ export function AppRoutes() {
       <Route path="/supervisor" element={<ProtectedRoute allowedRoles={['SUPERVISOR']}><SupervisorPage /></ProtectedRoute>} />
       <Route path="/administracao" element={<ProtectedRoute allowedRoles={['DIRECTOR_ADMIN']}><DiretoriaPage /></ProtectedRoute>} />
       <Route path="/administracao/equipes" element={<ProtectedRoute allowedRoles={['DIRECTOR_ADMIN']}><EquipesPage /></ProtectedRoute>} />
+      <Route path="/administracao/relatorios" element={<ProtectedRoute allowedRoles={['DIRECTOR_ADMIN']}><RelatoriosPage /></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   )
