@@ -11,7 +11,7 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg'],
+      includeAssets: ['sma-logo-32.png', 'sma-logo-192.png', 'sma-logo-512.png', 'apple-touch-icon.png'],
       workbox: {
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
       },
@@ -25,8 +25,8 @@ export default defineConfig({
         background_color: '#0A161E',
         lang: 'pt-BR',
         icons: [
-          { src: './favicon.svg', sizes: '192x192', type: 'image/svg+xml', purpose: 'any maskable' },
-          { src: './favicon.svg', sizes: '512x512', type: 'image/svg+xml', purpose: 'any maskable' },
+          { src: './sma-logo-192.png', sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
+          { src: './sma-logo-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
         ],
       },
     }),
