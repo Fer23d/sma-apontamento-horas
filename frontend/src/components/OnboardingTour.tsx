@@ -13,15 +13,15 @@ const collaboratorSteps: Step[] = [
 ]
 
 const supervisorSteps: Step[] = [
-  { target: '.tour-aprovacoes', title: 'Fila de aprovações', content: 'Nesta área você acompanha os apontamentos enviados pela equipe e decide quais serão aprovados ou rejeitados.', placement: 'right' },
-  { target: '.tour-checkbox-lote', title: 'Seleção em lote', content: 'Selecione vários apontamentos pendentes para aprovar ou rejeitar de uma só vez.', placement: 'bottom' },
-  { target: '.tour-prazo', title: 'Prazo de fechamento', content: 'Este alerta informa a proximidade do fechamento. Pendências não tratadas no prazo podem ser transferidas para a Diretoria.', placement: 'bottom' },
+  { target: '.tour-aprovacoes', title: 'Fila de aprovações', content: 'Nesta área você acompanha os apontamentos enviados pela equipe e decide quais serão aprovados ou rejeitados.', placement: 'right', targetWaitTimeout: 3000 },
+  { target: '.tour-checkbox-lote', title: 'Seleção em lote', content: 'Use os filtros e a seleção da tabela para aprovar ou rejeitar vários apontamentos de uma só vez.', placement: 'bottom', targetWaitTimeout: 3000 },
+  { target: '.tour-prazo', title: 'Prazo de fechamento', content: 'Este alerta informa a proximidade do fechamento. Pendências não tratadas no prazo podem ser transferidas para a Diretoria.', placement: 'bottom', targetWaitTimeout: 3000 },
 ]
 
 const directorSteps: Step[] = [
-  { target: '.tour-painel-diretor', title: 'Painel Diretor', content: 'Acompanhe os indicadores macro da operação e a alocação de horas por projeto.', placement: 'right' },
-  { target: '.tour-relatorios', title: 'Relatórios hierárquicos', content: 'Explore supervisores, equipes, colaboradores e apontamentos diários em uma visão detalhada.', placement: 'bottom' },
-  { target: '.tour-btn-exportar', title: 'Exportação gerencial', content: 'Exporte os dados filtrados da Diretoria para um relatório Excel corporativo.', placement: 'bottom' },
+  { target: '.tour-painel-diretor', title: 'Painel Diretor', content: 'Acompanhe os indicadores macro da operação e a alocação de horas por projeto.', placement: 'right', targetWaitTimeout: 3000 },
+  { target: '.tour-relatorios', title: 'Relatórios hierárquicos', content: 'Explore supervisores, equipes, colaboradores e apontamentos diários em uma visão detalhada.', placement: 'bottom', targetWaitTimeout: 3000 },
+  { target: '.tour-btn-exportar', title: 'Exportação gerencial', content: 'Exporte os dados filtrados da Diretoria para um relatório Excel corporativo.', placement: 'bottom', targetWaitTimeout: 3000 },
 ]
 
 function getTourConfig(role: string | undefined, pathname: string) {
@@ -35,15 +35,48 @@ export function OnboardingTour() {
   const location = useLocation()
   const { session } = useSession()
   const [run, setRun] = useState(false)
+  const [activeSteps, setActiveSteps] = useState<Step[]>([])
   const config = useMemo(() => getTourConfig(session?.role, location.pathname), [location.pathname, session?.role])
   const storageKey = session ? `${TOUR_STORAGE_PREFIX}:${session.id}:${session.role}` : null
 
   useEffect(() => {
     setRun(false)
+    setActiveSteps([])
     if (!session || !storageKey || !config.routeReady || localStorage.getItem(storageKey)) return
-    const timer = window.setTimeout(() => setRun(true), 700)
-    return () => window.clearTimeout(timer)
-  }, [config.routeReady, location.pathname, session, storageKey])
+    let cancelled = false
+    const startedAt = Date.now()
+    const targetSelectors = config.steps.filter((step) => typeof step.target === 'string')
+
+    const findMountedSteps = () => targetSelectors.filter((step) => {
+      try {
+        return Boolean(document.querySelector(step.target as string))
+      } catch {
+        return false
+      }
+    })
+
+    const waitForTargets = () => {
+      if (cancelled) return
+      const mountedSteps = findMountedSteps()
+      const allTargetsMounted = mountedSteps.length === targetSelectors.length
+      const waitExpired = Date.now() - startedAt >= 6000
+
+      if (allTargetsMounted || waitExpired) {
+        if (mountedSteps.length > 0) {
+          setActiveSteps(mountedSteps)
+          setRun(true)
+        }
+        return
+      }
+
+      window.setTimeout(waitForTargets, 100)
+    }
+
+    waitForTargets()
+    return () => {
+      cancelled = true
+    }
+  }, [config, location.pathname, session, storageKey])
 
   function handleCallback({ status }: EventData) {
     if ((status === STATUS.FINISHED || status === STATUS.SKIPPED) && storageKey) {
@@ -52,7 +85,7 @@ export function OnboardingTour() {
     }
   }
 
-  if (!config.routeReady) return null
+  if (!config.routeReady || activeSteps.length === 0) return null
 
-  return <Joyride steps={config.steps} run={run} continuous onEvent={handleCallback} locale={{ back: 'Voltar', close: 'Fechar', last: 'Concluir', next: 'Próximo', skip: 'Pular' }} options={{ showProgress: true, buttons: ['back', 'primary', 'skip'], overlayClickAction: false, spotlightPadding: 8, spotlightRadius: 16, arrowColor: '#132532', backgroundColor: '#132532', overlayColor: 'rgba(3, 10, 16, 0.78)', primaryColor: '#77C2A4', textColor: '#F8FAFC', zIndex: 10000 }} styles={{ tooltip: { border: '1px solid #1F3B4D', borderRadius: 16, boxShadow: '0 16px 40px rgba(0, 0, 0, 0.28)' }, buttonPrimary: { borderRadius: 10, color: '#0A161E', fontWeight: 800 }, buttonBack: { color: '#94A3B8', fontWeight: 700 }, buttonSkip: { color: '#94A3B8', fontWeight: 700 } }} />
+  return <Joyride steps={activeSteps} run={run} continuous scrollToFirstStep onEvent={handleCallback} locale={{ back: 'Voltar', close: 'Fechar', last: 'Concluir', next: 'Próximo', skip: 'Pular' }} options={{ showProgress: true, buttons: ['back', 'primary', 'skip'], overlayClickAction: false, spotlightPadding: 8, spotlightRadius: 16, targetWaitTimeout: 3000, scrollDuration: 300, scrollOffset: 24, arrowColor: '#132532', backgroundColor: '#132532', overlayColor: 'rgba(3, 10, 16, 0.78)', primaryColor: '#77C2A4', textColor: '#F8FAFC', zIndex: 10000 }} styles={{ tooltip: { border: '1px solid #1F3B4D', borderRadius: 16, boxShadow: '0 16px 40px rgba(0, 0, 0, 0.28)' }, buttonPrimary: { borderRadius: 10, color: '#0A161E', fontWeight: 800 }, buttonBack: { color: '#94A3B8', fontWeight: 700 }, buttonSkip: { color: '#94A3B8', fontWeight: 700 } }} />
 }

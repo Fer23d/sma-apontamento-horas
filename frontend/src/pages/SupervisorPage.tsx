@@ -496,7 +496,7 @@ export function SupervisorPage() {
 
             {activeView === 'entries' && (
               <>
-                <div className="tour-prazo"><ApprovalDeadlineBanner pendingCount={dashboard.entries.filter((entry) => entry.status === 'PENDING').length} /></div>
+                <div className="tour-prazo min-h-1"><ApprovalDeadlineBanner pendingCount={dashboard.entries.filter((entry) => entry.status === 'PENDING').length} /></div>
                 <BalancePeriodFilter
                   startDate={range.startDate}
                   endDate={range.endDate}
@@ -537,7 +537,7 @@ export function SupervisorPage() {
                   )}
                 </section>
 
-                <section className="grid gap-3 rounded-2xl border ui-border ui-surface p-4 sm:grid-cols-2 xl:grid-cols-[1fr_1fr_1fr_auto]" aria-label="Filtros de apontamentos">
+                <section className="tour-checkbox-lote grid gap-3 rounded-2xl border ui-border ui-surface p-4 sm:grid-cols-2 xl:grid-cols-[1fr_1fr_1fr_auto]" aria-label="Filtros de apontamentos">
                   <label className="text-sm font-bold ui-text">
                     Colaborador
                     <select value={collaboratorFilter} onChange={(event) => setCollaboratorFilter(event.target.value)} className="mt-1 block w-full ui-field rounded-xl px-3 py-2 font-normal ui-text">
@@ -582,24 +582,26 @@ export function SupervisorPage() {
                   </section>
                 )}
 
-                {dashboard.isLoading ? (
-                  <p className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-8 text-center font-semibold text-[var(--color-text-muted)]" aria-live="polite">
-                    Carregando apontamentos da equipe...
-                  </p>
-                ) : (
-                  <SupervisorEntriesTable
-                    entries={filteredEntries}
-                    isMutating={dashboard.isMutating}
-                    selectedIds={selectedIds}
-                    onToggleAll={toggleAllVisibleEntries}
-                    onToggleEntry={toggleSelectedEntry}
-                    onApprove={(entry) => void dashboard.approve(entry)}
-                    onReject={(entry) => {
-                      setRejectionError(null)
-                      setRejectionTarget({ type: 'entry', item: entry })
-                    }}
-                  />
-                )}
+                <div className="tour-aprovacoes">
+                  {dashboard.isLoading ? (
+                    <p className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-8 text-center font-semibold text-[var(--color-text-muted)]" aria-live="polite">
+                      Carregando apontamentos da equipe...
+                    </p>
+                  ) : (
+                    <SupervisorEntriesTable
+                      entries={filteredEntries}
+                      isMutating={dashboard.isMutating}
+                      selectedIds={selectedIds}
+                      onToggleAll={toggleAllVisibleEntries}
+                      onToggleEntry={toggleSelectedEntry}
+                      onApprove={(entry) => void dashboard.approve(entry)}
+                      onReject={(entry) => {
+                        setRejectionError(null)
+                        setRejectionTarget({ type: 'entry', item: entry })
+                      }}
+                    />
+                  )}
+                </div>
               </>
             )}
 
