@@ -35,7 +35,7 @@ export function SupervisorEntriesTable({ entries, isMutating, selectedIds, onTog
   const allVisibleSelected = pendingEntries.length > 0 && pendingEntries.every((entry) => selectedIds.includes(entry.id))
 
   return (
-    <section className="ui-card overflow-hidden rounded-2xl" aria-labelledby="supervisor-entries-title">
+    <section className="tour-aprovacoes ui-card overflow-hidden rounded-2xl" aria-labelledby="supervisor-entries-title">
       <div className="flex flex-col gap-2 border-b border-[var(--color-border)] p-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-secondary)]">Histórico completo</p>
@@ -54,7 +54,7 @@ export function SupervisorEntriesTable({ entries, isMutating, selectedIds, onTog
                   checked={allVisibleSelected}
                   onChange={(event) => onToggleAll(event.target.checked)}
                   disabled={pendingEntries.length === 0 || isMutating}
-                  className="h-4 w-4 rounded border-[var(--color-border)] bg-[var(--color-surface)] accent-[var(--color-primary)]"
+                  className="tour-checkbox-lote h-4 w-4 rounded border-[var(--color-border)] bg-[var(--color-surface)] accent-[var(--color-primary)]"
                   aria-label="Selecionar todos os apontamentos visíveis"
                 />
               </th>

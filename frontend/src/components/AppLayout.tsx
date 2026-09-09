@@ -2,7 +2,6 @@ import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { Outlet } from 'react-router-dom'
 import { Header } from './Header'
 import { DesktopSidebar, MobileDrawer } from './Sidebar'
-import { OnboardingTour } from './OnboardingTour'
 import { closeDrawerAfterNavigation, focusDrawerInitialElement, scheduleDrawerTriggerFocus, shouldCloseDrawerForKey } from './drawer'
 
 const focusableSelector = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
@@ -51,7 +50,6 @@ export function AppLayout() {
     <div className="min-h-screen overflow-x-clip bg-[var(--color-background)] text-[var(--color-text)]">
       <a href="#main-content" className="ui-card fixed left-3 top-3 z-50 -translate-y-20 rounded-lg px-4 py-2 font-bold text-[var(--color-primary)] focus:translate-y-0">Ir para o conteúdo principal</a>
       <Header ref={menuButtonRef} isMenuOpen={isSidebarOpen} onMenuToggle={() => setSidebarOpen((current) => !current)} />
-      <OnboardingTour />
       <div data-layout-body className="relative grid min-h-[calc(100vh-5rem)] min-w-0 grid-cols-1 lg:grid-cols-[16rem_minmax(0,1fr)]">
         <DesktopSidebar />
         <main id="main-content" className="w-full min-w-0 overflow-x-hidden" tabIndex={-1}>

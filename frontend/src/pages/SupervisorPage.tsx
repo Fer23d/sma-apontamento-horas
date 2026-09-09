@@ -496,7 +496,7 @@ export function SupervisorPage() {
 
             {activeView === 'entries' && (
               <>
-                <ApprovalDeadlineBanner pendingCount={dashboard.entries.filter((entry) => entry.status === 'PENDING').length} />
+                <div className="tour-prazo"><ApprovalDeadlineBanner pendingCount={dashboard.entries.filter((entry) => entry.status === 'PENDING').length} /></div>
                 <BalancePeriodFilter
                   startDate={range.startDate}
                   endDate={range.endDate}
