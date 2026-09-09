@@ -389,6 +389,19 @@ describe('comandos e consultas de apontamento', () => {
     expect(await service.listByDate(collaboratorId, '2026-07-18')).toHaveLength(1)
   })
 
+  it('usa a política de competência do intervalo para o lançamento em lote', async () => {
+    const storage = new MemoryStorage()
+    const service = buildService(storage, {
+      mutationPolicy: {
+        canMutate: async () => false,
+        canMutateRange: async () => true,
+      },
+    })
+
+    await expect(service.create(collaboratorId, { ...validData, endDate: '2026-07-15' })).resolves.toMatchObject({ status: 'PENDING' })
+    await expect(service.create(collaboratorId, validData)).rejects.toThrow('somente leitura')
+  })
+
   it('migra leitura da chave v3 antiga para apontamentos_sma', async () => {
     const storage = new MemoryStorage()
     storage.setItem('sma:time-entries:v3', JSON.stringify({

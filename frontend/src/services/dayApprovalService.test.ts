@@ -30,6 +30,12 @@ describe('LocalDayApprovalService', () => {
     await expect(service.canMutate('collaborator-1', '2026-07-01')).resolves.toBe(true)
   })
 
+  it('permite lote futuro dentro da competência aberta e rejeita mudança de competência', async () => {
+    const service = new LocalDayApprovalService(new MemoryStorage(), () => '2026-07-20')
+    await expect(service.canMutateRange('collaborator-1', ['2026-07-20', '2026-07-21', '2026-07-22'])).resolves.toBe(true)
+    await expect(service.canMutateRange('collaborator-1', ['2026-07-31', '2026-08-01'])).resolves.toBe(false)
+  })
+
   it('não cria estado de aprovação para dia não aplicável', async () => {
     const service = new LocalDayApprovalService(new MemoryStorage(), () => '2026-07-20')
     await expect(service.getForDate('collaborator-1', '2026-07-19', false, correction.assignmentSnapshot, false)).resolves.toBeNull()

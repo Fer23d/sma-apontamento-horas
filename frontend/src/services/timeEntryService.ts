@@ -56,6 +56,7 @@ export type TimeEntryPage = {
 
 export interface EntryMutationPolicy {
   canMutate(collaboratorId: string, date: string): Promise<boolean>
+  canMutateRange?(collaboratorId: string, dates: string[]): Promise<boolean>
 }
 
 export interface EntryDateGuard {
@@ -221,6 +222,16 @@ export class LocalStorageTimeEntryService implements TimeEntryService {
     }
   }
 
+  private async ensureMutableRange(collaboratorId: string, dates: string[]) {
+    if (dates.length > 1 && this.mutationPolicy.canMutateRange) {
+      if (!await this.mutationPolicy.canMutateRange(collaboratorId, dates)) {
+        throw new Error('Este período está somente leitura ou fora de uma competência aberta.')
+      }
+      return
+    }
+    for (const date of dates) await this.ensureMutable(collaboratorId, date)
+  }
+
   private async ensureDateAvailable(collaboratorId: string, date: string) {
     const block = await this.dateGuard.getBlock(collaboratorId, date)
     if (block.blocked) throw new Error(block.message)
@@ -297,8 +308,8 @@ export class LocalStorageTimeEntryService implements TimeEntryService {
     if (dates.length === 0) {
       throw new Error('O período selecionado não contém dias válidos para lançamento.')
     }
+    await this.ensureMutableRange(collaboratorId, dates)
     for (const date of dates) {
-      await this.ensureMutable(collaboratorId, date)
       await this.ensureDateAvailable(collaboratorId, date)
     }
     const assignmentSnapshot = this.resolveAssignment(collaboratorId)

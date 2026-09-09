@@ -136,10 +136,15 @@ export function useTimeEntryForm({ initialDate, entryId, duplicateId }: { initia
     let dateBlock = { blocked: false } as Awaited<ReturnType<typeof entryDateAvailabilityService.getBlock>>
     if (isIsoDate(data.entryDate)) {
       try {
-        [canMutateDate, dateBlock] = await Promise.all([
-          dayApprovalService.canMutate(profile.id, data.entryDate),
-          entryDateAvailabilityService.getBlock(profile.id, data.entryDate),
+        const datesToCheck = periodDates.length > 0 ? periodDates : [data.entryDate]
+        const [mutationAllowed, dateBlocks] = await Promise.all([
+          mode === 'CREATE' && periodDates.length > 0
+            ? dayApprovalService.canMutateRange(profile.id, periodDates)
+            : dayApprovalService.canMutate(profile.id, data.entryDate),
+          Promise.all(datesToCheck.map((date) => entryDateAvailabilityService.getBlock(profile.id, date))),
         ])
+        canMutateDate = mutationAllowed
+        dateBlock = dateBlocks.find((block) => block.blocked) ?? { blocked: false }
       } catch {
         setSubmitError('Não foi possível verificar os eventos desta data. Tente novamente.')
         return false
