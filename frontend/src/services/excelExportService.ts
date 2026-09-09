@@ -40,6 +40,17 @@ type GeneralReportRow = BaseReportRow & {
   supervisor: string
 }
 
+export type DirectorateReportRow = {
+  supervisor: string
+  colaborador: string
+  dataApontamento: string
+  horasTrabalhadas: string
+  horasExtras: string
+  horasNoturnas: string
+  bancoDeHoras: string
+  status: string
+}
+
 type CollaboratorMeta = {
   name: string
   jobTitle: string
@@ -354,6 +365,47 @@ export async function exportSquadHoursReport({ organograma, squadName, mesSeleci
 
   const safeSquadName = squad?.nome ?? squadName
   await writeWorkbook(workbook, `Relatorio_Horas_${safeSquadName.replace(/[^a-z0-9]+/gi, '_')}_${monthKey}.xlsx`)
+}
+
+export async function exportDirectorateReport(
+  rows: DirectorateReportRow[],
+  period: { startDate: string, endDate: string },
+) {
+  const workbook = new ExcelJS.Workbook()
+  workbook.creator = 'SM&A Apontamento de Horas'
+  workbook.created = new Date()
+
+  const worksheet = workbook.addWorksheet('Relatório Gerencial')
+  worksheet.columns = [
+    { key: 'supervisor', width: 28 },
+    { key: 'colaborador', width: 30 },
+    { key: 'dataApontamento', width: 20 },
+    { key: 'horasTrabalhadas', width: 19 },
+    { key: 'horasExtras', width: 16 },
+    { key: 'horasNoturnas', width: 16 },
+    { key: 'bancoDeHoras', width: 16 },
+    { key: 'status', width: 20 },
+  ]
+
+  applyCorporateHeader(workbook, worksheet, 'Relatório Gerencial de Horas', 8)
+  worksheet.getRow(2).values = ['Supervisor', 'Colaborador', 'Data do Apontamento', 'Horas Trabalhadas', 'Horas Extras', 'Horas Noturnas', 'Banco de Horas', 'Status']
+  worksheet.getRow(2).height = 26
+  rows.forEach((row, index) => {
+    const addedRow = worksheet.addRow(row)
+    if (index % 2 === 1) {
+      addedRow.eachCell((cell) => {
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } }
+      })
+    }
+  })
+  applyHeaderStyle(worksheet, 2)
+  applyBodyStyle(worksheet, [3, 4, 5, 6, 7, 8], 3)
+  autoFitColumns(worksheet)
+  worksheet.autoFilter = 'A2:H2'
+  worksheet.views = [{ state: 'frozen', ySplit: 2 }]
+
+  const safePeriod = `${period.startDate}_${period.endDate}`
+  await writeWorkbook(workbook, `Relatorio_Gerencial_${safePeriod}.xlsx`)
 }
 
 
