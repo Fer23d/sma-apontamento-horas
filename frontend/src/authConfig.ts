@@ -2,9 +2,13 @@ import type { Configuration, PopupRequest } from '@azure/msal-browser'
 
 export const msalConfig: Configuration = {
   auth: {
-    clientId: 'COLOQUE_SEU_CLIENT_ID_AQUI',
-    authority: 'https://login.microsoftonline.com/COLOQUE_SEU_TENANT_ID_AQUI',
-    redirectUri: typeof window === 'undefined' ? '/' : window.location.origin,
+    clientId: import.meta.env.VITE_MSAL_CLIENT_ID?.trim() ?? '',
+    authority: `https://login.microsoftonline.com/${import.meta.env.VITE_MSAL_TENANT_ID?.trim() ?? ''}`,
+    redirectUri: typeof window === 'undefined'
+      ? '/'
+      : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+        ? '/'
+        : new URL(import.meta.env.BASE_URL || '/sma-apontamento-horas/', window.location.origin).toString(),
   },
   cache: {
     cacheLocation: 'localStorage',
