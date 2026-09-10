@@ -1,5 +1,6 @@
 import { useLocation, useNavigate, type NavigateFunction } from 'react-router-dom'
 import { useState } from 'react'
+import { InteractionStatus } from '@azure/msal-browser'
 import { useMsal } from '@azure/msal-react'
 import { loginRequest } from '../authConfig'
 import { BrandMark } from '../components/BrandMark'
@@ -41,11 +42,12 @@ type LoginPageContentProps = {
   from: unknown
   signIn: SessionContextValue['signIn']
   handleLogin: () => Promise<void>
+  isSigningIn?: boolean
   authError: string | null
   navigate: NavigateFunction
 }
 
-export function LoginPageContent({ from, signIn, handleLogin, authError, navigate }: LoginPageContentProps) {
+export function LoginPageContent({ from, signIn, handleLogin, isSigningIn = false, authError, navigate }: LoginPageContentProps) {
   const enterDemo = (role: DemoRole) => {
     const destination = typeof from === 'string' && canAccessDemoPath(role, from)
       ? from
@@ -67,8 +69,8 @@ export function LoginPageContent({ from, signIn, handleLogin, authError, navigat
           <p className="mt-4 text-sm leading-6 text-[var(--color-text-muted)] sm:text-base">
             Acesse o sistema pelo perfil adequado ao seu fluxo de trabalho. A autenticação corporativa pode ser usada quando configurada.
           </p>
-          <button type="button" onClick={() => void handleLogin()} className="ui-button-secondary mt-6">
-            Entrar com Microsoft
+          <button type="button" onClick={() => void handleLogin()} disabled={isSigningIn} aria-busy={isSigningIn} className="ui-button-secondary mt-6">
+            {isSigningIn ? 'Autenticando...' : 'Entrar com Microsoft'}
           </button>
           {authError && <p role="alert" className="mt-3 text-sm font-semibold text-[var(--color-danger)]">{authError}</p>}
         </header>
@@ -94,28 +96,39 @@ export function LoginPageContent({ from, signIn, handleLogin, authError, navigat
 
 export function LoginPage() {
   const { signIn } = useSession()
-  const { instance } = useMsal()
+  const { instance, inProgress } = useMsal()
   const navigate = useNavigate()
   const location = useLocation()
   const from = (location.state as { from?: unknown } | null)?.from
   const [authError, setAuthError] = useState<string | null>(null)
+  const [isSigningIn, setIsSigningIn] = useState(false)
 
   async function handleLogin() {
+    if (isSigningIn || inProgress !== InteractionStatus.None) return
     setAuthError(null)
+    setIsSigningIn(true)
     try {
       const response = await instance.loginPopup(loginRequest)
       const account = response.account
       if (account) {
+        instance.setActiveAccount(account)
         window.localStorage.setItem('sma:microsoft-user:v1', JSON.stringify({
           name: account.name ?? account.username,
           email: account.username,
           homeAccountId: account.homeAccountId,
         }))
+        const destination = typeof from === 'string' && canAccessDemoPath('COLLABORATOR', from)
+          ? from
+          : getDemoHomePath('COLLABORATOR')
+        signIn('COLLABORATOR')
+        navigate(destination, { replace: true })
       }
     } catch (error) {
       setAuthError(error instanceof Error ? error.message : 'Não foi possível autenticar com a Microsoft.')
+    } finally {
+      setIsSigningIn(false)
     }
   }
 
-  return <LoginPageContent from={from} signIn={signIn} handleLogin={handleLogin} authError={authError} navigate={navigate} />
+  return <LoginPageContent from={from} signIn={signIn} handleLogin={handleLogin} isSigningIn={isSigningIn} authError={authError} navigate={navigate} />
 }
