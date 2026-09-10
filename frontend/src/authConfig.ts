@@ -1,9 +1,14 @@
 import type { Configuration, PopupRequest } from '@azure/msal-browser'
 
+const clientId = import.meta.env.VITE_MSAL_CLIENT_ID?.trim() ?? ''
+const tenantId = import.meta.env.VITE_MSAL_TENANT_ID?.trim() ?? ''
+
+export const isMsalConfigured = Boolean(clientId && tenantId)
+
 export const msalConfig: Configuration = {
   auth: {
-    clientId: import.meta.env.VITE_MSAL_CLIENT_ID?.trim() ?? '',
-    authority: `https://login.microsoftonline.com/${import.meta.env.VITE_MSAL_TENANT_ID?.trim() ?? ''}`,
+    clientId,
+    authority: `https://login.microsoftonline.com/${tenantId}`,
     redirectUri: typeof window === 'undefined'
       ? '/'
       : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')

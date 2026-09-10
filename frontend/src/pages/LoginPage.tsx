@@ -2,7 +2,7 @@ import { useLocation, useNavigate, type NavigateFunction } from 'react-router-do
 import { useState } from 'react'
 import { InteractionStatus } from '@azure/msal-browser'
 import { useMsal } from '@azure/msal-react'
-import { loginRequest } from '../authConfig'
+import { isMsalConfigured, loginRequest } from '../authConfig'
 import { BrandMark } from '../components/BrandMark'
 import { ThemeToggle } from '../components/ThemeToggle'
 import { canAccessDemoPath, getDemoHomePath } from '../features/session/routePolicy'
@@ -106,6 +106,10 @@ export function LoginPage() {
   async function handleLogin() {
     if (isSigningIn || inProgress !== InteractionStatus.None) return
     setAuthError(null)
+    if (!isMsalConfigured) {
+      setAuthError('Configure VITE_MSAL_CLIENT_ID e VITE_MSAL_TENANT_ID no arquivo frontend/.env e reinicie o servidor.')
+      return
+    }
     setIsSigningIn(true)
     try {
       const response = await instance.loginPopup(loginRequest)
