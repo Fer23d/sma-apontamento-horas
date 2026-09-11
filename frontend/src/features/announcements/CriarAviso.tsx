@@ -1,9 +1,9 @@
 import { useState, type FormEvent } from 'react'
 import { useSession } from '../session/useSession'
-import { saveAnnouncement } from '../../services/announcementService'
+import { ANNOUNCEMENTS_STORAGE_KEY, ANNOUNCEMENTS_UPDATED_EVENT } from '../../services/announcementService'
 import { getAllColaboradores } from '../../data/mockDEP'
 import { demoSquads } from '../../mocks/demoData'
-import type { ComunicadoDestinatario, ComunicadoTipo } from './types'
+import type { Comunicado, ComunicadoDestinatario, ComunicadoTipo } from './types'
 
 const urgencyOptions: Array<{ value: ComunicadoTipo, label: string }> = [
   { value: 'info', label: 'Normal' },
@@ -35,31 +35,43 @@ export function CriarAviso() {
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    const titulo = title.trim()
-    const mensagem = message.trim()
-    if (!titulo || !mensagem || !session || (recipientType !== 'all' && !recipientReference)) {
-      setFeedback('Preencha o título e a mensagem para enviar o aviso.')
-      return
-    }
+    try {
+      const titulo = title?.trim() ?? ''
+      const mensagem = message?.trim() ?? ''
+      if (!titulo || !mensagem || !session || (recipientType !== 'all' && !recipientReference)) {
+        setFeedback('Preencha o título e a mensagem para enviar o aviso.')
+        return
+      }
 
-    saveAnnouncement({
-      id: crypto.randomUUID(),
-      titulo,
-      mensagem,
-      dataPublicacao: new Date().toISOString(),
-      timestamp: new Date().toISOString(),
-      autor: sessionRole === 'SUPERVISOR' ? 'Supervisor (Modo Offline)' : 'Gestão (Modo Offline)',
-      tipo: type,
-      urgencia: type,
-      tipo_destinatario: recipientType,
-      alvo_referencia: recipientType === 'all' ? null : recipientReference,
-    })
-    setTitle('')
-    setMessage('')
-    setType('info')
-    setRecipientType('all')
-    setRecipientReference('')
-    setFeedback('Aviso enviado com sucesso.')
+      const raw = window.localStorage.getItem(ANNOUNCEMENTS_STORAGE_KEY) || '[]'
+      const parsed: unknown = JSON.parse(raw)
+      const avisosAtuais: Comunicado[] = Array.isArray(parsed) ? parsed : []
+      const timestamp = new Date().toISOString()
+      const novoAviso: Comunicado = {
+        id: crypto.randomUUID(),
+        titulo,
+        mensagem,
+        dataPublicacao: timestamp,
+        timestamp,
+        autor: session?.role === 'SUPERVISOR' ? 'Supervisor (Modo Offline)' : 'Gestão (Modo Offline)',
+        tipo: type,
+        urgencia: type,
+        tipo_destinatario: recipientType,
+        alvo_referencia: recipientType === 'all' ? 'geral' : (recipientReference || session?.id || 'geral'),
+      }
+      const novaLista = [novoAviso, ...(Array.isArray(avisosAtuais) ? avisosAtuais : [])]
+      window.localStorage.setItem(ANNOUNCEMENTS_STORAGE_KEY, JSON.stringify(novaLista))
+      window.dispatchEvent(new CustomEvent(ANNOUNCEMENTS_UPDATED_EVENT))
+      setTitle('')
+      setMessage('')
+      setType('info')
+      setRecipientType('all')
+      setRecipientReference('')
+      setFeedback('Aviso enviado com sucesso.')
+    } catch (error) {
+      console.error('Erro ao salvar aviso:', error)
+      setFeedback('Não foi possível enviar o aviso. Tente novamente.')
+    }
   }
 
   return (
