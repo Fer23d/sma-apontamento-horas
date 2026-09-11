@@ -10,6 +10,7 @@ import { getMonthKey } from '../shared/utils/date'
 import { diretoriaService } from '../services/diretoriaService'
 import type { SupervisorPendingEntry } from '../features/supervisor/types'
 import { formatMinutes } from '../features/time-entries/domain'
+import { CriarAviso } from '../features/announcements/CriarAviso'
 
 type DiretoriaEntry = {
   id: string
@@ -224,6 +225,8 @@ export function DiretoriaPage() {
               <h1 className="mt-2 text-3xl font-extrabold text-[var(--color-text)]">SM&A - Painel da Diretoria</h1>
               <p className="mt-2 text-sm text-[var(--color-text-muted)]">Visão macro e alocação de tempo por projetos.</p>
             </section>
+
+            <CriarAviso />
 
             <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4" aria-label="Indicadores da diretoria">
               <SummaryCard label="Total de Horas Apontadas (Mês)" value={totalMonthHours > 0 ? totalMonthHours.toFixed(1) : '298'} helper="Horas consolidadas no mês atual" />

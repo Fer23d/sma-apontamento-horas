@@ -17,6 +17,7 @@ import { useSession } from '../features/session/useSession'
 import { formatMinutes } from '../features/time-entries/domain'
 import { getCorporateToday, getMonthKey, getMonthRange, isIsoDate } from '../shared/utils/date'
 import { getAllColaboradores } from '../data/mockDEP'
+import { CriarAviso } from '../features/announcements/CriarAviso'
 
 type ActiveView = 'entries' | 'requests' | 'history' | 'profile'
 type EntryStatusFilter = 'ALL' | SupervisorPendingEntry['status']
@@ -492,6 +493,7 @@ export function SupervisorPage() {
                 {dashboard.error}
               </div>
             )}
+            <CriarAviso />
             {rangeError && <p role="alert" className="rounded-xl border border-red-300 bg-red-50 p-4 text-sm font-semibold text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200">{rangeError}</p>}
 
             {activeView === 'entries' && (

@@ -1,5 +1,7 @@
+import { useEffect, useState } from 'react'
 import { PageContainer } from '../components/PageContainer'
 import type { Comunicado, ComunicadoTipo } from '../features/announcements/types'
+import { ANNOUNCEMENTS_UPDATED_EVENT, readAnnouncements } from '../services/announcementService'
 
 const comunicadosMock: Comunicado[] = [
   {
@@ -51,6 +53,14 @@ function formatPublicationDate(date: string) {
 }
 
 export function AvisosPage() {
+  const [comunicados, setComunicados] = useState<Comunicado[]>(() => readAnnouncements(comunicadosMock))
+
+  useEffect(() => {
+    const reload = () => setComunicados(readAnnouncements(comunicadosMock))
+    window.addEventListener(ANNOUNCEMENTS_UPDATED_EVENT, reload)
+    return () => window.removeEventListener(ANNOUNCEMENTS_UPDATED_EVENT, reload)
+  }, [])
+
   return (
     <PageContainer
       title="Quadro de Avisos"
@@ -63,11 +73,11 @@ export function AvisosPage() {
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-secondary)]">Comunicados</p>
             <h2 id="announcements-title" className="mt-1 text-xl font-extrabold ui-text">Mensagens recentes</h2>
           </div>
-          <span className="text-sm text-[var(--color-text-muted)]">{comunicadosMock.length} comunicado(s)</span>
+          <span className="text-sm text-[var(--color-text-muted)]">{comunicados.length} comunicado(s)</span>
         </div>
 
         <div className="space-y-4">
-          {comunicadosMock.map((comunicado) => {
+          {comunicados.length === 0 ? <p className="rounded-2xl border ui-border ui-surface p-8 text-center text-sm font-semibold ui-text-muted">Nenhum comunicado publicado.</p> : comunicados.map((comunicado) => {
             const presentation = tipoPresentation[comunicado.tipo]
             return (
               <article key={comunicado.id} className={`rounded-2xl border border-l-4 ui-border ui-surface p-5 shadow-sm ${presentation.border}`}>
