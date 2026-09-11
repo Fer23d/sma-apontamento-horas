@@ -4,7 +4,7 @@ import type { TimeEntryFormValues } from './useTimeEntryForm'
 import { disciplines, documentTypes, isManualDocumentType } from './documentCatalog'
 import { MAX_CLIENT_NAME_LENGTH } from '../../config/business'
 
-export const fieldClassName = 'mt-2 w-full ui-field rounded-xl px-3 py-2.5 text-sm ui-text shadow-sm outline-none transition focus:ring-2 disabled:cursor-not-allowed disabled:bg-[var(--color-surface-subtle)]'
+export const fieldClassName = 'mt-2 w-full ui-field rounded-xl px-3 py-2.5 text-base ui-text shadow-sm outline-none transition focus:ring-2 disabled:cursor-not-allowed disabled:bg-[var(--color-surface-subtle)]'
 
 export function FieldError({ id, message }: { id: string; message?: string | null }) {
   if (!message) return null

@@ -33,6 +33,7 @@ describe('markup acessível de apontamentos e histórico', () => {
     expect(markup).toContain('for="contractor-number"')
     expect(markup).toContain('for="discipline"')
     expect(markup).toContain('for="document-type"')
+    expect(markup).toContain('text-base')
   })
 
   it('usa campo textual para cliente em vez do catálogo demonstrativo', () => {

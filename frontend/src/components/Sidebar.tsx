@@ -91,7 +91,7 @@ export function DesktopSidebar() {
     <aside
       data-desktop-sidebar
       aria-label="Menu lateral do colaborador"
-      className="hidden h-[calc(100vh-5rem)] w-64 min-w-0 flex-col overflow-y-auto bg-[var(--color-sidebar)] text-[var(--color-sidebar-text)] lg:sticky lg:top-20 lg:flex lg:self-start"
+      className="hidden h-[calc(100vh-5rem)] w-64 min-w-0 flex-col overflow-y-auto bg-[var(--color-sidebar)] text-[var(--color-sidebar-text)] md:sticky md:top-20 md:flex md:self-start"
     >
       <SidebarContent onNavigate={() => undefined} />
     </aside>
@@ -106,7 +106,7 @@ export function MobileDrawer({ isOpen, onClose, onNavigate, onKeyDown }: MobileD
       data-drawer-panel
       onKeyDown={onKeyDown}
       aria-label="Menu móvel do colaborador"
-      className={`${isOpen ? 'visible translate-x-0' : 'invisible -translate-x-full'} fixed bottom-0 left-0 top-20 z-30 flex w-72 min-w-0 flex-col overflow-y-auto bg-[var(--color-sidebar)] text-[var(--color-sidebar-text)] shadow-2xl transition-[translate,visibility] duration-200 lg:hidden`}
+      className={`${isOpen ? 'visible translate-x-0' : 'invisible -translate-x-full'} fixed bottom-0 left-0 top-20 z-30 flex w-72 min-w-0 flex-col overflow-y-auto bg-[var(--color-sidebar)] text-[var(--color-sidebar-text)] shadow-2xl transition-[translate,visibility] duration-200 md:hidden`}
     >
       <div className="flex items-center justify-between border-b border-[var(--color-sidebar-border)] px-4 py-3">
         <p className="font-bold">Navegação</p>

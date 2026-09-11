@@ -69,7 +69,7 @@ describe('layout responsivo do colaborador', () => {
     expect(desktopStart).toBeLessThan(markup.indexOf('id="main-content"'))
     expect(markup.indexOf('id="main-content"')).toBeLessThan(markup.indexOf('data-mobile-drawer="true"'))
     expect(desktopMarkup).toContain('w-64')
-    expect(desktopMarkup).toContain('lg:flex')
+    expect(desktopMarkup).toContain('md:flex')
     expect(desktopMarkup).not.toContain('invisible')
     expect(desktopMarkup).not.toContain('translate-x')
   })
@@ -107,9 +107,9 @@ describe('layout responsivo do colaborador', () => {
 
     expect(markup).toContain('top-20')
     expect(drawerMarkup).toContain('-translate-x-full')
-    expect(drawerMarkup).toContain('lg:hidden')
-    expect(drawerMarkup).not.toContain('lg:translate-x-0')
-    expect(markup).toContain('lg:grid-cols-[16rem_minmax(0,1fr)]')
+    expect(drawerMarkup).toContain('md:hidden')
+    expect(drawerMarkup).not.toContain('md:translate-x-0')
+    expect(markup).toContain('md:grid-cols-[16rem_minmax(0,1fr)]')
     expect(markup).toContain('overflow-x-clip')
   })
 
