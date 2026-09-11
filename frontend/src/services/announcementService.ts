@@ -28,6 +28,7 @@ function normalizeComunicado(value: unknown): Comunicado | null {
     timestamp: typeof item.timestamp === 'string' ? item.timestamp : item.dataPublicacao,
     autor: item.autor,
     autorId: typeof item.autorId === 'string' ? item.autorId : undefined,
+    oculto_por: Array.isArray(item.oculto_por) ? item.oculto_por.filter((id): id is string => typeof id === 'string') : [],
     tipo: item.tipo as ComunicadoTipo,
     urgencia: validTypes.has(item.urgencia as ComunicadoTipo) ? item.urgencia as ComunicadoTipo : item.tipo as ComunicadoTipo,
     tipo_destinatario: tipoDestinatario,
@@ -38,6 +39,10 @@ function normalizeComunicado(value: unknown): Comunicado | null {
 export function canDeleteAnnouncement(announcement: Comunicado, role: DemoRole | null | undefined, actorId: string | undefined) {
   if (role === 'DIRECTOR_ADMIN') return true
   return role === 'SUPERVISOR' && Boolean(actorId) && announcement.autorId === actorId
+}
+
+export function isAnnouncementHiddenForUser(announcement: Comunicado, userId: string | undefined) {
+  return Boolean(userId && Array.isArray(announcement.oculto_por) && announcement.oculto_por.includes(userId))
 }
 
 export function sortAnnouncements(announcements: Comunicado[]) {
@@ -79,6 +84,21 @@ export function deleteAnnouncement(id: string) {
   const current = readAnnouncements()
   const next = current.filter((announcement) => announcement.id !== id)
   if (next.length === current.length) return false
+  window.localStorage.setItem(ANNOUNCEMENTS_STORAGE_KEY, JSON.stringify(next))
+  window.dispatchEvent(new CustomEvent(ANNOUNCEMENTS_UPDATED_EVENT))
+  return true
+}
+
+export function hideAnnouncementForUser(id: string, userId: string | undefined) {
+  if (typeof window === 'undefined' || !userId) return false
+  const current = readAnnouncements()
+  let changed = false
+  const next = current.map((announcement) => {
+    if (announcement.id !== id || announcement.oculto_por.includes(userId)) return announcement
+    changed = true
+    return { ...announcement, oculto_por: [...announcement.oculto_por, userId] }
+  })
+  if (!changed) return false
   window.localStorage.setItem(ANNOUNCEMENTS_STORAGE_KEY, JSON.stringify(next))
   window.dispatchEvent(new CustomEvent(ANNOUNCEMENTS_UPDATED_EVENT))
   return true

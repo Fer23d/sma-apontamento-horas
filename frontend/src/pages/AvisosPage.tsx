@@ -3,7 +3,7 @@ import { PageContainer } from '../components/PageContainer'
 import { useSession } from '../features/session/useSession'
 import { CriarAviso } from '../features/announcements/CriarAviso'
 import type { Comunicado, ComunicadoDestinatario, ComunicadoTipo } from '../features/announcements/types'
-import { ANNOUNCEMENTS_UPDATED_EVENT, canDeleteAnnouncement, deleteAnnouncement, readAnnouncements } from '../services/announcementService'
+import { ANNOUNCEMENTS_UPDATED_EVENT, canDeleteAnnouncement, deleteAnnouncement, hideAnnouncementForUser, isAnnouncementHiddenForUser, readAnnouncements } from '../services/announcementService'
 
 const comunicadosMock: Comunicado[] = [
   {
@@ -17,6 +17,7 @@ const comunicadosMock: Comunicado[] = [
     urgencia: 'alerta',
     tipo_destinatario: 'all',
     alvo_referencia: null,
+    oculto_por: [],
   },
   {
     id: 'aviso-politica-apontamentos',
@@ -29,6 +30,7 @@ const comunicadosMock: Comunicado[] = [
     urgencia: 'info',
     tipo_destinatario: 'all',
     alvo_referencia: null,
+    oculto_por: [],
   },
   {
     id: 'aviso-prazo-urgente',
@@ -41,24 +43,25 @@ const comunicadosMock: Comunicado[] = [
     urgencia: 'urgente',
     tipo_destinatario: 'all',
     alvo_referencia: null,
+    oculto_por: [],
   },
 ]
 
 const tipoPresentation: Record<ComunicadoTipo, { label: string, border: string, badge: string }> = {
   info: {
     label: 'Informação',
-    border: '[border-left-color:#8AB7C7]',
-    badge: 'border-[#8AB7C7]/40 bg-[#8AB7C7]/10 text-[#8AB7C7]',
+    border: 'border-l-[var(--color-border-strong)] bg-[var(--color-surface)]',
+    badge: 'border-[var(--color-border-strong)] bg-[var(--color-secondary)] text-white',
   },
   alerta: {
     label: 'Atenção',
-    border: '[border-left-color:#C9A66B]',
-    badge: 'border-[#C9A66B]/40 bg-[#C9A66B]/10 text-[#C9A66B]',
+    border: 'border-l-orange-500 bg-orange-50 dark:border-l-orange-400 dark:bg-orange-950/25',
+    badge: 'border-orange-500 bg-orange-500 text-white',
   },
   urgente: {
     label: 'Urgente',
-    border: '[border-left-color:#C99393]',
-    badge: 'border-[#C99393]/40 bg-[#C99393]/10 text-[#C99393]',
+    border: 'border-l-red-800 bg-red-50 dark:border-l-red-500 dark:bg-red-950/30',
+    badge: 'border-red-800 bg-red-800 text-white dark:border-red-700 dark:bg-red-700',
   },
 }
 
@@ -86,12 +89,19 @@ export function AvisosPage() {
   const [comunicados, setComunicados] = useState<Comunicado[]>(() => readAnnouncements(comunicadosMock))
 
   const safeAnnouncements = Array.isArray(comunicados) ? comunicados : []
-  const visibleAnnouncements = safeAnnouncements.filter((comunicado) => session?.role !== 'COLLABORATOR' || isVisibleToCollaborator(comunicado, profile?.id, profile?.email, profile?.activeSquadId))
+  const visibleAnnouncements = safeAnnouncements
+    .filter((comunicado) => !isAnnouncementHiddenForUser(comunicado, session?.id))
+    .filter((comunicado) => session?.role !== 'COLLABORATOR' || isVisibleToCollaborator(comunicado, profile?.id, profile?.email, profile?.activeSquadId))
 
   function handleDelete(comunicado: Comunicado) {
     if (!canDeleteAnnouncement(comunicado, session?.role, session?.id)) return
     if (!window.confirm(`Excluir o aviso "${comunicado.titulo}"?`)) return
     if (deleteAnnouncement(comunicado.id)) setComunicados(readAnnouncements(comunicadosMock))
+  }
+
+  function handleHide(comunicado: Comunicado) {
+    if (!session?.id || !window.confirm('Apagar este aviso somente para você?')) return
+    if (hideAnnouncementForUser(comunicado.id, session.id)) setComunicados((current) => current.filter((item) => item.id !== comunicado.id))
   }
 
   useEffect(() => {
@@ -131,7 +141,8 @@ export function AvisosPage() {
                   <div className="flex flex-wrap items-center justify-end gap-2">
                     <span className={`w-fit rounded-full border px-3 py-1 text-xs font-bold ${presentation.badge}`}>{presentation.label}</span>
                     <span className="w-fit rounded-full border border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-3 py-1 text-xs font-bold text-[var(--color-text-muted)]">{recipientPresentation[comunicado.tipo_destinatario]}</span>
-                    {canDeleteAnnouncement(comunicado, session?.role, session?.id) && <button type="button" onClick={() => handleDelete(comunicado)} className="inline-flex items-center gap-1 rounded-lg border border-[var(--color-border)] px-2.5 py-1.5 text-xs font-bold text-[var(--color-text-muted)] transition hover:border-[var(--color-danger)] hover:text-[var(--color-danger)]" aria-label={`Excluir aviso ${comunicado.titulo}`}><span aria-hidden="true">🗑</span><span className="sr-only">Excluir</span></button>}
+                    {canDeleteAnnouncement(comunicado, session?.role, session?.id) && <button type="button" onClick={() => handleDelete(comunicado)} className="inline-flex items-center gap-1 rounded-lg border border-[var(--color-border)] px-2.5 py-1.5 text-xs font-bold text-[var(--color-text-muted)] transition hover:border-[var(--color-danger)] hover:text-[var(--color-danger)]" aria-label={`Excluir aviso ${comunicado.titulo}`}><span aria-hidden="true">&#128465;</span><span className="sr-only">Excluir</span></button>}
+                    <button type="button" onClick={() => handleHide(comunicado)} className="inline-flex items-center gap-1 rounded-lg border border-[var(--color-border)] px-2.5 py-1.5 text-xs font-bold text-[var(--color-text-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]" aria-label={`Apagar aviso ${comunicado.titulo} para mim`}><span aria-hidden="true">×</span><span className="sr-only">Apagar para mim</span></button>
                   </div>
                 </header>
                 <p className="mt-4 max-w-4xl text-sm leading-7 ui-text-muted">{comunicado.mensagem}</p>

@@ -55,6 +55,7 @@ export function CriarAviso() {
         timestamp,
         autor: session?.role === 'SUPERVISOR' ? 'Supervisor (Modo Offline)' : 'Gestão (Modo Offline)',
         autorId: session?.id,
+        oculto_por: [],
         tipo: type,
         urgencia: type,
         tipo_destinatario: recipientType,

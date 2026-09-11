@@ -9,6 +9,7 @@ export interface Comunicado {
   timestamp: string
   autor: string
   autorId?: string
+  oculto_por: string[]
   tipo: ComunicadoTipo
   urgencia: ComunicadoTipo
   tipo_destinatario: ComunicadoDestinatario
