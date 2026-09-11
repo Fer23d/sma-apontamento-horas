@@ -1,4 +1,5 @@
 import type { Comunicado, ComunicadoDestinatario, ComunicadoTipo } from '../features/announcements/types'
+import type { DemoRole } from '../features/session/types'
 
 export const ANNOUNCEMENTS_STORAGE_KEY = 'avisos_sistema'
 export const ANNOUNCEMENTS_UPDATED_EVENT = 'sma:announcements-updated'
@@ -26,11 +27,17 @@ function normalizeComunicado(value: unknown): Comunicado | null {
     dataPublicacao: item.dataPublicacao,
     timestamp: typeof item.timestamp === 'string' ? item.timestamp : item.dataPublicacao,
     autor: item.autor,
+    autorId: typeof item.autorId === 'string' ? item.autorId : undefined,
     tipo: item.tipo as ComunicadoTipo,
     urgencia: validTypes.has(item.urgencia as ComunicadoTipo) ? item.urgencia as ComunicadoTipo : item.tipo as ComunicadoTipo,
     tipo_destinatario: tipoDestinatario,
     alvo_referencia: typeof item.alvo_referencia === 'string' ? item.alvo_referencia : null,
   }
+}
+
+export function canDeleteAnnouncement(announcement: Comunicado, role: DemoRole | null | undefined, actorId: string | undefined) {
+  if (role === 'DIRECTOR_ADMIN') return true
+  return role === 'SUPERVISOR' && Boolean(actorId) && announcement.autorId === actorId
 }
 
 export function sortAnnouncements(announcements: Comunicado[]) {
@@ -65,4 +72,14 @@ export function saveAnnouncement(announcement: Comunicado) {
   const next = sortAnnouncements([...current, announcement])
   window.localStorage.setItem(ANNOUNCEMENTS_STORAGE_KEY, JSON.stringify(next))
   window.dispatchEvent(new CustomEvent(ANNOUNCEMENTS_UPDATED_EVENT))
+}
+
+export function deleteAnnouncement(id: string) {
+  if (typeof window === 'undefined') return false
+  const current = readAnnouncements()
+  const next = current.filter((announcement) => announcement.id !== id)
+  if (next.length === current.length) return false
+  window.localStorage.setItem(ANNOUNCEMENTS_STORAGE_KEY, JSON.stringify(next))
+  window.dispatchEvent(new CustomEvent(ANNOUNCEMENTS_UPDATED_EVENT))
+  return true
 }

@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { PageContainer } from '../components/PageContainer'
 import { useProfile } from '../features/collaborator/useProfile'
 import { ProfileSummary } from '../features/profile/ProfileSummary'
 import { WorkloadHistory } from '../features/workloads/WorkloadHistory'
 import { WorkloadRequestForm, type WorkloadFormField } from '../features/workloads/WorkloadRequestForm'
 import { getCorporateToday } from '../shared/utils/date'
+import { useTour } from '../components/tourContext'
 
 type WorkloadForm = { hours: string; minutes: string; effectiveFrom: string; justification: string }
 type ProfileForm = { name: string; email: string; jobTitle: string; activeSquadId: string }
@@ -24,6 +26,8 @@ function toDailyMinutes(form: WorkloadForm) {
 }
 
 export function PerfilPage() {
+  const navigate = useNavigate()
+  const { startTour } = useTour()
   const profileState = useProfile()
   const [form, setForm] = useState<WorkloadForm>(initialForm)
   const [profileForm, setProfileForm] = useState<ProfileForm>(emptyProfileForm)
@@ -98,7 +102,7 @@ export function PerfilPage() {
           <section className="space-y-4" aria-labelledby="profile-edit-title">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <h2 id="profile-edit-title" className="text-lg font-extrabold ui-heading">Dados profissionais</h2>
-              {!isEditing && <button type="button" onClick={() => setEditing(true)} className="ui-button-secondary">Editar Perfil</button>}
+              {!isEditing && <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row"><button type="button" onClick={() => { startTour(); navigate('/colaborador') }} className="ui-button-secondary">Ver Tutorial do Sistema</button><button type="button" onClick={() => setEditing(true)} className="ui-button-secondary">Editar Perfil</button></div>}
             </div>
             {isEditing ? (
               <div className="rounded-2xl border ui-border ui-surface p-5">

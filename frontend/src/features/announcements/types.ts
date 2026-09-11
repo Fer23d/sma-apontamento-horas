@@ -8,6 +8,7 @@ export interface Comunicado {
   dataPublicacao: string
   timestamp: string
   autor: string
+  autorId?: string
   tipo: ComunicadoTipo
   urgencia: ComunicadoTipo
   tipo_destinatario: ComunicadoDestinatario

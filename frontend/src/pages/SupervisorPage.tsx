@@ -17,6 +17,7 @@ import { useSession } from '../features/session/useSession'
 import { formatMinutes } from '../features/time-entries/domain'
 import { getCorporateToday, getMonthKey, getMonthRange, isIsoDate } from '../shared/utils/date'
 import { getAllColaboradores } from '../data/mockDEP'
+import { useTour } from '../components/tourContext'
 
 type ActiveView = 'entries' | 'requests' | 'history' | 'profile'
 type EntryStatusFilter = 'ALL' | SupervisorPendingEntry['status']
@@ -176,7 +177,7 @@ function HistoryView({ entries }: { entries: SupervisorPendingEntry[] }) {
   )
 }
 
-function SupervisorProfileView({ profile, onSave }: { profile: SupervisorProfile, onSave: (profile: SupervisorProfile) => void }) {
+function SupervisorProfileView({ profile, onSave, onStartTour }: { profile: SupervisorProfile, onSave: (profile: SupervisorProfile) => void, onStartTour: () => void }) {
   const [isEditing, setEditing] = useState(false)
   const [form, setForm] = useState(profile)
 
@@ -210,7 +211,7 @@ function SupervisorProfileView({ profile, onSave }: { profile: SupervisorProfile
           <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-secondary)]">Meu Perfil</p>
           <h2 id="supervisor-profile-title" className="mt-1 text-2xl font-extrabold text-[var(--color-primary)]">{profile.name}</h2>
         </div>
-        {!isEditing && <button type="button" onClick={() => setEditing(true)} className="ui-button-secondary">Editar Perfil</button>}
+        {!isEditing && <div className="flex flex-col gap-2 sm:flex-row"><button type="button" onClick={onStartTour} className="ui-button-secondary">Ver Tutorial do Sistema</button><button type="button" onClick={() => setEditing(true)} className="ui-button-secondary">Editar Perfil</button></div>}
       </div>
       {isEditing ? (
         <div className="mt-6">
@@ -253,6 +254,7 @@ function SupervisorProfileView({ profile, onSave }: { profile: SupervisorProfile
 }
 
 export function SupervisorPage() {
+  const { startTour } = useTour()
   const { session, signOut } = useSession()
   const navigate = useNavigate()
   const dashboard = useSupervisorDashboard(session?.id)
@@ -635,7 +637,7 @@ export function SupervisorPage() {
             )}
 
             {activeView === 'history' && <HistoryView entries={dashboard.entries} />}
-            {activeView === 'profile' && <SupervisorProfileView profile={supervisorProfile} onSave={updateSupervisorProfile} />}
+            {activeView === 'profile' && <SupervisorProfileView profile={supervisorProfile} onSave={updateSupervisorProfile} onStartTour={() => { setActiveView('entries'); startTour() }} />}
           </div>
         </div>
       </section>

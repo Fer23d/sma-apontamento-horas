@@ -3,7 +3,7 @@ import { PageContainer } from '../components/PageContainer'
 import { useSession } from '../features/session/useSession'
 import { CriarAviso } from '../features/announcements/CriarAviso'
 import type { Comunicado, ComunicadoDestinatario, ComunicadoTipo } from '../features/announcements/types'
-import { ANNOUNCEMENTS_UPDATED_EVENT, readAnnouncements } from '../services/announcementService'
+import { ANNOUNCEMENTS_UPDATED_EVENT, canDeleteAnnouncement, deleteAnnouncement, readAnnouncements } from '../services/announcementService'
 
 const comunicadosMock: Comunicado[] = [
   {
@@ -88,6 +88,12 @@ export function AvisosPage() {
   const safeAnnouncements = Array.isArray(comunicados) ? comunicados : []
   const visibleAnnouncements = safeAnnouncements.filter((comunicado) => session?.role !== 'COLLABORATOR' || isVisibleToCollaborator(comunicado, profile?.id, profile?.email, profile?.activeSquadId))
 
+  function handleDelete(comunicado: Comunicado) {
+    if (!canDeleteAnnouncement(comunicado, session?.role, session?.id)) return
+    if (!window.confirm(`Excluir o aviso "${comunicado.titulo}"?`)) return
+    if (deleteAnnouncement(comunicado.id)) setComunicados(readAnnouncements(comunicadosMock))
+  }
+
   useEffect(() => {
     const reload = () => setComunicados(readAnnouncements(comunicadosMock))
     window.addEventListener(ANNOUNCEMENTS_UPDATED_EVENT, reload)
@@ -122,9 +128,10 @@ export function AvisosPage() {
                       Publicado em {formatPublicationDate(comunicado.dataPublicacao)} · por {comunicado.autor}
                     </p>
                   </div>
-                  <div className="flex flex-wrap justify-end gap-2">
+                  <div className="flex flex-wrap items-center justify-end gap-2">
                     <span className={`w-fit rounded-full border px-3 py-1 text-xs font-bold ${presentation.badge}`}>{presentation.label}</span>
                     <span className="w-fit rounded-full border border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-3 py-1 text-xs font-bold text-[var(--color-text-muted)]">{recipientPresentation[comunicado.tipo_destinatario]}</span>
+                    {canDeleteAnnouncement(comunicado, session?.role, session?.id) && <button type="button" onClick={() => handleDelete(comunicado)} className="inline-flex items-center gap-1 rounded-lg border border-[var(--color-border)] px-2.5 py-1.5 text-xs font-bold text-[var(--color-text-muted)] transition hover:border-[var(--color-danger)] hover:text-[var(--color-danger)]" aria-label={`Excluir aviso ${comunicado.titulo}`}><span aria-hidden="true">🗑</span><span className="sr-only">Excluir</span></button>}
                   </div>
                 </header>
                 <p className="mt-4 max-w-4xl text-sm leading-7 ui-text-muted">{comunicado.mensagem}</p>

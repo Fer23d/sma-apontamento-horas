@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Joyride, STATUS, type EventData, type Step } from 'react-joyride'
 import { useLocation } from 'react-router-dom'
 import { useSession } from '../features/session/useSession'
-
-const TOUR_STORAGE_PREFIX = '@sma-banco:hasSeenTour'
+import { TourContext } from './tourContext'
 
 const collaboratorSteps: Step[] = [
   { target: '.tour-menu', title: 'Navegação principal', content: 'Use este menu para acessar o calendário, seus apontamentos, ausências, avisos e perfil.', placement: 'right' },
@@ -31,18 +30,19 @@ function getTourConfig(role: string | undefined, pathname: string) {
   return { steps: [], routeReady: false }
 }
 
-export function OnboardingTour() {
+export function OnboardingTour({ children }: { children?: ReactNode }) {
   const location = useLocation()
   const { session } = useSession()
   const [run, setRun] = useState(false)
   const [activeSteps, setActiveSteps] = useState<Step[]>([])
+  const [manualRun, setManualRun] = useState(false)
   const config = useMemo(() => getTourConfig(session?.role, location.pathname), [location.pathname, session?.role])
-  const storageKey = session ? `${TOUR_STORAGE_PREFIX}:${session.id}:${session.role}` : null
+  const startTour = useCallback(() => setManualRun(true), [])
 
   useEffect(() => {
     setRun(false)
     setActiveSteps([])
-    if (!session || !storageKey || !config.routeReady || localStorage.getItem(storageKey)) return
+    if (!session || !config.routeReady || !manualRun) return
     let cancelled = false
     const startedAt = Date.now()
     const targetSelectors = config.steps.filter((step) => typeof step.target === 'string')
@@ -76,16 +76,18 @@ export function OnboardingTour() {
     return () => {
       cancelled = true
     }
-  }, [config, location.pathname, session, storageKey])
+  }, [config, location.pathname, manualRun, session])
 
   function handleCallback({ status }: EventData) {
-    if ((status === STATUS.FINISHED || status === STATUS.SKIPPED) && storageKey) {
-      localStorage.setItem(storageKey, 'true')
+    if (status === STATUS.FINISHED || status === STATUS.SKIPPED) {
       setRun(false)
+      setManualRun(false)
     }
   }
 
-  if (!config.routeReady || activeSteps.length === 0) return null
+  const tour = config.routeReady && activeSteps.length > 0
+    ? <Joyride steps={activeSteps} run={run} continuous scrollToFirstStep onEvent={handleCallback} locale={{ back: 'Voltar', close: 'Fechar', last: 'Concluir', next: 'Próximo', skip: 'Pular' }} options={{ showProgress: true, buttons: ['back', 'primary', 'skip'], overlayClickAction: false, spotlightPadding: 8, spotlightRadius: 16, targetWaitTimeout: 3000, scrollDuration: 300, scrollOffset: 24, arrowColor: '#132532', backgroundColor: '#132532', overlayColor: 'rgba(3, 10, 16, 0.78)', primaryColor: '#77C2A4', textColor: '#F8FAFC', zIndex: 10000 }} styles={{ tooltip: { border: '1px solid #1F3B4D', borderRadius: 16, boxShadow: '0 16px 40px rgba(0, 0, 0, 0.28)' }, buttonPrimary: { borderRadius: 10, color: '#0A161E', fontWeight: 800 }, buttonBack: { color: '#94A3B8', fontWeight: 700 }, buttonSkip: { color: '#94A3B8', fontWeight: 700 } }} />
+    : null
 
-  return <Joyride steps={activeSteps} run={run} continuous scrollToFirstStep onEvent={handleCallback} locale={{ back: 'Voltar', close: 'Fechar', last: 'Concluir', next: 'Próximo', skip: 'Pular' }} options={{ showProgress: true, buttons: ['back', 'primary', 'skip'], overlayClickAction: false, spotlightPadding: 8, spotlightRadius: 16, targetWaitTimeout: 3000, scrollDuration: 300, scrollOffset: 24, arrowColor: '#132532', backgroundColor: '#132532', overlayColor: 'rgba(3, 10, 16, 0.78)', primaryColor: '#77C2A4', textColor: '#F8FAFC', zIndex: 10000 }} styles={{ tooltip: { border: '1px solid #1F3B4D', borderRadius: 16, boxShadow: '0 16px 40px rgba(0, 0, 0, 0.28)' }, buttonPrimary: { borderRadius: 10, color: '#0A161E', fontWeight: 800 }, buttonBack: { color: '#94A3B8', fontWeight: 700 }, buttonSkip: { color: '#94A3B8', fontWeight: 700 } }} />
+  return <TourContext.Provider value={{ startTour }}>{tour}{children}</TourContext.Provider>
 }

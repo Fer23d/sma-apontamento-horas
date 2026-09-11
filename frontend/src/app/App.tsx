@@ -7,8 +7,9 @@ export function App() {
   return (
     <HashRouter>
       <OfflineSyncProvider>
-        <OnboardingTour />
-        <AppRoutes />
+        <OnboardingTour>
+          <AppRoutes />
+        </OnboardingTour>
       </OfflineSyncProvider>
     </HashRouter>
   )

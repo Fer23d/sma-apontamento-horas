@@ -10,6 +10,7 @@ import { getMonthKey } from '../shared/utils/date'
 import { diretoriaService } from '../services/diretoriaService'
 import type { SupervisorPendingEntry } from '../features/supervisor/types'
 import { formatMinutes } from '../features/time-entries/domain'
+import { useTour } from '../components/tourContext'
 
 type DiretoriaEntry = {
   id: string
@@ -159,6 +160,7 @@ function DiretoriaSidebar({ onSignOut }: { onSignOut: () => void }) {
 }
 
 export function DiretoriaPage() {
+  const { startTour } = useTour()
   const { session, signOut } = useSession()
   const navigate = useNavigate()
   const [entries, setEntries] = useState<DiretoriaEntry[]>([])
@@ -227,6 +229,7 @@ export function DiretoriaPage() {
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-secondary)]">Visão Macro</p>
               <h1 className="mt-2 text-3xl font-extrabold text-[var(--color-text)]">SM&A - Painel da Diretoria</h1>
               <p className="mt-2 text-sm text-[var(--color-text-muted)]">Visão macro e alocação de tempo por projetos.</p>
+              <button type="button" onClick={() => { startTour(); navigate('/administracao/relatorios') }} className="ui-button-secondary mt-4">Ver Tutorial do Sistema</button>
             </section>
 
             <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4" aria-label="Indicadores da diretoria">
