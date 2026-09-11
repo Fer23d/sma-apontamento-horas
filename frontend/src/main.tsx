@@ -7,6 +7,7 @@ import { ThemeProvider } from './app/ThemeProvider'
 import { DemoSessionProvider } from './features/session/DemoSessionProvider'
 import { isMsalConfigured, msalConfig } from './authConfig'
 import { demoSessionService } from './services/demoSessionService'
+import { mapMicrosoftClaimsToRole } from './features/session/claims'
 import { registerSW } from 'virtual:pwa-register'
 import './styles/index.css'
 
@@ -30,8 +31,13 @@ async function prepareMsal() {
       } catch (storageError) {
         console.warn('Não foi possível persistir os dados básicos da conta Microsoft.', storageError)
       }
-      // O SSO atual não traz um papel de negócio; mantém o acesso corporativo como colaborador.
-      demoSessionService.signIn('COLLABORATOR')
+      const claims = account.idTokenClaims as { roles?: unknown; groups?: unknown } | undefined
+      demoSessionService.signInWithMicrosoft({
+        id: account.homeAccountId,
+        name: account.name ?? account.username,
+        email: account.username,
+        role: mapMicrosoftClaimsToRole(claims),
+      })
     }
   } catch (error) {
     console.error('Não foi possível processar o retorno da autenticação Microsoft.', error)
