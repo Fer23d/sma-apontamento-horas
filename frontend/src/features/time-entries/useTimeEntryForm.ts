@@ -10,6 +10,7 @@ import { useSession } from '../session/useSession'
 import { areValidDurationParts, hoursAndMinutesToMinutes, validateTimeEntry } from './domain'
 import { applyLdDocument, type LdDocument } from '../document-list/ldImport'
 import { isManualDocumentType } from './documentCatalog'
+import { offlineQueueService } from '../../services/offlineQueueService'
 
 export type TimeEntryFormValues = {
   startDate: string
@@ -186,10 +187,20 @@ export function useTimeEntryForm({ initialDate, entryId, duplicateId }: { initia
         await timeEntryService.duplicate(profile.id, source.id, source.version, data)
         setSuccessMessage('Apontamento duplicado com sucesso.')
       } else {
-        await timeEntryService.create(profile.id, data)
-        setSuccessMessage(periodDates.length > 1
-          ? `${periodDates.length} lançamentos salvos com sucesso para o período selecionado.`
-          : 'Apontamento salvo com sucesso.')
+        if (typeof navigator !== 'undefined' && !navigator.onLine) {
+          await offlineQueueService.enqueue({
+            id: crypto.randomUUID(),
+            status: 'PENDING',
+            collaboratorId: profile.id,
+            data,
+          })
+          setSuccessMessage('Sem conexão. Apontamento salvo localmente e aguardando rede.')
+        } else {
+          await timeEntryService.create(profile.id, data)
+          setSuccessMessage(periodDates.length > 1
+            ? `${periodDates.length} lançamentos salvos com sucesso para o período selecionado.`
+            : 'Apontamento salvo com sucesso.')
+        }
       }
       setErrors({})
       setEditReasonError(null)

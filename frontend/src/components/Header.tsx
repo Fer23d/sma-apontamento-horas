@@ -2,6 +2,7 @@ import { forwardRef } from 'react'
 import { ThemeToggle } from './ThemeToggle'
 import { useSession } from '../features/session/useSession'
 import { BrandMark } from './BrandMark'
+import { OfflineStatusIndicator } from './OfflineStatusIndicator'
 
 type HeaderProps = {
   isMenuOpen: boolean
@@ -31,6 +32,7 @@ export const Header = forwardRef<HTMLButtonElement, HeaderProps>(function Header
         </div>
       </div>
       <div className="flex items-center gap-3">
+        <OfflineStatusIndicator />
         <span className="hidden text-right text-xs font-semibold text-[var(--color-text-muted)] sm:block">{profile?.name}</span>
         <ThemeToggle />
       </div>
