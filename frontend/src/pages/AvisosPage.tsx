@@ -76,7 +76,9 @@ function isVisibleToCollaborator(comunicado: Comunicado, collaboratorId: string 
 }
 
 function formatPublicationDate(date: string) {
-  return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'long', timeZone: 'UTC' }).format(new Date(`${date}T00:00:00.000Z`))
+  const parsedDate = new Date(date.includes('T') ? date : `${date}T00:00:00.000Z`)
+  if (Number.isNaN(parsedDate.getTime())) return 'Data indisponível'
+  return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'long', timeZone: 'UTC' }).format(parsedDate)
 }
 
 export function AvisosPage() {
