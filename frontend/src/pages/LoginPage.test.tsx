@@ -5,7 +5,7 @@ import { MsalProvider } from '@azure/msal-react'
 import { describe, expect, it, vi } from 'vitest'
 import { ThemeContext } from '../app/themeContext'
 import { msalConfig } from '../authConfig'
-import { LoginPage } from './LoginPage'
+import { LoginPage, LoginPageContent } from './LoginPage'
 
 function renderLogin(from?: string) {
   const msalInstance = new PublicClientApplication(msalConfig)
@@ -30,7 +30,18 @@ describe('LoginPage', () => {
     expect(markup).toContain('alt="SM&amp;A — Sistemas Elétricos e Automação"')
     expect(markup).not.toMatch(/Entrar como (Colaborador|Supervisor|Diretor)/)
     expect(markup.match(/<img/g) ?? []).toHaveLength(1)
-    expect(markup).toContain('Entrar com Microsoft')
+    expect(markup).toContain('Processando autenticação...')
     expect(markup).not.toMatch(/type="password"|Microsoft Login/i)
+  })
+
+  it('exibe o botão somente quando não há interação MSAL em andamento', () => {
+    const markup = renderToStaticMarkup(
+      <ThemeContext.Provider value={{ theme: 'light', toggleTheme: vi.fn() }}>
+        <LoginPageContent handleLogin={vi.fn()} authError={null} />
+      </ThemeContext.Provider>,
+    )
+
+    expect(markup).toContain('Entrar com Microsoft')
+    expect(markup).not.toContain('Processando autenticação...')
   })
 })

@@ -12,8 +12,8 @@ export const msalConfig: Configuration = {
     redirectUri: typeof window === 'undefined'
       ? '/'
       : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-        ? '/'
-        : new URL(import.meta.env.BASE_URL || '/sma-apontamento-horas/', window.location.origin).toString(),
+        ? `${window.location.origin}/`
+        : 'https://fer23d.github.io/sma-apontamento-horas/',
   },
   cache: {
     cacheLocation: 'localStorage',

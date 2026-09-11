@@ -11,11 +11,11 @@ import { demoSessionService } from '../services/demoSessionService'
 
 type LoginPageContentProps = {
   handleLogin: () => Promise<void>
-  isSigningIn?: boolean
+  isProcessing?: boolean
   authError: string | null
 }
 
-export function LoginPageContent({ handleLogin, isSigningIn = false, authError }: LoginPageContentProps) {
+export function LoginPageContent({ handleLogin, isProcessing = false, authError }: LoginPageContentProps) {
   return (
     <main className="relative flex min-h-screen items-center justify-center bg-[var(--color-background)] px-4 py-20 text-[var(--color-text)] sm:px-6">
       <div className="absolute right-4 top-4"><ThemeToggle /></div>
@@ -29,9 +29,9 @@ export function LoginPageContent({ handleLogin, isSigningIn = false, authError }
           <p className="mt-4 text-sm leading-6 text-[var(--color-text-muted)] sm:text-base">
             Acesse o sistema com sua conta corporativa Microsoft.
           </p>
-          <button type="button" onClick={() => void handleLogin()} disabled={isSigningIn} aria-busy={isSigningIn} className="ui-button-secondary mt-6">
-            {isSigningIn ? 'Autenticando...' : 'Entrar com Microsoft'}
-          </button>
+          {isProcessing
+            ? <p className="mt-6 text-sm font-semibold text-[var(--color-text-muted)]" role="status" aria-live="polite">Processando autenticação...</p>
+            : <button type="button" onClick={() => void handleLogin()} className="ui-button-secondary mt-6">Entrar com Microsoft</button>}
           {authError && <p role="alert" className="mt-3 text-sm font-semibold text-[var(--color-danger)]">{authError}</p>}
         </header>
 
@@ -86,5 +86,5 @@ export function LoginPage() {
     }
   }
 
-  return <LoginPageContent handleLogin={handleLogin} isSigningIn={isSigningIn} authError={authError} />
+  return <LoginPageContent handleLogin={handleLogin} isProcessing={isSigningIn || inProgress !== InteractionStatus.None} authError={authError} />
 }

@@ -18,7 +18,7 @@ async function prepareMsal() {
   if (!isMsalConfigured) return
   try {
     await msalInstance.initialize()
-    const response = await msalInstance.handleRedirectPromise()
+    const response = await msalInstance.handleRedirectPromise({ navigateToLoginRequestUrl: true })
     const account = response?.account ?? msalInstance.getActiveAccount() ?? msalInstance.getAllAccounts()[0]
     if (account) {
       msalInstance.setActiveAccount(account)
