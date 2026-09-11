@@ -83,7 +83,8 @@ export function AvisosPage() {
   const { profile, session } = useSession()
   const [comunicados, setComunicados] = useState<Comunicado[]>(() => readAnnouncements(comunicadosMock))
 
-  const visibleAnnouncements = comunicados.filter((comunicado) => session?.role !== 'COLLABORATOR' || isVisibleToCollaborator(comunicado, profile?.id, profile?.email, profile?.activeSquadId))
+  const safeAnnouncements = Array.isArray(comunicados) ? comunicados : []
+  const visibleAnnouncements = safeAnnouncements.filter((comunicado) => session?.role !== 'COLLABORATOR' || isVisibleToCollaborator(comunicado, profile?.id, profile?.email, profile?.activeSquadId))
 
   useEffect(() => {
     const reload = () => setComunicados(readAnnouncements(comunicadosMock))

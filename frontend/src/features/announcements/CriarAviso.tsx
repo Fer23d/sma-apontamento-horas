@@ -26,7 +26,11 @@ export function CriarAviso() {
   const [recipientReference, setRecipientReference] = useState('')
   const [feedback, setFeedback] = useState<string | null>(null)
 
-  const canCreate = session?.role === 'SUPERVISOR' || session?.role === 'DIRECTOR_ADMIN'
+  const sessionRole = session?.role ?? null
+  const canCreate = sessionRole === 'SUPERVISOR' || sessionRole === 'DIRECTOR_ADMIN'
+  const squads = Array.isArray(demoSquads) ? demoSquads : []
+  const collaborators = getAllColaboradores()
+  const collaboratorOptions = Array.isArray(collaborators) ? collaborators : []
   if (!canCreate) return null
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -44,7 +48,7 @@ export function CriarAviso() {
       mensagem,
       dataPublicacao: new Date().toISOString(),
       timestamp: new Date().toISOString(),
-      autor: session.role === 'SUPERVISOR' ? 'Supervisor (Modo Offline)' : 'Gestão (Modo Offline)',
+      autor: sessionRole === 'SUPERVISOR' ? 'Supervisor (Modo Offline)' : 'Gestão (Modo Offline)',
       tipo: type,
       urgencia: type,
       tipo_destinatario: recipientType,
@@ -94,7 +98,7 @@ export function CriarAviso() {
             Equipe destinatária
             <select value={recipientReference} onChange={(event) => setRecipientReference(event.target.value)} className="mt-2 block w-full ui-field rounded-xl px-3 py-2.5 ui-text outline-none focus:ring-2">
               <option value="">Selecione uma equipe</option>
-              {demoSquads.map((squad) => <option key={squad.id} value={squad.id}>{squad.name}</option>)}
+              {squads.map((squad) => <option key={squad.id} value={squad.id}>{squad.name}</option>)}
             </select>
           </label>
         )}
@@ -103,7 +107,7 @@ export function CriarAviso() {
             Colaborador destinatário
             <select value={recipientReference} onChange={(event) => setRecipientReference(event.target.value)} className="mt-2 block w-full ui-field rounded-xl px-3 py-2.5 ui-text outline-none focus:ring-2">
               <option value="">Selecione um colaborador</option>
-              {getAllColaboradores().map((collaborator) => <option key={collaborator} value={collaborator}>{collaborator}</option>)}
+              {collaboratorOptions.map((collaborator) => <option key={collaborator} value={collaborator}>{collaborator}</option>)}
             </select>
           </label>
         )}

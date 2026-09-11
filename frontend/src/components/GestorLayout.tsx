@@ -6,7 +6,9 @@ import { useSession } from '../features/session/useSession'
 export function GestorLayout() {
   const { session, signOut } = useSession()
   const navigate = useNavigate()
-  const isDirector = session?.role === 'DIRECTOR_ADMIN'
+  const sessionRole = session?.role ?? null
+  const isDirector = sessionRole === 'DIRECTOR_ADMIN'
+  const displayName = session?.name ?? 'Usuário gestor'
 
   function exit() {
     signOut()
@@ -26,7 +28,7 @@ export function GestorLayout() {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <span className="hidden text-right text-xs font-semibold text-[var(--color-text-muted)] sm:block">{session?.name}</span>
+          <span className="hidden text-right text-xs font-semibold text-[var(--color-text-muted)] sm:block">{displayName}</span>
           <ThemeToggle />
         </div>
       </header>
@@ -37,7 +39,7 @@ export function GestorLayout() {
             <div className="flex items-center gap-3">
               <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[var(--color-sidebar-border)] bg-[var(--color-sidebar-surface)] text-sm font-extrabold">{isDirector ? 'DI' : 'SU'}</span>
               <div className="min-w-0">
-                <p className="text-sm font-extrabold leading-tight">{session?.name}</p>
+                <p className="text-sm font-extrabold leading-tight">{displayName}</p>
                 <p className="mt-0.5 text-xs leading-tight text-[var(--color-sidebar-text-muted)]">{isDirector ? 'Diretoria' : 'Supervisor'}</p>
               </div>
             </div>
