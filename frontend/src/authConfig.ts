@@ -14,7 +14,9 @@ export const msalConfig: Configuration = {
       : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
         ? `${window.location.origin}/`
         : 'https://fer23d.github.io/sma-apontamento-horas/',
-  },
+    // Compatibilidade explícita com o retorno do HashRouter.
+    navigateToLoginRequestUrl: false,
+  } as Configuration['auth'] & { navigateToLoginRequestUrl: false },
   cache: {
     cacheLocation: 'localStorage',
   },

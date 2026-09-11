@@ -22,7 +22,7 @@ export function ProtectedRoute({ children, allowedRoles = COLLABORATOR_ONLY }: P
   if (isLoading || inProgress !== InteractionStatus.None) {
     return (
       <main className="flex min-h-screen items-center justify-center ui-surface-subtle" aria-busy="true">
-        <p className="font-semibold ui-heading">Carregando ambiente corporativo…</p>
+        <p className="font-semibold ui-heading">{inProgress !== InteractionStatus.None ? 'Processando autenticação...' : 'Carregando ambiente corporativo...'}</p>
       </main>
     )
   }
