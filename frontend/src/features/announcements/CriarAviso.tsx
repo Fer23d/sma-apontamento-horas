@@ -1,7 +1,10 @@
 import { useState, type FormEvent } from 'react'
+import { useMsal } from '@azure/msal-react'
 import { useSession } from '../session/useSession'
 import { saveAnnouncement } from '../../services/announcementService'
-import type { ComunicadoTipo } from './types'
+import { getAllColaboradores } from '../../data/mockDEP'
+import { demoSquads } from '../../mocks/demoData'
+import type { ComunicadoDestinatario, ComunicadoTipo } from './types'
 
 const urgencyOptions: Array<{ value: ComunicadoTipo, label: string }> = [
   { value: 'info', label: 'Normal' },
@@ -9,21 +12,32 @@ const urgencyOptions: Array<{ value: ComunicadoTipo, label: string }> = [
   { value: 'urgente', label: 'Crítico' },
 ]
 
+const recipientOptions: Array<{ value: ComunicadoDestinatario, label: string }> = [
+  { value: 'all', label: 'Todos' },
+  { value: 'team', label: 'Equipe Específica' },
+  { value: 'individual', label: 'Colaborador Específico' },
+]
+
 export function CriarAviso() {
   const { session } = useSession()
+  const { accounts } = useMsal()
   const [title, setTitle] = useState('')
   const [message, setMessage] = useState('')
   const [type, setType] = useState<ComunicadoTipo>('info')
+  const [recipientType, setRecipientType] = useState<ComunicadoDestinatario>('all')
+  const [recipientReference, setRecipientReference] = useState('')
   const [feedback, setFeedback] = useState<string | null>(null)
 
-  const canCreate = session?.role === 'SUPERVISOR' || session?.role === 'DIRECTOR_ADMIN'
+  const tokenRoles = (accounts[0]?.idTokenClaims?.roles ?? []).map((role) => role.toLowerCase())
+  const hasTokenRole = tokenRoles.some((role) => role === 'supervisor' || role === 'diretor' || role === 'director' || role === 'director_admin')
+  const canCreate = session?.role === 'SUPERVISOR' || session?.role === 'DIRECTOR_ADMIN' || hasTokenRole
   if (!canCreate) return null
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const titulo = title.trim()
     const mensagem = message.trim()
-    if (!titulo || !mensagem || !session) {
+    if (!titulo || !mensagem || !session || (recipientType !== 'all' && !recipientReference)) {
       setFeedback('Preencha o título e a mensagem para enviar o aviso.')
       return
     }
@@ -33,12 +47,18 @@ export function CriarAviso() {
       titulo,
       mensagem,
       dataPublicacao: new Date().toISOString(),
+      timestamp: new Date().toISOString(),
       autor: session.name,
       tipo: type,
+      urgencia: type,
+      tipo_destinatario: recipientType,
+      alvo_referencia: recipientType === 'all' ? null : recipientReference,
     })
     setTitle('')
     setMessage('')
     setType('info')
+    setRecipientType('all')
+    setRecipientReference('')
     setFeedback('Aviso enviado com sucesso.')
   }
 
@@ -65,8 +85,32 @@ export function CriarAviso() {
               {urgencyOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
             </select>
           </label>
+          <label className="block text-sm font-bold ui-text sm:min-w-64">
+            Destinatário
+            <select value={recipientType} onChange={(event) => { setRecipientType(event.target.value as ComunicadoDestinatario); setRecipientReference('') }} className="mt-2 block w-full ui-field rounded-xl px-3 py-2.5 ui-text outline-none focus:ring-2">
+              {recipientOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+            </select>
+          </label>
           <button type="submit" className="ui-button-primary">Enviar Aviso</button>
         </div>
+        {recipientType === 'team' && (
+          <label className="block text-sm font-bold ui-text">
+            Equipe destinatária
+            <select value={recipientReference} onChange={(event) => setRecipientReference(event.target.value)} className="mt-2 block w-full ui-field rounded-xl px-3 py-2.5 ui-text outline-none focus:ring-2">
+              <option value="">Selecione uma equipe</option>
+              {demoSquads.map((squad) => <option key={squad.id} value={squad.id}>{squad.name}</option>)}
+            </select>
+          </label>
+        )}
+        {recipientType === 'individual' && (
+          <label className="block text-sm font-bold ui-text">
+            Colaborador destinatário
+            <select value={recipientReference} onChange={(event) => setRecipientReference(event.target.value)} className="mt-2 block w-full ui-field rounded-xl px-3 py-2.5 ui-text outline-none focus:ring-2">
+              <option value="">Selecione um colaborador</option>
+              {getAllColaboradores().map((collaborator) => <option key={collaborator} value={collaborator}>{collaborator}</option>)}
+            </select>
+          </label>
+        )}
         {feedback && <p role="status" className="text-sm font-semibold ui-text-muted">{feedback}</p>}
       </form>
     </section>

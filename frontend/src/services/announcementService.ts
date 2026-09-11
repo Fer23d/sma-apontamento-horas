@@ -1,20 +1,36 @@
-import type { Comunicado, ComunicadoTipo } from '../features/announcements/types'
+import type { Comunicado, ComunicadoDestinatario, ComunicadoTipo } from '../features/announcements/types'
 
 export const ANNOUNCEMENTS_STORAGE_KEY = 'avisos_sistema'
 export const ANNOUNCEMENTS_UPDATED_EVENT = 'sma:announcements-updated'
 
 const validTypes = new Set<ComunicadoTipo>(['info', 'alerta', 'urgente'])
+const validRecipients = new Set<ComunicadoDestinatario>(['all', 'team', 'individual'])
 
-function isComunicado(value: unknown): value is Comunicado {
-  if (!value || typeof value !== 'object') return false
+function normalizeComunicado(value: unknown): Comunicado | null {
+  if (!value || typeof value !== 'object') return null
   const item = value as Record<string, unknown>
-  return typeof item.id === 'string'
-    && typeof item.titulo === 'string'
-    && typeof item.mensagem === 'string'
-    && typeof item.dataPublicacao === 'string'
-    && typeof item.autor === 'string'
-    && typeof item.tipo === 'string'
-    && validTypes.has(item.tipo as ComunicadoTipo)
+  if (typeof item.id !== 'string'
+    || typeof item.titulo !== 'string'
+    || typeof item.mensagem !== 'string'
+    || typeof item.dataPublicacao !== 'string'
+    || typeof item.autor !== 'string'
+    || typeof item.tipo !== 'string'
+    || !validTypes.has((item.urgencia ?? item.tipo) as ComunicadoTipo)) return null
+  const tipoDestinatario = validRecipients.has(item.tipo_destinatario as ComunicadoDestinatario)
+    ? item.tipo_destinatario as ComunicadoDestinatario
+    : 'all'
+  return {
+    id: item.id,
+    titulo: item.titulo,
+    mensagem: item.mensagem,
+    dataPublicacao: item.dataPublicacao,
+    timestamp: typeof item.timestamp === 'string' ? item.timestamp : item.dataPublicacao,
+    autor: item.autor,
+    tipo: item.tipo as ComunicadoTipo,
+    urgencia: validTypes.has(item.urgencia as ComunicadoTipo) ? item.urgencia as ComunicadoTipo : item.tipo as ComunicadoTipo,
+    tipo_destinatario: tipoDestinatario,
+    alvo_referencia: typeof item.alvo_referencia === 'string' ? item.alvo_referencia : null,
+  }
 }
 
 export function sortAnnouncements(announcements: Comunicado[]) {
@@ -33,7 +49,10 @@ export function readAnnouncements(fallback: Comunicado[] = []) {
       return seeded
     }
     const parsed: unknown = JSON.parse(raw)
-    return Array.isArray(parsed) ? sortAnnouncements(parsed.filter(isComunicado)) : []
+    return Array.isArray(parsed) ? sortAnnouncements(parsed.flatMap((item) => {
+      const normalized = normalizeComunicado(item)
+      return normalized ? [normalized] : []
+    })) : []
   } catch (error) {
     console.error('Erro ao ler avisos:', error)
     return []
