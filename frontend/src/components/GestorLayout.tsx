@@ -34,7 +34,7 @@ export function GestorLayout() {
       </header>
 
       <div className="relative grid min-h-[calc(100vh-5rem)] min-w-0 grid-cols-1 lg:grid-cols-[16rem_minmax(0,1fr)]">
-        <aside className="hidden h-[calc(100vh-5rem)] w-64 min-w-0 flex-col overflow-y-auto bg-[var(--color-sidebar)] text-[var(--color-sidebar-text)] lg:sticky lg:top-20 lg:flex lg:self-start" aria-label="Menu lateral da gestão">
+        <aside className="flex max-h-80 min-w-0 flex-col overflow-y-auto bg-[var(--color-sidebar)] text-[var(--color-sidebar-text)] lg:sticky lg:top-20 lg:h-[calc(100vh-5rem)] lg:max-h-none lg:w-64 lg:self-start" aria-label="Menu lateral da gestão">
           <section className="border-b border-[var(--color-sidebar-border)] p-4">
             <div className="flex items-center gap-3">
               <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[var(--color-sidebar-border)] bg-[var(--color-sidebar-surface)] text-sm font-extrabold">{isDirector ? 'DI' : 'SU'}</span>
