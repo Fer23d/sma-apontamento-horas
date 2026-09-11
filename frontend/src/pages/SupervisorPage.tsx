@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import ExcelJS from 'exceljs'
 import { saveAs } from 'file-saver'
@@ -17,7 +17,6 @@ import { useSession } from '../features/session/useSession'
 import { formatMinutes } from '../features/time-entries/domain'
 import { getCorporateToday, getMonthKey, getMonthRange, isIsoDate } from '../shared/utils/date'
 import { getAllColaboradores } from '../data/mockDEP'
-import { CriarAviso } from '../features/announcements/CriarAviso'
 
 type ActiveView = 'entries' | 'requests' | 'history' | 'profile'
 type EntryStatusFilter = 'ALL' | SupervisorPendingEntry['status']
@@ -132,6 +131,10 @@ function SupervisorSidebar({ activeView, profile, onChange, onSignOut }: {
             </button>
           )
         })}
+        <NavLink to="/avisos" className={({ isActive }) => `flex w-full items-center gap-3 rounded-xl border-l-4 px-3 py-3 text-left text-sm font-semibold transition ${isActive ? 'border-[var(--color-primary)] bg-[var(--color-navigation-active)] text-[var(--color-navigation-active-text)]' : 'border-transparent text-[var(--color-sidebar-text-muted)] hover:bg-[var(--color-navigation-hover)] hover:text-[var(--color-sidebar-text)]'}`}>
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--color-sidebar-surface)] text-xs">AV</span>
+          <span className="flex-1">Avisos</span>
+        </NavLink>
       </nav>
 
       <div className="border-t border-[var(--color-sidebar-border)] p-4">
@@ -493,7 +496,6 @@ export function SupervisorPage() {
                 {dashboard.error}
               </div>
             )}
-            <CriarAviso />
             {rangeError && <p role="alert" className="rounded-xl border border-red-300 bg-red-50 p-4 text-sm font-semibold text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200">{rangeError}</p>}
 
             {activeView === 'entries' && (

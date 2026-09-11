@@ -10,7 +10,6 @@ import { getMonthKey } from '../shared/utils/date'
 import { diretoriaService } from '../services/diretoriaService'
 import type { SupervisorPendingEntry } from '../features/supervisor/types'
 import { formatMinutes } from '../features/time-entries/domain'
-import { CriarAviso } from '../features/announcements/CriarAviso'
 
 type DiretoriaEntry = {
   id: string
@@ -145,6 +144,10 @@ function DiretoriaSidebar({ onSignOut }: { onSignOut: () => void }) {
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--color-sidebar-surface)] text-xs">RE</span>
           <span className="flex-1">Relatórios</span>
         </NavLink>
+        <NavLink to="/avisos" className={linkClass}>
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--color-sidebar-surface)] text-xs">AV</span>
+          <span className="flex-1">Avisos</span>
+        </NavLink>
       </nav>
       <div className="border-t border-[var(--color-sidebar-border)] p-4">
         <button type="button" onClick={onSignOut} className="w-full rounded-xl border border-[var(--color-sidebar-border)] px-4 py-3 text-left text-sm font-bold text-[var(--color-sidebar-text)] hover:bg-[var(--color-navigation-hover)]">
@@ -225,8 +228,6 @@ export function DiretoriaPage() {
               <h1 className="mt-2 text-3xl font-extrabold text-[var(--color-text)]">SM&A - Painel da Diretoria</h1>
               <p className="mt-2 text-sm text-[var(--color-text-muted)]">Visão macro e alocação de tempo por projetos.</p>
             </section>
-
-            <CriarAviso />
 
             <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4" aria-label="Indicadores da diretoria">
               <SummaryCard label="Total de Horas Apontadas (Mês)" value={totalMonthHours > 0 ? totalMonthHours.toFixed(1) : '298'} helper="Horas consolidadas no mês atual" />

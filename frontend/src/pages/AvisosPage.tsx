@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { PageContainer } from '../components/PageContainer'
 import { useSession } from '../features/session/useSession'
+import { CriarAviso } from '../features/announcements/CriarAviso'
 import type { Comunicado, ComunicadoDestinatario, ComunicadoTipo } from '../features/announcements/types'
 import { ANNOUNCEMENTS_UPDATED_EVENT, readAnnouncements } from '../services/announcementService'
 
@@ -79,10 +80,10 @@ function formatPublicationDate(date: string) {
 }
 
 export function AvisosPage() {
-  const { profile } = useSession()
+  const { profile, session } = useSession()
   const [comunicados, setComunicados] = useState<Comunicado[]>(() => readAnnouncements(comunicadosMock))
 
-  const visibleAnnouncements = comunicados.filter((comunicado) => isVisibleToCollaborator(comunicado, profile?.id, profile?.email, profile?.activeSquadId))
+  const visibleAnnouncements = comunicados.filter((comunicado) => session?.role !== 'COLLABORATOR' || isVisibleToCollaborator(comunicado, profile?.id, profile?.email, profile?.activeSquadId))
 
   useEffect(() => {
     const reload = () => setComunicados(readAnnouncements(comunicadosMock))
@@ -96,6 +97,7 @@ export function AvisosPage() {
       description="Acompanhe comunicados importantes da Diretoria, do RH e da supervisão da operação."
       contained={false}
     >
+      <CriarAviso />
       <section className="space-y-4" aria-labelledby="announcements-title">
         <div className="flex items-center justify-between gap-4">
           <div>

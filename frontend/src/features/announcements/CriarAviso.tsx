@@ -1,5 +1,4 @@
 import { useState, type FormEvent } from 'react'
-import { useMsal } from '@azure/msal-react'
 import { useSession } from '../session/useSession'
 import { saveAnnouncement } from '../../services/announcementService'
 import { getAllColaboradores } from '../../data/mockDEP'
@@ -20,7 +19,6 @@ const recipientOptions: Array<{ value: ComunicadoDestinatario, label: string }> 
 
 export function CriarAviso() {
   const { session } = useSession()
-  const { accounts } = useMsal()
   const [title, setTitle] = useState('')
   const [message, setMessage] = useState('')
   const [type, setType] = useState<ComunicadoTipo>('info')
@@ -28,9 +26,7 @@ export function CriarAviso() {
   const [recipientReference, setRecipientReference] = useState('')
   const [feedback, setFeedback] = useState<string | null>(null)
 
-  const tokenRoles = (accounts[0]?.idTokenClaims?.roles ?? []).map((role) => role.toLowerCase())
-  const hasTokenRole = tokenRoles.some((role) => role === 'supervisor' || role === 'diretor' || role === 'director' || role === 'director_admin')
-  const canCreate = session?.role === 'SUPERVISOR' || session?.role === 'DIRECTOR_ADMIN' || hasTokenRole
+  const canCreate = session?.role === 'SUPERVISOR' || session?.role === 'DIRECTOR_ADMIN'
   if (!canCreate) return null
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -48,7 +44,7 @@ export function CriarAviso() {
       mensagem,
       dataPublicacao: new Date().toISOString(),
       timestamp: new Date().toISOString(),
-      autor: session.name,
+      autor: session.role === 'SUPERVISOR' ? 'Supervisor (Modo Offline)' : 'Gestão (Modo Offline)',
       tipo: type,
       urgencia: type,
       tipo_destinatario: recipientType,
