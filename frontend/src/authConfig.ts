@@ -10,10 +10,8 @@ export const msalConfig: Configuration = {
     clientId,
     authority: `https://login.microsoftonline.com/${tenantId}`,
     redirectUri: typeof window === 'undefined'
-      ? '/'
-      : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-        ? `${window.location.origin}/`
-        : 'https://fer23d.github.io/sma-apontamento-horas/',
+      ? '/auth.html'
+      : new URL(`${import.meta.env.BASE_URL || '/'}auth.html`, window.location.origin).toString(),
     // Compatibilidade explícita com o retorno do HashRouter.
     navigateToLoginRequestUrl: false,
   } as Configuration['auth'] & { navigateToLoginRequestUrl: false },
