@@ -1,5 +1,7 @@
 export interface VercelRequest {
   query: Record<string, string | string[] | undefined>;
+  headers?: Record<string, string | string[] | undefined>;
+  cookies?: Record<string, string | undefined>;
 }
 
 export interface VercelResponse {

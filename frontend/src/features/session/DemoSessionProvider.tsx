@@ -12,8 +12,42 @@ export function DemoSessionProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    setSession(demoSessionService.restore())
-    setIsLoading(false)
+    let cancelled = false
+
+    async function restoreSession() {
+      const localSession = demoSessionService.restore()
+      if (localSession) {
+        if (!cancelled) {
+          setSession(localSession)
+          setIsLoading(false)
+        }
+        return
+      }
+
+      try {
+        const response = await fetch('/api/me', { credentials: 'include' })
+        if (!response.ok) return
+        const payload = await response.json() as {
+          isAuthenticated?: boolean
+          account?: { id?: string; name?: string; username?: string }
+        }
+        if (payload.isAuthenticated && payload.account?.id && payload.account.name && payload.account.username && !cancelled) {
+          setSession(demoSessionService.signInWithMicrosoft({
+            id: payload.account.id,
+            name: payload.account.name,
+            email: payload.account.username,
+            role: 'COLLABORATOR',
+          }))
+        }
+      } catch {
+        // API indisponível não impede o modo demo/local.
+      } finally {
+        if (!cancelled) setIsLoading(false)
+      }
+    }
+
+    void restoreSession()
+    return () => { cancelled = true }
   }, [])
 
   useEffect(() => {
@@ -41,6 +75,7 @@ export function DemoSessionProvider({ children }: { children: ReactNode }) {
     return created
   }
   const signOut = () => {
+    void fetch('/api/logout', { method: 'POST', credentials: 'include' }).catch(() => undefined)
     demoSessionService.signOut()
     setSession(null)
     setProfile(null)
