@@ -68,8 +68,8 @@ export function validateTimeEntry(
   if (!clientName) errors.clientName = 'Informe o cliente.'
   else if (clientName.length > MAX_CLIENT_NAME_LENGTH) errors.clientName = `O cliente deve ter no máximo ${MAX_CLIENT_NAME_LENGTH} caracteres.`
   const projectCode = data.projectCode.trim()
-  if (!projectCode) errors.projectCode = 'Informe o número do projeto.'
-  else if (projectCode.length > MAX_PROJECT_CODE_LENGTH) errors.projectCode = 'O número do projeto deve ter no máximo 80 caracteres.'
+  if (!projectCode) errors.projectCode = 'Informe o número da contratada.'
+  else if (projectCode.length > MAX_PROJECT_CODE_LENGTH) errors.projectCode = 'O número da contratada deve ter no máximo 80 caracteres.'
   if (!activities.some((activity) => activity.id === data.activityId && activity.active)) errors.activityId = 'Selecione uma atividade ativa.'
   if (!isDisciplineCode(data.disciplineCode)) errors.disciplineCode = 'Selecione uma disciplina.'
   if (!isAllowedDocumentType(data.documentTypeCode, data.ldDocument)) {

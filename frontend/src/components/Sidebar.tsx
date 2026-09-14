@@ -77,7 +77,7 @@ function SidebarContent({ onNavigate }: SidebarContentProps) {
 
       <div className="border-t border-[var(--color-sidebar-border)] p-4">
         <InstallAppButton />
-        <button type="button" onClick={handleSignOut} className="w-full rounded-xl border border-[var(--color-sidebar-border)] px-4 py-3 text-left text-sm font-bold text-[var(--color-sidebar-text)] hover:bg-[var(--color-navigation-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-sidebar-text)]">
+        <button type="button" onClick={handleSignOut} className="mt-3 w-full rounded-xl border border-[var(--color-sidebar-border)] px-4 py-3 text-left text-sm font-bold text-[var(--color-sidebar-text)] hover:bg-[var(--color-navigation-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-sidebar-text)]">
           Sair do sistema
         </button>
         <p className="mt-3 px-1 text-xs text-[var(--color-sidebar-text-muted)]">Dados armazenados somente neste navegador.</p>

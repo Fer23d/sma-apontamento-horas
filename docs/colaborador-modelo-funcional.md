@@ -23,7 +23,7 @@ Definir o comportamento esperado da área do Colaborador e registrar as decisõe
 2. Consultar o perfil profissional, a squad vigente e a carga horária versionada; alterações locais continuam corporativas e sem valor corporativo oficial.
 3. Abrir o dashboard individual para ver período, jornada prevista, total apontado e saldo calculado.
 4. Selecionar uma data pelo calendário ou pela rota de novo apontamento.
-5. Escolher o cliente, digitar exatamente o número do projeto atual e escolher a atividade.
+5. Escolher o cliente, digitar exatamente o número da contratada atual e escolher a atividade.
 6. Opcionalmente, importar uma LD em `.xlsx`/`.xlsm`, pesquisar um documento e usar seus dados para preencher número da contratada, disciplina e tipo documental. O cliente não filtra projetos nesta fase.
 7. Informar duração em horas/minutos; a aplicação converte para minutos.
 8. Visualizar uma prévia do total diário e da situação da jornada.
@@ -42,7 +42,7 @@ Definir o comportamento esperado da área do Colaborador e registrar as decisõe
 | `collaboratorId` | identificador do perfil | **Automático, somente leitura** | Sempre obtido da sessão; nunca aceito de um seletor. |
 | `entryDate` | data ISO `YYYY-MM-DD` | **Obrigatório** | Data civil do trabalho; datas futuras e datas bloqueadas não aceitam mutação. |
 | `clientName` | texto, máximo provisório de 120 caracteres | **Obrigatório** | Sem LD é informado manualmente e recebe `trim()` externo. Com LD do formato VALE é preenchido como `VALE` e fica somente leitura enquanto o documento estiver vinculado. |
-| `projectCode` | texto, máximo provisório de 80 caracteres | **Obrigatório** | Informado pelo Colaborador. Aplicar somente `trim()` externo antes de validar/persistir; preservar capitalização, zeros, pontos, barras, hífens e espaços internos. |
+| `projectCode` | campo técnico de compatibilidade, texto com máximo provisório de 80 caracteres | **Obrigatório** | Nesta fase armazena exclusivamente o **Número da contratada** informado pelo Colaborador. Aplica somente `trim()` externo antes de validar/persistir; preserva capitalização, zeros, pontos, barras, hífens e espaços internos. O nome técnico será revisto quando existir catálogo oficial de projetos. |
 | `contractorNumber` | texto, máximo provisório de 160 caracteres | **Opcional** | Preenchido manualmente ou a partir de `Nº CONTRATADA` da LD; aplica somente `trim()` externo. |
 | `activityId` | identificador da atividade | **Obrigatório** | Atividade tipada define categoria e aplicabilidade dos demais campos. |
 | `disciplineCode` | enum `— | A | E | G | M` | **Obrigatório** | `—` representa “não aplicável”; os demais códigos representam Automação, Elétrica, Geral e Mecânica. |
@@ -247,7 +247,7 @@ Cada célula deve fornecer texto acessível, foco por teclado e descrição/tool
 
 - data;
 - cliente;
-- número do projeto (`projectCode`); futuramente, nome resolvido pelo catálogo oficial;
+- número da contratada (armazenado tecnicamente em `projectCode`); futuramente, referência a projeto será resolvida pelo catálogo oficial;
 - atividade;
 - disciplina;
 - tipo de documento;

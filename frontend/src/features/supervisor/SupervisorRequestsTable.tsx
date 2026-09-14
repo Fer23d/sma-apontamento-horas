@@ -33,7 +33,7 @@ export function SupervisorRequestsTable({ requests, isMutating, onApprove, onRej
     <section className="ui-card overflow-hidden rounded-2xl" aria-labelledby="supervisor-requests-title">
       <div className="flex flex-col gap-2 border-b border-[var(--color-border)] p-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-secondary)]">Solicitacoes</p>
+          <p className="ui-eyebrow text-xs font-bold uppercase tracking-[0.16em]">Solicitacoes</p>
           <h2 id="supervisor-requests-title" className="mt-1 text-xl font-extrabold text-[var(--color-text)]">Solicitacoes de Ausencia</h2>
         </div>
         <p className="text-sm text-[var(--color-text-muted)]">{safeRequests.length} solicitacao(oes)</p>

@@ -38,7 +38,7 @@ export function WorkloadHistory({ versions, requests }: WorkloadHistoryProps) {
                 </div>
                 <p className="mt-2 text-sm ui-text-muted">Início pretendido: {formatDatePtBr(request.requestedEffectiveFrom)}</p>
                 <p className="mt-1 text-sm ui-text-muted">Justificativa: {request.justification}</p>
-                {request.rejectionReason && <p className="mt-2 text-sm font-semibold text-red-700 dark:text-red-300">Motivo: {request.rejectionReason}</p>}
+                {request.rejectionReason && <p className="mt-2 text-sm font-semibold ui-text-danger">Motivo: {request.rejectionReason}</p>}
               </li>
             })}
           </ul>

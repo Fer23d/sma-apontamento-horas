@@ -156,7 +156,7 @@ function HistoryView({ entries }: { entries: SupervisorPendingEntry[] }) {
   return (
     <section className="ui-card rounded-2xl p-5" aria-labelledby="supervisor-history-title">
       <div className="mb-4">
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-secondary)]">Consolidado</p>
+        <p className="ui-eyebrow text-xs font-bold uppercase tracking-[0.16em]">Consolidado</p>
         <h2 id="supervisor-history-title" className="mt-1 text-xl font-extrabold text-[var(--color-text)]">Histórico de validações</h2>
       </div>
       <div className="max-h-[600px] space-y-3 overflow-y-auto">
@@ -208,7 +208,7 @@ function SupervisorProfileView({ profile, onSave, onStartTour }: { profile: Supe
     <section className="ui-card rounded-2xl p-6" aria-labelledby="supervisor-profile-title">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-secondary)]">Meu Perfil</p>
+          <p className="ui-eyebrow text-xs font-bold uppercase tracking-[0.16em]">Meu Perfil</p>
           <h2 id="supervisor-profile-title" className="mt-1 text-2xl font-extrabold text-[var(--color-primary)]">{profile.name}</h2>
         </div>
         {!isEditing && <div className="flex flex-col gap-2 sm:flex-row"><button type="button" onClick={onStartTour} className="ui-button-secondary">Ver Tutorial do Sistema</button><button type="button" onClick={() => setEditing(true)} className="ui-button-secondary">Editar Perfil</button></div>}
@@ -470,7 +470,7 @@ export function SupervisorPage() {
         <div className="flex min-w-0 items-center gap-3">
           <BrandMark variant="compact" />
           <div className="hidden min-w-0 sm:block">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--color-secondary)]">Área do supervisor</p>
+            <p className="ui-eyebrow text-xs font-bold uppercase tracking-[0.2em]">Área do supervisor</p>
             <p className="truncate text-sm text-[var(--color-text-muted)]">Validação de apontamentos e solicitações da equipe</p>
           </div>
         </div>
@@ -485,7 +485,7 @@ export function SupervisorPage() {
 
         <div className="mx-auto w-full min-w-0 max-w-7xl p-4 sm:p-6 lg:p-8">
           <div className="mb-6">
-            <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-[var(--color-secondary)]">SM&A</p>
+            <p className="ui-eyebrow mb-2 text-xs font-bold uppercase tracking-[0.2em]">SM&A</p>
             <h1 className="text-2xl font-extrabold text-[var(--color-primary)] sm:text-3xl">{supervisorNavigation.find((item) => item.id === activeView)?.label}</h1>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--color-text-muted)]">
               Consulte dados sincronizados do localStorage, valide pendências e acompanhe o histórico da equipe.
@@ -498,7 +498,7 @@ export function SupervisorPage() {
                 {dashboard.error}
               </div>
             )}
-            {rangeError && <p role="alert" className="rounded-xl border border-red-300 bg-red-50 p-4 text-sm font-semibold text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200">{rangeError}</p>}
+            {rangeError && <p role="alert" className="ui-alert-danger rounded-xl p-4 text-sm font-semibold">{rangeError}</p>}
 
             {activeView === 'entries' && (
               <>

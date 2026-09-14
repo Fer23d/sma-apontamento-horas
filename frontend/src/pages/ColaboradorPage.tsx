@@ -65,8 +65,8 @@ export function ColaboradorPage() {
     >
       <div className="space-y-6">
         {dashboard.isLoading && <p className="rounded-2xl ui-surface p-8 text-center font-semibold ui-text-muted" aria-live="polite">Carregando visão geral…</p>}
-        {dashboard.error && <div role="alert" className="rounded-2xl border border-red-300 bg-red-50 p-5 text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200"><p>{dashboard.error}</p><button type="button" onClick={() => void dashboard.reload()} className="mt-3 font-bold underline">Tentar novamente</button></div>}
-        {rangeError && <p role="alert" className="rounded-xl border border-red-300 bg-red-50 p-4 text-sm font-semibold text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200">{rangeError}</p>}
+        {dashboard.error && <div role="alert" className="ui-alert-danger rounded-2xl p-5"><p>{dashboard.error}</p><button type="button" onClick={() => void dashboard.reload()} className="mt-3 font-bold underline">Tentar novamente</button></div>}
+        {rangeError && <p role="alert" className="ui-alert-danger rounded-xl p-4 text-sm font-semibold">{rangeError}</p>}
         {dashboard.data && !dashboard.isLoading && (
           <>
             <BalancePeriodFilter startDate={range.startDate} endDate={range.endDate} isCustomRange={hasCustomRange} onChange={(field, value) => setRange((current) => ({ ...current, [field]: value }))} onApply={applyRange} onClear={useCalendarMonth} />

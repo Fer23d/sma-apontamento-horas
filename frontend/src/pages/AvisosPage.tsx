@@ -120,7 +120,7 @@ export function AvisosPage() {
       <section className="space-y-4" aria-labelledby="announcements-title">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-secondary)]">Comunicados</p>
+            <p className="ui-eyebrow text-xs font-bold uppercase tracking-[0.16em]">Comunicados</p>
             <h2 id="announcements-title" className="mt-1 text-xl font-extrabold ui-text">Mensagens recentes</h2>
           </div>
           <span className="text-sm text-[var(--color-text-muted)]">{visibleAnnouncements.length} comunicado(s)</span>

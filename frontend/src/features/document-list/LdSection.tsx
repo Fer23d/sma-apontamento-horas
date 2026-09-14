@@ -48,7 +48,7 @@ export function LdSection({ selected, onSelect, onClear }: { selected?: LdDocume
       <p className="mt-1 text-sm ui-text-muted">Formatos aceitos: .xlsx e .xlsm</p>
     </div>
     <div id="ld-feedback" aria-live="polite" className="break-words text-sm ui-text-muted">{busy ? 'Lendo a LD…' : fileName && `${fileName} — ${result?.documents.length} documentos válidos`}</div>
-    {error && <p role="alert" className="text-sm text-red-700 dark:text-red-300">{error} Os dados atuais do formulário foram preservados.</p>}
+    {error && <p role="alert" className="text-sm ui-text-danger">{error} Os dados atuais do formulário foram preservados.</p>}
     {result && <>
       <label htmlFor="ld-search" className="block text-sm font-bold ui-text">Pesquisar documento</label>
       <input id="ld-search" type="search" value={query} onChange={(event) => setQuery(event.target.value)} className={fieldClassName} placeholder="Número VALE, contratada ou título" />

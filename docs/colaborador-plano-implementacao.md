@@ -52,7 +52,7 @@ Não é necessário criar todas as pastas de uma vez. Cada etapa cria somente o 
 | `timeEntries` | Criar, validar, listar, editar, duplicar e cancelar apontamentos. | `TimeEntryForm`, `TimeEntryFields`, `DurationInput`, `TimeEntryTable`, `EntryActions`, `EntryDetails`. | `useTimeEntryForm`, `useTimeEntries`, `useEntryActions`. | `timeEntryService`, adaptador local. | `TimeEntry`, comandos, filtros, paginação, validadores e formatadores. | sessão, catálogos, jornada. |
 | `workSchedules` | Jornada vigente, dias previstos, eventos e cálculos de saldo. | `ScheduleSummary`, `DailyBalance`, `MonthlyBalance`. | `useWorkSchedule`, `useBalancePreview`. | `workScheduleService`. | `WorkSchedule`, `DailyWorkContext`, funções puras em minutos. | perfil, calendário de feriados, apontamentos. |
 | `calendar` | Calendário mensal individual e estados acessíveis por dia. | `MonthlyCalendar`, `CalendarDay`, `CalendarLegend`, `DayDetails`. | `useCalendarMonth`. | `calendarSummaryService`. | `CalendarDaySummary`, formatação de datas. | jornada, eventos, apontamentos. |
-| `clients` | Catálogo de clientes visíveis ao Colaborador. Na primeira fatia é independente do número do projeto. | `ClientSelect`. | `useClients`. | `clientService`. | `Client`, filtros. | sessão. |
+| `clients` | Catálogo de clientes visíveis ao Colaborador. Na primeira fatia é independente do número da contratada. | `ClientSelect`. | `useClients`. | `clientService`. | `Client`, filtros. | sessão. |
 | `projects` | Futuro catálogo oficial de projetos e referência estável. Não existe na primeira fatia. | `ProjectSelect`, `ProjectSummary`. | `useProjects`. | `projectService`. | `Project`, `ProjectCapabilities`. | backend, cliente, sessão. |
 | `projectDocuments` | Documentos da LD e tipos documentais aplicáveis. | `DocumentTypeSelect`, `ProjectDocumentSelect`, `DocumentPreview`. | `useProjectDocuments`. | `projectDocumentService`. | `ProjectDocument`, `DocumentType`. | projeto. |
 | `activities` | Catálogo tipado e matriz de campos aplicáveis. | `ActivitySelect`. | `useActivities`. | `activityService`. | `Activity`, `ActivityCategory`, `FieldApplicability`. | projeto e regras do formulário. |
@@ -115,7 +115,7 @@ Utilitários de domínio, sem React ou armazenamento:
 
 A implementação passa a ser organizada por fluxos completos, cada um atravessando domínio, service, persistência, interface e testes:
 
-1. **Fatia 1 — sessão e apontamento diário básico (implementada):** sessão corporativa, perfil, jornada semanal, clientes e atividades simulados, número do projeto digitado, criação persistida localmente, dashboard e resumo diário.
+1. **Fatia 1 — sessão e apontamento diário básico (implementada):** sessão corporativa, perfil, jornada semanal, clientes e atividades simulados, número da contratada digitado, criação persistida localmente, dashboard e resumo diário.
 2. **Fatia 2 — histórico e ciclo de vida:** histórico paginado, edição versionada, duplicação, cancelamento lógico e motivos; rascunho persistido continua sujeito a decisão.
 3. **Fatia 3 — calendário e eventos:** calendário mensal e `CalendarEvent` para feriados, férias, afastamentos, folgas, compensações e exceções de jornada.
 4. **Fatia 4 — contexto técnico do projeto:** disciplina, tipo de documento, documentos da LD e percentual de avanço, sem antecipar administração/importação.
@@ -405,7 +405,7 @@ Esses pontos são **Fora do escopo da fase do Colaborador** e não devem gerar i
 - regras puras de conversão, formatação, validação, jornada, soma e resumo diário;
 - cliente textual obrigatório, preenchido manualmente ou automaticamente pela LD VALE, e catálogo demonstrativo de vinte atividades; não há catálogo oficial de projetos nesta fase;
 - service com interface e adaptador `localStorage`, chave versionada e isolamento por colaborador;
-- formulário com data, cliente, número do projeto, atividade, duração e detalhamento;
+- formulário com data, cliente, número da contratada, atividade, duração e detalhamento;
 - dashboard com saldos reais locais por dia, mês, intervalo e total, além da lista do dia;
 - calendário mensal corporativo, eventos integrais/parciais e solicitações de folga;
 - histórico paginado com filtros, edição, duplicação e cancelamento lógico;
@@ -420,8 +420,8 @@ Esses pontos são **Fora do escopo da fase do Colaborador** e não devem gerar i
 - `TimeEntry.status` usa somente `ACTIVE | CANCELLED`; novos registros começam `ACTIVE` e o cancelamento é lógico;
 - normal, extra e faltante existem somente em `DailySummary`;
 - duração é inteiro em minutos e limitada provisoriamente a 1.440;
-- `TimeEntry` usa somente `projectCode`; não possui `projectId` ou `projectName` nesta fase;
-- `projectCode` preserva o conteúdo informado e remove somente espaços externos, com limite provisório de 80 caracteres;
+- `TimeEntry` usa `projectCode` somente como chave técnica de compatibilidade para o Número da contratada; não possui `projectId` ou `projectName` nesta fase;
+- o Número da contratada preserva o conteúdo informado e remove somente espaços externos, com limite provisório de 80 caracteres;
 - o storage compartilhado atual usa `apontamentos_sma` com payload `v4`; a migração encadeada `v1 → v2 → v3 → v4` relê e valida cada etapa, mantém backups anteriores e nunca combina versões nas consultas;
 - a migração `v3 → v4` substitui `clientId` por `clientName`, converte IDs demonstrativos conhecidos e preserva IDs desconhecidos como texto;
 - o mapa de projetos antigos existe somente no módulo de migração como compatibilidade temporária, não como catálogo oficial;

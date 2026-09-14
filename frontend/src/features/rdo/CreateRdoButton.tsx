@@ -28,7 +28,7 @@ export function CreateRdoButton({ values }: { values: TimeEntryFormValues }) {
   return <section className="border-t ui-border pt-5">
     <button type="button" disabled={busy || !profile} onClick={() => void create()} className="rounded-xl border ui-border px-5 py-3 text-sm font-bold ui-text disabled:opacity-60">{busy ? 'Gerando RDO…' : 'Criar RDO'}</button>
     <p className="mt-2 text-xs ui-text-subtle">Opcional. Gera um PDF com os dados atuais, sem salvar o apontamento.</p>
-    {error && <p role="alert" className="mt-2 text-sm text-red-700 dark:text-red-300">{error}</p>}
+    {error && <p role="alert" className="mt-2 text-sm ui-text-danger">{error}</p>}
     {feedback && <p role="status" className="mt-2 text-sm ui-text-muted">{feedback}</p>}
   </section>
 }

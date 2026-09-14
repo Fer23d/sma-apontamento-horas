@@ -27,7 +27,7 @@ export const Header = forwardRef<HTMLButtonElement, HeaderProps>(function Header
         </button>
         <BrandMark variant="compact" />
         <div className="hidden md:block">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--color-secondary)]">Área do colaborador</p>
+          <p className="ui-eyebrow text-xs font-bold uppercase tracking-[0.2em]">Área do colaborador</p>
           <p className="text-sm text-[var(--color-text-muted)]">Apontamento de horas por projeto</p>
         </div>
       </div>

@@ -49,7 +49,7 @@ export function TimeOffRequestList({ requests, today, onRemovePending, onCancelA
                 {request.rejectionReason && <p className="mt-2 text-xs ui-text-subtle">Motivo da rejeicao: {request.rejectionReason}</p>}
                 {request.cancellationReason && <p className="mt-2 text-xs ui-text-subtle">Motivo do cancelamento: {request.cancellationReason}</p>}
               </div>
-              <div className="shrink-0">{request.status === 'PENDING' && isFuture && <button type="button" onClick={() => onRemovePending(request)} className="rounded-xl border border-red-300 px-3 py-2 text-sm font-bold text-red-700 dark:border-red-800 dark:text-red-300">Excluir solicitação</button>}{request.status === 'APPROVED' && isFuture && <button type="button" onClick={() => onCancelApproved(request)} className="rounded-xl border border-red-300 px-3 py-2 text-sm font-bold text-red-700 dark:border-red-800 dark:text-red-300">Cancelar ausência</button>}</div>
+              <div className="shrink-0">{request.status === 'PENDING' && isFuture && <button type="button" onClick={() => onRemovePending(request)} className="ui-button-danger-outline rounded-xl px-3 py-2 text-sm font-bold">Excluir solicitação</button>}{request.status === 'APPROVED' && isFuture && <button type="button" onClick={() => onCancelApproved(request)} className="ui-button-danger-outline rounded-xl px-3 py-2 text-sm font-bold">Cancelar ausência</button>}</div>
             </div>
           </article>
         )

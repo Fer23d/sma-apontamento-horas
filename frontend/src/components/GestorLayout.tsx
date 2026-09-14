@@ -28,7 +28,7 @@ export function GestorLayout() {
           </button>
           <BrandMark variant="compact" />
           <div className="hidden min-w-0 sm:block">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--color-secondary)]">Área da {isDirector ? 'diretoria' : 'supervisão'}</p>
+            <p className="ui-eyebrow text-xs font-bold uppercase tracking-[0.2em]">Área da {isDirector ? 'diretoria' : 'supervisão'}</p>
             <p className="truncate text-sm text-[var(--color-text-muted)]">Central de comunicação da operação</p>
           </div>
         </div>

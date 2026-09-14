@@ -45,6 +45,7 @@ const requiredSemanticTokens = [
   '--color-primary-contrast',
   '--color-secondary',
   '--color-secondary-hover',
+  '--color-eyebrow',
   '--color-input-background',
   '--color-input-border',
   '--color-input-placeholder',
@@ -179,6 +180,7 @@ describe('tokens institucionais e contraste', () => {
       '--color-text-muted': hex('4B5B67'),
       '--color-border': hex('758798'),
       '--color-primary': hex('0F455F'),
+      '--color-eyebrow': hex('3A6F5B'),
       '--color-primary-contrast': hex('FFFFFF'),
     })
     expect(dark).toMatchObject({
@@ -191,6 +193,7 @@ describe('tokens institucionais e contraste', () => {
       '--color-border': hex('1F3B4D'),
       '--color-primary': hex('77C2A4'),
       '--color-secondary': hex('135063'),
+      '--color-eyebrow': hex('9BD7BE'),
       '--color-primary-contrast': hex('0A161E'),
     })
   })
@@ -202,6 +205,7 @@ describe('tokens institucionais e contraste', () => {
       expect(contrastRatio(tokens['--color-text'], tokens['--color-background'])).toBeGreaterThanOrEqual(4.5)
       expect(contrastRatio(tokens['--color-text-muted'], tokens['--color-background'])).toBeGreaterThanOrEqual(4.5)
       expect(contrastRatio(tokens['--color-primary-contrast'], tokens['--color-primary'])).toBeGreaterThanOrEqual(4.5)
+      expect(contrastRatio(tokens['--color-eyebrow'], tokens['--color-header'])).toBeGreaterThanOrEqual(4.5)
       expect(contrastRatio(tokens['--color-border'], tokens['--color-surface'])).toBeGreaterThanOrEqual(selector === '.dark' ? 1.25 : 3)
       expect(contrastRatio(tokens['--color-focus-ring'], tokens['--color-surface'])).toBeGreaterThanOrEqual(3)
     }
@@ -284,9 +288,16 @@ describe('tokens institucionais e contraste', () => {
   })
 
   it('define os utilitarios visuais compartilhados', () => {
-    for (const className of ['ui-card', 'ui-field', 'ui-button-primary', 'ui-button-secondary', 'ui-badge-primary', 'ui-badge-secondary', 'brand-mark']) {
+    for (const className of ['ui-card', 'ui-field', 'ui-button-primary', 'ui-button-secondary', 'ui-badge-primary', 'ui-badge-secondary', 'ui-alert-danger', 'ui-text-danger', 'brand-mark']) {
       expect(stylesheet).toContain(`.${className}`)
     }
+  })
+
+  it('define utilitários semânticos para rótulos institucionais e alertas', () => {
+    expect(stylesheet).toContain('.ui-eyebrow')
+    expect(stylesheet).toContain('color: var(--color-eyebrow)')
+    expect(stylesheet).toContain('.ui-alert-danger')
+    expect(stylesheet).toContain('background: var(--status-danger-surface)')
   })
 
   it('mantem a logo como etiqueta branca sem filtros ou blend no tema escuro', () => {

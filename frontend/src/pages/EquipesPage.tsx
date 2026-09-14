@@ -312,7 +312,7 @@ export function EquipesPage() {
         <div className="flex items-center gap-3">
           <BrandMark variant="compact" />
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--color-secondary)]">SM&A - Gerenciamento de Equipes</p>
+            <p className="ui-eyebrow text-xs font-bold uppercase tracking-[0.2em]">SM&A - Gerenciamento de Equipes</p>
             <p className="text-sm text-[var(--color-text-muted)]">Organograma editável e movimentação de colaboradores</p>
           </div>
         </div>
@@ -329,7 +329,7 @@ export function EquipesPage() {
             <section>
               <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-secondary)]">Estrutura DEP</p>
+                  <p className="ui-eyebrow text-xs font-bold uppercase tracking-[0.16em]">Estrutura DEP</p>
                   <h1 className="mt-2 text-3xl font-extrabold text-[var(--color-text)]">SM&A - Gerenciamento de Equipes</h1>
                   <p className="mt-2 text-sm text-[var(--color-text-muted)]">Gerencie colaboradores, cargos e transferências entre squads.</p>
                 </div>

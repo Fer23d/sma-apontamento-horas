@@ -8,7 +8,7 @@ export const fieldClassName = 'mt-2 w-full ui-field rounded-xl px-3 py-2.5 text-
 
 export function FieldError({ id, message }: { id: string; message?: string | null }) {
   if (!message) return null
-  return <p id={id} className="mt-1.5 text-sm font-medium text-red-700 dark:text-red-300">{message}</p>
+  return <p id={id} className="mt-1.5 text-sm font-medium ui-text-danger">{message}</p>
 }
 
 type TimeEntryFieldsProps = {

@@ -42,7 +42,7 @@ export function RejectionDialog({
         className="ui-card w-full max-w-lg rounded-2xl p-5 sm:p-6"
         role="dialog"
       >
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-secondary)]">Validação do supervisor</p>
+        <p className="ui-eyebrow text-xs font-bold uppercase tracking-[0.16em]">Validação do supervisor</p>
         <h2 id="rejection-dialog-title" className="mt-2 text-xl font-extrabold text-[var(--color-text)]">
           {title}
         </h2>

@@ -124,6 +124,14 @@ describe('layout responsivo do colaborador', () => {
     }
   })
 
+  it('separa sutilmente as ações de instalar aplicativo e sair do sistema', () => {
+    const markup = renderLayout()
+    const signOutStart = markup.indexOf('Sair do sistema')
+    const signOutMarkup = markup.slice(Math.max(0, signOutStart - 360), signOutStart)
+
+    expect(signOutMarkup).toContain('mt-3 w-full')
+  })
+
   it('fecha o drawer somente com a tecla Escape', () => {
     expect(shouldCloseDrawerForKey('Escape')).toBe(true)
     expect(shouldCloseDrawerForKey('Enter')).toBe(false)

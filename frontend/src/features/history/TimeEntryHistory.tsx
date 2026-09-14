@@ -39,7 +39,7 @@ export function TimeEntryHistory() {
     <div className="space-y-5">
       <HistoryFilters value={history.draftFilters} onChange={history.setDraftFilters} onApply={history.applyFilters} />
       {history.feedback && <p role="status" className="rounded-xl border border-emerald-300 bg-emerald-50 p-4 text-sm font-semibold text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-100">{history.feedback}</p>}
-      {history.error && <div role="alert" className="rounded-xl border border-red-300 bg-red-50 p-4 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200"><p>{history.error}</p><button type="button" onClick={() => void history.reload()} className="mt-2 font-bold underline">Tentar novamente</button></div>}
+      {history.error && <div role="alert" className="ui-alert-danger rounded-xl p-4 text-sm"><p>{history.error}</p><button type="button" onClick={() => void history.reload()} className="mt-2 font-bold underline">Tentar novamente</button></div>}
       {history.isLoading && <p aria-live="polite" className="rounded-2xl ui-surface p-8 text-center font-semibold ui-text-muted">Carregando histórico…</p>}
       {!history.isLoading && history.periodSummary && <HistoryPeriodSummary summary={history.periodSummary} events={history.periodEvents} timeOffRequests={history.periodTimeOffRequests} />}
       {!history.isLoading && !history.error && history.rows.length === 0 && <div className="rounded-2xl border border-dashed ui-border ui-surface p-10 text-center"><p className="font-bold ui-heading">Nenhum apontamento encontrado.</p><p className="mt-2 text-sm ui-text-subtle">Ajuste os filtros ou registre um novo apontamento.</p></div>}
@@ -61,7 +61,7 @@ export function TimeEntryHistory() {
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <h2 className="font-extrabold ui-heading">{formatDatePtBr(entry.entryDate)} · Projeto {entry.projectCode}</h2>
+                      <h2 className="font-extrabold ui-heading">{formatDatePtBr(entry.entryDate)} · Contratada {entry.projectCode}</h2>
                       {entry.status === 'CANCELLED' && <StatusBadge tone={timeEntryStatusPresentation.CANCELLED.tone}>{timeEntryStatusPresentation.CANCELLED.label}</StatusBadge>}
                       <StatusBadge tone={approvalPresentation.tone}>{approvalPresentation.label}</StatusBadge>
                       <EntryRevisionBadge version={entry.version} />
@@ -87,7 +87,7 @@ export function TimeEntryHistory() {
                   <div className="flex min-w-44 flex-col gap-2">
                     {actions.edit && <Link to={`/colaborador/apontamentos/${entry.id}/editar`} className="rounded-xl border ui-border-primary px-3 py-2 text-center text-sm font-bold ui-heading">Editar</Link>}
                     {actions.duplicate && <Link to={`/colaborador/apontamentos/novo?duplicate=${entry.id}`} className="rounded-xl border ui-border px-3 py-2 text-center text-sm font-bold ui-text">Duplicar</Link>}
-                    {actions.cancel && <button type="button" onClick={() => setCancelTarget(row)} className="rounded-xl border border-red-300 px-3 py-2 text-sm font-bold text-red-700 dark:border-red-800 dark:text-red-300">Cancelar</button>}
+                    {actions.cancel && <button type="button" onClick={() => setCancelTarget(row)} className="ui-button-danger-outline rounded-xl px-3 py-2 text-sm font-bold">Cancelar</button>}
                     {actions.completeCorrection && <button type="button" onClick={() => void history.completeCorrection(row)} className="rounded-xl bg-amber-500 px-3 py-2 text-sm font-bold text-amber-950">Concluir correção</button>}
                     {actions.readOnly && <span className="rounded-xl ui-surface-subtle px-3 py-2 text-center text-sm font-semibold ui-text-muted">Somente leitura</span>}
                   </div>

@@ -30,7 +30,7 @@ export function FolgasPage() {
           onSubmit={() => void controller.create()}
         />
         {controller.feedback && <p role="status" className="rounded-xl border border-emerald-300 bg-emerald-50 p-4 text-sm font-semibold text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-100">{controller.feedback}</p>}
-        {controller.error && <div role="alert" className="rounded-xl border border-red-300 bg-red-50 p-4 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200"><p>{controller.error}</p><button type="button" onClick={() => void controller.reload()} className="mt-2 font-bold underline">Tentar novamente</button></div>}
+        {controller.error && <div role="alert" className="ui-alert-danger rounded-xl p-4 text-sm"><p>{controller.error}</p><button type="button" onClick={() => void controller.reload()} className="mt-2 font-bold underline">Tentar novamente</button></div>}
         {controller.isLoading ? <p aria-live="polite" className="rounded-2xl ui-surface p-8 text-center">Carregando ausências…</p> : <TimeOffRequestList requests={controller.requests} today={controller.today} onRemovePending={setRemoveTarget} onCancelApproved={setCancelTarget} />}
       </div>
       <ConfirmDialog open={Boolean(removeTarget)} title="Excluir solicitação pendente?" description="A solicitação será retirada, preservada na auditoria e não seguirá para aprovação." confirmLabel="Excluir solicitação" onCancel={() => setRemoveTarget(null)} onConfirm={() => { if (removeTarget) void controller.removePending(removeTarget).then(() => setRemoveTarget(null)) }} />

@@ -75,15 +75,15 @@ describe('validações e formatação', () => {
     expect(errors.clientName).toBeUndefined()
   })
 
-  it('rejeita número do projeto composto somente por espaços', () => {
+  it('rejeita número da contratada composto somente por espaços', () => {
     const errors = validateTimeEntry(
       { ...validData, projectCode: '   ' },
       demoActivities,
     )
-    expect(errors.projectCode).toBe('Informe o número do projeto.')
+    expect(errors.projectCode).toBe('Informe o número da contratada.')
   })
 
-  it('aceita número do projeto com 80 caracteres após trim', () => {
+  it('aceita número da contratada com 80 caracteres após trim', () => {
     const errors = validateTimeEntry(
       { ...validData, projectCode: `  ${'A'.repeat(80)}  ` },
       demoActivities,
@@ -91,12 +91,12 @@ describe('validações e formatação', () => {
     expect(errors.projectCode).toBeUndefined()
   })
 
-  it('rejeita número do projeto acima de 80 caracteres após trim', () => {
+  it('rejeita número da contratada acima de 80 caracteres após trim', () => {
     const errors = validateTimeEntry(
       { ...validData, projectCode: `  ${'A'.repeat(81)}  ` },
       demoActivities,
     )
-    expect(errors.projectCode).toBe('O número do projeto deve ter no máximo 80 caracteres.')
+    expect(errors.projectCode).toBe('O número da contratada deve ter no máximo 80 caracteres.')
   })
 
   it('bloqueia data futura no fuso corporativo', () => {

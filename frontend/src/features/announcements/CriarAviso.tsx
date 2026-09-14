@@ -79,7 +79,7 @@ export function CriarAviso() {
   return (
     <section className="ui-card rounded-2xl p-5 sm:p-6" aria-labelledby="create-announcement-title">
       <div className="mb-5">
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-secondary)]">Comunicação</p>
+        <p className="ui-eyebrow text-xs font-bold uppercase tracking-[0.16em]">Comunicação</p>
         <h2 id="create-announcement-title" className="mt-1 text-xl font-extrabold ui-text">Criar Novo Aviso</h2>
         <p className="mt-1 text-sm ui-text-muted">Publique uma orientação para os colaboradores da operação.</p>
       </div>

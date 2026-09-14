@@ -37,7 +37,7 @@ export function TimeEntryForm({ entryId }: { entryId?: string }) {
           <Link className="mt-2 inline-block font-bold underline" to={`/colaborador?date=${controller.values.startDate}`}>Ver resumo atualizado do período</Link>
         </div>
       )}
-      {controller.submitError && <p role="alert" className="rounded-xl border border-red-300 bg-red-50 p-4 text-sm font-semibold text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200">{controller.submitError}</p>}
+      {controller.submitError && <p role="alert" className="ui-alert-danger rounded-xl p-4 text-sm font-semibold">{controller.submitError}</p>}
 
       <LdSection selected={controller.values.ldDocument} onSelect={controller.selectLdDocument} onClear={controller.clearLdDocument} />
       <FieldError id="ld-document-error" message={controller.errors.ldDocument} />

@@ -38,7 +38,7 @@ export function SupervisorEntriesTable({ entries, isMutating, selectedIds, onTog
     <section className="ui-card overflow-hidden rounded-2xl" aria-labelledby="supervisor-entries-title">
       <div className="flex flex-col gap-2 border-b border-[var(--color-border)] p-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-secondary)]">Histórico completo</p>
+          <p className="ui-eyebrow text-xs font-bold uppercase tracking-[0.16em]">Histórico completo</p>
           <h2 id="supervisor-entries-title" className="mt-1 text-xl font-extrabold text-[var(--color-text)]">Apontamentos da equipe</h2>
         </div>
         <p className="text-sm text-[var(--color-text-muted)]">{entries.length} registro(s)</p>

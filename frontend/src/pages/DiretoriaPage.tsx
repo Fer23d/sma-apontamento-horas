@@ -211,7 +211,7 @@ export function DiretoriaPage() {
         <div className="flex items-center gap-3">
           <BrandMark variant="compact" />
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--color-secondary)]">SM&A - Painel da Diretoria</p>
+            <p className="ui-eyebrow text-xs font-bold uppercase tracking-[0.2em]">SM&A - Painel da Diretoria</p>
             <p className="text-sm text-[var(--color-text-muted)]">Visão macro e alocação de tempo por projetos</p>
           </div>
         </div>
@@ -226,7 +226,7 @@ export function DiretoriaPage() {
         <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-7xl space-y-6">
             <section>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-secondary)]">Visão Macro</p>
+              <p className="ui-eyebrow text-xs font-bold uppercase tracking-[0.16em]">Visão Macro</p>
               <h1 className="mt-2 text-3xl font-extrabold text-[var(--color-text)]">SM&A - Painel da Diretoria</h1>
               <p className="mt-2 text-sm text-[var(--color-text-muted)]">Visão macro e alocação de tempo por projetos.</p>
               <button type="button" onClick={() => { startTour(); navigate('/administracao/relatorios') }} className="ui-button-secondary mt-4">Ver Tutorial do Sistema</button>
@@ -244,7 +244,7 @@ export function DiretoriaPage() {
             <section className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-sm" aria-labelledby="project-allocation-title">
               <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-secondary)]">Dashboard</p>
+                  <p className="ui-eyebrow text-xs font-bold uppercase tracking-[0.16em]">Dashboard</p>
                   <h2 id="project-allocation-title" className="mt-1 text-xl font-extrabold text-[var(--color-text)]">Alocação de Tempo por Projeto</h2>
                 </div>
                 <p className="text-sm text-[var(--color-text-muted)]">{entries.length > 0 ? 'Dados reais do localStorage' : 'Dados corporativos para aprovação visual'}</p>
