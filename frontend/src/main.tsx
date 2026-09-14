@@ -1,5 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import { EventType, type AuthenticationResult } from '@azure/msal-browser'
 import { MsalProvider } from '@azure/msal-react'
 import { App } from './app/App'
 import { ThemeProvider } from './app/ThemeProvider'
@@ -9,6 +10,12 @@ import { demoSessionService } from './services/demoSessionService'
 import { mapMicrosoftClaimsToRole } from './features/session/claims'
 import { registerSW } from 'virtual:pwa-register'
 import './styles/index.css'
+
+msalInstance.addEventCallback((event) => {
+  if (event.eventType !== EventType.LOGIN_SUCCESS || !event.payload) return
+  const account = (event.payload as AuthenticationResult).account
+  if (account) msalInstance.setActiveAccount(account)
+})
 
 registerSW({ immediate: true })
 

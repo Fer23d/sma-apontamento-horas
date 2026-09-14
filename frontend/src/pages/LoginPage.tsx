@@ -91,10 +91,26 @@ export function LoginPage() {
     }
     setIsSigningIn(true)
     try {
-      await instance.loginPopup({
+      const response = await instance.loginPopup({
         ...loginRequest,
         redirectUri: getMsalRedirectUri(),
       })
+      const account = response.account
+      if (!account) throw new Error('A Microsoft não retornou uma conta autenticada.')
+
+      instance.setActiveAccount(account)
+      const claims = account.idTokenClaims as { roles?: unknown; groups?: unknown } | undefined
+      const role = mapMicrosoftClaimsToRole(claims)
+      demoSessionService.signInWithMicrosoft({
+        id: account.homeAccountId,
+        name: account.name ?? account.username,
+        email: account.username,
+        role,
+      })
+      const destination = typeof from === 'string' && canAccessDemoPath(role, from)
+        ? from
+        : getDemoHomePath(role)
+      navigate(destination, { replace: true })
     } catch (error) {
       console.error('Erro no popup:', error)
       setAuthError(error instanceof Error ? error.message : 'Não foi possível autenticar com a Microsoft.')
