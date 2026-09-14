@@ -7,7 +7,7 @@ const weekdayMinutes = 480
 
 export const demoCollaborator: CollaboratorProfile = {
   id: 'demo-collaborator-001',
-  name: 'Colaborador Demonstração',
+  name: 'Colaborador',
   email: 'colaborador.demo@sma.local',
   jobTitle: 'Projetista',
   active: true,
@@ -46,7 +46,7 @@ export const demoActivities: Activity[] = [
 ]
 
 export const demoSupervisors: Supervisor[] = [
-  { id: 'supervisor-demo-001', name: 'Supervisora Demonstração', email: 'supervisao.demo@sma.local', active: true },
+  { id: 'supervisor-demo-001', name: 'Jeen Carlos E. Azevedo', email: 'supervisao.demo@sma.local', active: true },
 ]
 
 export const demoSquads: Squad[] = [
@@ -58,7 +58,7 @@ export const demoAssignmentSnapshot: AssignmentSnapshot = {
   squadId: 'squad-automation',
   squadName: 'Engenharia de Automação',
   supervisorId: 'supervisor-demo-001',
-  supervisorName: 'Supervisora Demonstração',
+  supervisorName: 'Jeen Carlos E. Azevedo',
 }
 
 export const demoWorkloadVersions: WorkloadVersion[] = [{

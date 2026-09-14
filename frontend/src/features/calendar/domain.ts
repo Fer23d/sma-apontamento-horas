@@ -1,8 +1,10 @@
 import { compareIsoDates, eachIsoDate } from '../../shared/utils/date'
 import type { TimeEntry } from '../time-entries/types'
 import type { TimeOffRequest } from '../time-off/types'
+import { requestAppliesToDate } from '../time-off/types'
 import { getBaseExpectedMinutes } from '../workloads/domain'
 import type { WorkloadVersion } from '../workloads/types'
+import { isCountableTimeEntryStatus } from '../time-entries/domain'
 import type { CalendarEvent, CalendarVisualState, DailySummary, PeriodSummary } from './types'
 import { calendarStatePresentation } from './presentation'
 
@@ -57,7 +59,7 @@ export function calculateDaySummary(input: DaySummaryInput): DailySummary {
   const baseExpectedMinutes = getBaseExpectedMinutes(input.date, input.workloadVersions)
   const adjustedExpectation = calculateAdjustedExpectation(baseExpectedMinutes, applicableEvents)
   const recordedWorkedMinutes = input.entries.reduce((total, entry) => {
-    if (entry.collaboratorId !== input.collaboratorId || entry.entryDate !== input.date || entry.status !== 'ACTIVE') return total
+    if (entry.collaboratorId !== input.collaboratorId || entry.entryDate !== input.date || !isCountableTimeEntryStatus(entry.status)) return total
     return total + entry.durationMinutes
   }, 0)
   const isFuture = compareIsoDates(input.date, input.today) > 0
@@ -69,7 +71,7 @@ export function calculateDaySummary(input: DaySummaryInput): DailySummary {
   const extraMinutes = Math.max(workedMinutes - expectedMinutes, 0)
   const missingMinutes = Math.max(expectedMinutes - workedMinutes, 0)
   const hasApprovedTimeOff = input.timeOffRequests.some((request) =>
-    request.collaboratorId === input.collaboratorId && request.date === input.date && request.status === 'APPROVED')
+    request.collaboratorId === input.collaboratorId && requestAppliesToDate(request, input.date) && request.status === 'APPROVED')
 
   return {
     date: input.date,

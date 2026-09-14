@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { calculateDaySummary, calculatePeriodSummary } from '../calendar/domain'
+import { isCountableTimeEntryStatus } from '../time-entries/domain'
 import type { CalendarEvent, DailySummary, PeriodSummary } from '../calendar/types'
 import type { DayApproval } from '../approvals/types'
 import { isDayApprovalApplicable } from '../approvals/domain'
@@ -11,6 +12,7 @@ import { holidayProvider } from '../../services/holidayProvider'
 import { timeEntryService } from '../../services/timeEntryService'
 import { timeOffService } from '../../services/timeOffService'
 import type { TimeOffRequest } from '../time-off/types'
+import { requestAppliesToDate } from '../time-off/types'
 import type { AssignmentSnapshot } from '../squads/types'
 import type { WorkloadVersion } from '../workloads/types'
 import { eachIsoDate, getCorporateToday, getMonthRange } from '../../shared/utils/date'
@@ -99,7 +101,7 @@ export function useCollaboratorDashboard(selectedDate: string, monthKey: string,
       }
       const selectedEntries = monthEntries.filter((entry) => entry.entryDate === selectedDate)
       const selectedEvents = monthAllEvents.filter((event) => event.startDate <= selectedDate && event.endDate >= selectedDate)
-      const selectedTimeOffRequests = monthTimeOff.filter((request) => request.date === selectedDate && request.status !== 'CANCELLED')
+      const selectedTimeOffRequests = monthTimeOff.filter((request) => requestAppliesToDate(request, selectedDate) && request.status !== 'CANCELLED')
       const selectedSummary = monthSummary.days.find((day) => day.date === selectedDate) ?? calculateDaySummary({
         date: selectedDate, today, collaboratorId: profile.id, entries: selectedEntries, events: selectedEvents,
         timeOffRequests: monthTimeOff, workloadVersions,
@@ -116,7 +118,7 @@ export function useCollaboratorDashboard(selectedDate: string, monthKey: string,
         return [dayApprovalService.getForDate(
           profile.id,
           date,
-          entries.some((entry) => entry.status === 'ACTIVE'),
+          entries.some((entry) => isCountableTimeEntryStatus(entry.status)),
           entries[0]?.assignmentSnapshot ?? currentAssignment,
           true,
         )]
@@ -126,7 +128,7 @@ export function useCollaboratorDashboard(selectedDate: string, monthKey: string,
           ?? await dayApprovalService.getForDate(
             profile.id,
             selectedDate,
-            selectedEntries.some((entry) => entry.status === 'ACTIVE'),
+            selectedEntries.some((entry) => isCountableTimeEntryStatus(entry.status)),
             selectedEntries[0]?.assignmentSnapshot ?? currentAssignment,
             true,
           )

@@ -11,6 +11,7 @@ type MonthlyCalendarProps = {
   days: DailySummary[]
   onMonthChange: (monthKey: string) => void
   onSelectDate: (date: string) => void
+  onOpenDate?: (date: string, hasEntries: boolean) => void
 }
 
 const weekdayLabels = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
@@ -21,12 +22,12 @@ function monthLabel(monthKey: string) {
   return label.charAt(0).toUpperCase() + label.slice(1)
 }
 
-export function MonthlyCalendar({ monthKey, selectedDate, days, onMonthChange, onSelectDate }: MonthlyCalendarProps) {
+export function MonthlyCalendar({ monthKey, selectedDate, days, onMonthChange, onSelectDate, onOpenDate }: MonthlyCalendarProps) {
   const summaries = new Map(days.map((day) => [day.date, day]))
   const gridCells = getMonthGridCells(monthKey)
 
   return (
-    <section className="rounded-2xl border ui-border ui-surface p-4 shadow-sm sm:p-5" aria-labelledby="calendar-title">
+    <section className="tour-calendario rounded-2xl border ui-border ui-surface p-4 shadow-sm sm:p-5" aria-labelledby="calendar-title">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <button type="button" aria-label="Mês anterior" onClick={() => onMonthChange(shiftMonth(monthKey, -1))} className="rounded-xl border ui-border px-3 py-2 font-bold">‹</button>
         <div className="text-center">
@@ -57,10 +58,11 @@ export function MonthlyCalendar({ monthKey, selectedDate, days, onMonthChange, o
               data-calendar-day={date}
               data-calendar-state={state}
               onClick={() => onSelectDate(date)}
+              onDoubleClick={() => onOpenDate?.(date, (summary?.workedMinutes ?? 0) > 0)}
               aria-label={ariaLabel}
               aria-pressed={selectedDate === date}
               title={ariaLabel}
-              className={`calendar-state calendar-state--${presentation.tone} min-h-20 rounded-xl border p-1.5 text-left transition hover:-translate-y-0.5 sm:min-h-24 sm:p-2 ${selectedDate === date ? 'calendar-day--selected' : ''}`}
+              className={`calendar-state calendar-state--${presentation.tone} min-h-20 rounded-xl border border-l-4 p-1.5 text-left transition hover:-translate-y-0.5 sm:min-h-24 sm:p-2 ${selectedDate === date ? 'calendar-day--selected' : ''}`}
             >
               <span className="block text-xs font-extrabold sm:text-sm">{Number(date.slice(-2))}</span>
               <span className="mt-1 block text-[10px] font-bold leading-tight">
@@ -73,7 +75,7 @@ export function MonthlyCalendar({ monthKey, selectedDate, days, onMonthChange, o
         })}
       </div>
       <div className="mt-5"><CalendarLegend /></div>
-      <p role="note" className="mt-3 rounded-lg ui-surface-subtle px-3 py-2 text-xs leading-5 ui-text-muted">Calendário de demonstração: os feriados nacionais, estaduais e municipais ainda não estão integrados a uma fonte oficial.</p>
+      <p role="note" className="mt-3 rounded-lg ui-surface-subtle px-3 py-2 text-xs leading-5 ui-text-muted">Calendário corporativo: os feriados nacionais, estaduais e municipais ainda não estão integrados a uma fonte oficial.</p>
     </section>
   )
 }

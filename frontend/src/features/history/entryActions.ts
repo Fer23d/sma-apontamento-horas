@@ -1,5 +1,6 @@
 import type { DayApprovalStatus } from '../approvals/types'
 import type { TimeEntryStatus } from '../time-entries/types'
+import { isCountableTimeEntryStatus } from '../time-entries/domain'
 
 type HistoryEntryActionContext = {
   entryStatus: TimeEntryStatus
@@ -9,7 +10,7 @@ type HistoryEntryActionContext = {
 }
 
 export function getHistoryEntryActions(context: HistoryEntryActionContext) {
-  const mutable = context.entryStatus === 'ACTIVE'
+  const mutable = isCountableTimeEntryStatus(context.entryStatus)
     && context.canMutate
     && context.approvalStatus !== 'APPROVED'
     && !context.hasIntegralEventConflict

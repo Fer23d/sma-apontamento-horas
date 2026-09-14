@@ -33,7 +33,7 @@ export function ProfileSummary({ profile, assignment, currentWorkload }: Profile
         ))}
       </dl>
       <p className="rounded-xl border ui-callout-secondary p-4 text-sm ui-text">
-        Localização controlada pela empresa. Nome, e-mail, cargo, status e localização são somente leitura nesta fase.
+        Use "Editar Perfil" para atualizar nome, e-mail, cargo e squad. Localização e status seguem controlados pela empresa.
       </p>
     </section>
   )

@@ -35,16 +35,16 @@ export function DemoAreaPlaceholderContent({
       <div className="absolute right-4 top-4"><ThemeToggle /></div>
       <section className="ui-card w-full max-w-2xl rounded-3xl p-7 text-center sm:p-10" aria-labelledby="demo-area-title">
         <BrandMark variant="full" className="mb-7" />
-        <p className="ui-badge-secondary">Perfil demonstrativo: {roleLabel}</p>
+        <p className="ui-badge-secondary">Perfil de acesso: {roleLabel}</p>
         <h1 id="demo-area-title" className="mt-5 text-3xl font-extrabold text-[var(--color-primary)]">
           Área de {roleLabel}
         </h1>
         <p className="mt-4 text-lg font-semibold text-[var(--color-text)]">Esta área está em desenvolvimento.</p>
         <p className="mt-3 text-sm leading-6 text-[var(--color-text-muted)]">
-          Sessão demonstrativa ativa para {sessionName}. Nenhuma funcionalidade deste perfil está disponível nesta versão.
+          Sessão corporativa ativa para {sessionName}. Nenhuma funcionalidade deste perfil está disponível nesta versão.
         </p>
         <button type="button" onClick={exitDemo} className="ui-button-secondary mt-8">
-          Sair da demonstração
+          Sair do sistema
         </button>
       </section>
     </main>

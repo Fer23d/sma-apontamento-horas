@@ -8,8 +8,8 @@ const MIGRATION_DONE = 'done'
 
 const DEMO_IDENTITIES: Record<DemoRole, Pick<DemoSession, 'id' | 'name'>> = {
   COLLABORATOR: { id: demoCollaborator.id, name: demoCollaborator.name },
-  SUPERVISOR: { id: 'demo-supervisor-001', name: 'Supervisor Demonstração' },
-  DIRECTOR_ADMIN: { id: 'demo-director-admin-001', name: 'Diretor/Administração Demonstração' },
+  SUPERVISOR: { id: 'demo-supervisor-001', name: 'Jeen Carlos E. Azevedo' },
+  DIRECTOR_ADMIN: { id: 'demo-director-admin-001', name: 'Diretoria' },
 }
 
 const DEMO_ROLES = new Set<DemoRole>(['COLLABORATOR', 'SUPERVISOR', 'DIRECTOR_ADMIN'])
@@ -23,6 +23,7 @@ export interface SessionStorage {
 export interface DemoSessionService {
   restore(): DemoSession | null
   signIn(role: DemoRole): DemoSession
+  signInWithMicrosoft(input: { id: string; name: string; email: string; role: DemoRole }): DemoSession
   signOut(): void
 }
 
@@ -52,7 +53,7 @@ function isDemoSession(value: unknown): value is DemoSession {
     && DEMO_ROLES.has(candidate.role as DemoRole)
     && isNonEmptyString(candidate.createdAt)
     && isNonEmptyString(candidate.explicitLoginAt)
-    && candidate.isDemo === true
+    && (candidate.isDemo === true || candidate.authProvider === 'microsoft')
     && candidate.version === 2
 }
 
@@ -93,6 +94,23 @@ export class LocalDemoSessionService implements DemoSessionService {
       explicitLoginAt: timestamp,
       isDemo: true,
       version: 2,
+    }
+    this.write(SESSION_KEY, JSON.stringify(session))
+    return session
+  }
+
+  signInWithMicrosoft({ id, name, email, role }: { id: string; name: string; email: string; role: DemoRole }): DemoSession {
+    const timestamp = this.now()
+    const session: DemoSession = {
+      id,
+      name,
+      email,
+      role,
+      createdAt: timestamp,
+      explicitLoginAt: timestamp,
+      isDemo: false,
+      version: 2,
+      authProvider: 'microsoft',
     }
     this.write(SESSION_KEY, JSON.stringify(session))
     return session

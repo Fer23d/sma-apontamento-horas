@@ -9,6 +9,8 @@ export function LdSection({ selected, onSelect, onClear }: { selected?: LdDocume
   const [query, setQuery] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [isDragging, setIsDragging] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
   const request = useRef(0)
   const upload = async (file?: File) => {
     if (!file) return
@@ -24,11 +26,27 @@ export function LdSection({ selected, onSelect, onClear }: { selected?: LdDocume
   }
   const search = query.toLocaleLowerCase('pt-BR')
   const matching = result?.documents.filter((doc) => `${doc.valeNumber} ${doc.contractorNumber} ${doc.title}`.toLocaleLowerCase('pt-BR').includes(search)) ?? []
+  const handleFile = (file?: File) => { void upload(file) }
   return <section className="min-w-0 space-y-3 rounded-xl border ui-border ui-surface-subtle p-4" aria-labelledby="ld-title">
     <h2 id="ld-title" className="font-bold ui-heading">Lista de Documentos (LD)</h2>
     <p className="text-sm ui-text-muted">Opcional. Importe uma planilha e selecione um documento para preencher os dados relacionados.</p>
-    <label htmlFor="ld-file" className="block text-sm font-bold ui-text">Arquivo .xlsm ou .xlsx</label>
-    <input id="ld-file" type="file" accept=".xlsm,.xlsx" className="block w-full min-w-0 text-sm ui-text" onChange={(event) => { void upload(event.target.files?.[0]); event.target.value = '' }} aria-describedby="ld-feedback" />
+    <input ref={inputRef} id="ld-file" type="file" accept=".xlsm,.xlsx" className="sr-only" onChange={(event) => { handleFile(event.target.files?.[0]); event.target.value = '' }} aria-describedby="ld-feedback" />
+    <div
+      role="button"
+      tabIndex={0}
+      aria-controls="ld-file"
+      aria-describedby="ld-feedback"
+      onClick={() => inputRef.current?.click()}
+      onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); inputRef.current?.click() } }}
+      onDragEnter={(event) => { event.preventDefault(); setIsDragging(true) }}
+      onDragOver={(event) => { event.preventDefault(); setIsDragging(true) }}
+      onDragLeave={(event) => { if (event.currentTarget === event.target) setIsDragging(false) }}
+      onDrop={(event) => { event.preventDefault(); setIsDragging(false); handleFile(event.dataTransfer.files[0]) }}
+      className={`cursor-pointer rounded-xl border-2 border-dashed p-6 text-center transition ${isDragging ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/10' : 'ui-border hover:border-[var(--color-primary)] hover:bg-[var(--color-surface)]'} ${busy ? 'pointer-events-none opacity-60' : ''}`}
+    >
+      <p className="font-bold ui-text">Arraste a planilha aqui ou clique para selecionar</p>
+      <p className="mt-1 text-sm ui-text-muted">Formatos aceitos: .xlsx e .xlsm</p>
+    </div>
     <div id="ld-feedback" aria-live="polite" className="break-words text-sm ui-text-muted">{busy ? 'Lendo a LD…' : fileName && `${fileName} — ${result?.documents.length} documentos válidos`}</div>
     {error && <p role="alert" className="text-sm text-red-700 dark:text-red-300">{error} Os dados atuais do formulário foram preservados.</p>}
     {result && <>

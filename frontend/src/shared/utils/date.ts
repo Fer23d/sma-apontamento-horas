@@ -64,6 +64,16 @@ export function getMonthKey(value: string) {
   return value.slice(0, 7)
 }
 
+export function getMonthClosingDate(value: string) {
+  return getMonthRange(getMonthKey(value)).endDate
+}
+
+export function getDaysUntilMonthClosing(today = getCorporateToday(), closingDate = getMonthClosingDate(today)) {
+  if (!isIsoDate(today) || !isIsoDate(closingDate)) return 0
+  const millisecondsPerDay = 24 * 60 * 60 * 1000
+  return Math.max(0, Math.round((isoDateToUtc(closingDate).getTime() - isoDateToUtc(today).getTime()) / millisecondsPerDay))
+}
+
 export function formatDatePtBr(isoDate: string) {
   const [year, month, day] = isoDate.split('-').map(Number)
   if (!year || !month || !day) return isoDate

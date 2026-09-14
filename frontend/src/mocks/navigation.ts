@@ -4,6 +4,7 @@ export const collaboratorNavigation: NavigationItem[] = [
   { label: 'Visão geral', shortLabel: 'VG', path: '/colaborador' },
   { label: 'Novo apontamento', shortLabel: 'NA', path: '/colaborador/apontamentos/novo' },
   { label: 'Histórico', shortLabel: 'HI', path: '/colaborador/historico' },
-  { label: 'Folgas', shortLabel: 'FO', path: '/colaborador/folgas' },
+  { label: 'Ausências', shortLabel: 'AU', path: '/colaborador/folgas' },
+  { label: 'Quadro de Avisos', shortLabel: 'QA', path: '/colaborador/avisos' },
   { label: 'Meu perfil', shortLabel: 'MP', path: '/colaborador/perfil' },
 ]

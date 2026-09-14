@@ -44,7 +44,7 @@ const assignment: AssignmentSnapshot = {
   squadId: 'squad-automation',
   squadName: 'Engenharia de Automação',
   supervisorId: 'supervisor-demo-001',
-  supervisorName: 'Supervisora Demonstração',
+  supervisorName: 'Jeen Carlos E. Azevedo',
 }
 
 const validData: CreateTimeEntryData = {
@@ -147,7 +147,7 @@ describe('migração segura de apontamentos até v4', () => {
     const firstRead = await buildService(storage).listByDate(collaboratorId, '2026-07-13')
     const secondRead = await buildService(storage).listByDate(collaboratorId, '2026-07-13')
 
-    expect(TIME_ENTRY_STORAGE_KEY).toBe('sma:time-entries:v4')
+    expect(TIME_ENTRY_STORAGE_KEY).toBe('apontamentos_sma')
     expect(firstRead).toHaveLength(1)
     expect(firstRead[0]).toMatchObject({ clientName: 'Cliente Industrial Alfa' })
     expect(firstRead[0]).not.toHaveProperty('clientId')
@@ -363,6 +363,58 @@ describe('migração segura de apontamentos até v4', () => {
 })
 
 describe('comandos e consultas de apontamento', () => {
+  it('grava apontamentos na chave compartilhada apontamentos_sma', async () => {
+    const storage = new MemoryStorage()
+    const service = buildService(storage)
+
+    await service.create(collaboratorId, validData)
+
+    expect(TIME_ENTRY_STORAGE_KEY).toBe('apontamentos_sma')
+    expect(storage.getItem(TIME_ENTRY_STORAGE_KEY)).toContain('stable-entry-id')
+    expect(storage.getItem('sma:time-entries:v3')).toBeNull()
+  })
+
+  it('cria múltiplos registros para um período e preserva o lançamento único', async () => {
+    const storage = new MemoryStorage()
+    let nextId = 0
+    const service = buildService(storage, { createId: () => `batch-${++nextId}` })
+
+    await service.create(collaboratorId, { ...validData, entryDate: '2026-07-13', endDate: '2026-07-15' })
+    const batchEntries = await service.listByRange(collaboratorId, '2026-07-13', '2026-07-15')
+
+    expect(batchEntries.map((entry) => entry.entryDate)).toEqual(['2026-07-13', '2026-07-14', '2026-07-15'])
+
+    const single = await service.create(collaboratorId, { ...validData, entryDate: '2026-07-18', endDate: '2026-07-18' })
+    expect(single.entryDate).toBe('2026-07-18')
+    expect(await service.listByDate(collaboratorId, '2026-07-18')).toHaveLength(1)
+  })
+
+  it('usa a política de competência do intervalo para o lançamento em lote', async () => {
+    const storage = new MemoryStorage()
+    const service = buildService(storage, {
+      mutationPolicy: {
+        canMutate: async () => false,
+        canMutateRange: async () => true,
+      },
+    })
+
+    await expect(service.create(collaboratorId, { ...validData, endDate: '2026-07-15' })).resolves.toMatchObject({ status: 'PENDING' })
+    await expect(service.create(collaboratorId, validData)).rejects.toThrow('somente leitura')
+  })
+
+  it('migra leitura da chave v3 antiga para apontamentos_sma', async () => {
+    const storage = new MemoryStorage()
+    storage.setItem('sma:time-entries:v3', JSON.stringify({
+      version: 3,
+      entriesByCollaborator: { [collaboratorId]: [v3Entry({ id: 'legacy-v3-entry' })] },
+    }))
+
+    const entries = await buildService(storage).listByDate(collaboratorId, '2026-07-13')
+
+    expect(entries).toEqual([expect.objectContaining({ id: 'legacy-v3-entry' })])
+    expect(storage.getItem(TIME_ENTRY_STORAGE_KEY)).toContain('legacy-v3-entry')
+  })
+
   it('cria com snapshot, trim externo e preservação dos caracteres internos', async () => {
     const storage = new MemoryStorage()
     const service = buildService(storage)
@@ -378,7 +430,7 @@ describe('comandos e consultas de apontamento', () => {
       projectCode: 'Ab-00  1/2.03',
       details: 'Entrega concluída',
       assignmentSnapshot: assignment,
-      status: 'ACTIVE',
+      status: 'PENDING',
       version: 1,
     })
   })
@@ -405,7 +457,7 @@ describe('comandos e consultas de apontamento', () => {
       durationMinutes: 120,
       version: 2,
       lastEditReason: 'Detalhamento corrigido',
-      status: 'ACTIVE',
+      status: 'PENDING',
     })
   })
 
@@ -428,7 +480,7 @@ describe('comandos e consultas de apontamento', () => {
     })
 
     expect(duplicate.id).not.toBe(created.id)
-    expect(duplicate).toMatchObject({ sourceEntryId: created.id, entryDate: '2026-07-14', durationMinutes: 90, version: 1, status: 'ACTIVE', assignmentSnapshot: assignment })
+    expect(duplicate).toMatchObject({ sourceEntryId: created.id, entryDate: '2026-07-14', durationMinutes: 90, version: 1, status: 'PENDING', assignmentSnapshot: assignment })
   })
 
   it('cancela logicamente, preserva o registro e o retira do saldo', async () => {
@@ -481,7 +533,7 @@ describe('comandos e consultas de apontamento', () => {
     await expect(service.update(collaboratorId, created.id, created.version, validData, 'Correção')).rejects.toThrow('férias integrais')
     await expect(service.duplicate(collaboratorId, created.id, created.version, {})).rejects.toThrow('férias integrais')
     await expect(service.cancel(collaboratorId, created.id, created.version, 'Conflito')).rejects.toThrow('férias integrais')
-    await expect(service.getById(collaboratorId, created.id)).resolves.toMatchObject({ status: 'ACTIVE', version: 1, durationMinutes: 60 })
+    await expect(service.getById(collaboratorId, created.id)).resolves.toMatchObject({ status: 'PENDING', version: 1, durationMinutes: 60 })
   })
 
   it('isola propriedade e não permite editar registro de outro colaborador', async () => {

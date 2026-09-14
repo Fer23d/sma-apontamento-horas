@@ -13,7 +13,7 @@ Os dois arquivos são UTF-8 válidos, possuem início e encerramento completos d
 
 ## 2. Resumo executivo
 
-Foram identificadas **27 capacidades funcionais relacionadas ao Colaborador** no protótipo. Elas demonstram lançamento, classificação básica, calendário, histórico, edição, exclusão e exportação, mas misturam experiência individual, operações administrativas e acesso global a dados.
+Foram identificadas **27 capacidades funcionais relacionadas ao Colaborador** no protótipo. Elas apresentam lançamento, classificação básica, calendário, histórico, edição, exclusão e exportação, mas misturam experiência individual, operações administrativas e acesso global a dados.
 
 Conclusões principais:
 
@@ -30,7 +30,7 @@ Conclusões principais:
 
 | # | Capacidade | Funcionamento no protótipo | Campos/estado e regras | Dependências | Decisão |
 |---|---|---|---|---|---|
-| 1 | Sessão demonstrativa | Inicializa Firebase e usa token do Canvas ou autenticação anônima. Exibe estado “Conectado à Nuvem”. | `user`, `loading`; variáveis `__firebase_config`, `__initial_auth_token` e `__app_id`. | Firebase Auth e ambiente Gemini Canvas. | **Adaptar** para sessão demonstrativa local nesta fase; autenticação real fica futura. |
+| 1 | Sessão corporativa | Inicializa Firebase e usa token do Canvas ou autenticação anônima. Exibe estado “Conectado à Nuvem”. | `user`, `loading`; variáveis `__firebase_config`, `__initial_auth_token` e `__app_id`. | Firebase Auth e ambiente Gemini Canvas. | **Adaptar** para sessão corporativa local nesta fase; autenticação real fica futura. |
 | 2 | Seleção de colaborador | Um seletor global permite escolher qualquer pessoa da lista hardcoded. | `colaborador`, `COLABORADORES`; altera consultas, jornada, calendário, tabela e exportação. | Todas as visões individuais. | **Descartar** a seleção livre; o dono virá automaticamente da sessão. |
 | 3 | Jornada individual | Define 8h por padrão, 6h para quatro nomes e 4h para um nome específico. | `minutosDiariosAlvo`; comparação por nome em `COLABORADORES_6H` e `GUILHERME AUGUSTO`. | Cálculo diário, calendário e divisão normal/extra. | **Adaptar** para perfil profissional versionado e vigente por período. |
 
@@ -91,7 +91,7 @@ Duplicação, cancelamento lógico, rascunho, status explícito, motivo de ediç
 Todos os pontos abaixo devem deixar de aceitar um colaborador escolhido pela interface:
 
 1. remover o seletor `COLABORADORES` do cabeçalho;
-2. substituir `colaborador` por `session.user.id`/perfil demonstrativo somente leitura;
+2. substituir `colaborador` por `session.user.id`/perfil corporativo somente leitura;
 3. obter jornada do perfil vigente, não de listas de nomes;
 4. consultar apenas registros cujo dono seja o usuário da sessão;
 5. não carregar a coleção pública completa para depois filtrar no cliente;
@@ -162,7 +162,7 @@ A legenda futura deve oferecer texto persistente, ícone, tooltip/descrição, f
 
 ### 7.2 Adaptar
 
-- sessão demonstrativa e identidade automática;
+- sessão corporativa e identidade automática;
 - perfil e jornada por vigência;
 - projetos fixos como configuração, não nomes;
 - catálogos de atividade, disciplina e documento;
@@ -279,7 +279,7 @@ A primeira fatia funcional corrige os pontos centrais do protótipo sem copiá-l
 - férias, afastamentos, feriados, folgas, compensações e exceções de jornada serão `CalendarEvent`, separados de `TimeEntry`;
 - nesta fatia existem somente `TimeEntry` e `DailySummary`;
 - a sessão possui um perfil fictício, jornada de 480 minutos de segunda a sexta e zero no fim de semana;
-- o service local usa `sma:time-entries:v2`, isola registros por colaborador e migra uma única vez a antiga `v1`; IDs antigos conhecidos são convertidos pelo mapa demonstrativo de compatibilidade e IDs desconhecidos são preservados como código. A `v1` permanece inalterada como cópia de segurança;
+- o service local usa `sma:time-entries:v2`, isola registros por colaborador e migra uma única vez a antiga `v1`; IDs antigos conhecidos são convertidos pelo mapa corporativo de compatibilidade e IDs desconhecidos são preservados como código. A `v1` permanece inalterada como cópia de segurança;
 - uma futura aprovação será um eixo separado: o Colaborador verá apenas `PENDING` (Pendente de aprovação) e `APPROVED` (Aprovado) no dashboard e histórico; não haverá status no calendário. O encaminhamento virá do setor do perfil, sem escolha de supervisor. Nada desse fluxo é implementado nesta fatia;
 - não há feriados, ausências, compensações, calendário mensal, edição, duplicação, cancelamento pela interface, documentos da LD, avanço, exportação, agregado de squad ou homologação.
 

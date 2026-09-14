@@ -7,17 +7,17 @@ export interface CalendarEventService {
 const demoEvents: CalendarEvent[] = [
   {
     id: 'vacation-demo-july', collaboratorId: 'demo-collaborator-001', type: 'VACATION',
-    startDate: '2026-07-06', endDate: '2026-07-10', title: 'Férias demonstrativas', source: 'DEMO',
+    startDate: '2026-07-06', endDate: '2026-07-10', title: 'Férias corporativas', source: 'DEMO',
     recordedBy: 'supervisor-demo-001', createdAt: '2026-06-15T12:00:00.000Z',
   },
   {
     id: 'medical-partial-demo', collaboratorId: 'demo-collaborator-001', type: 'MEDICAL_LEAVE_PARTIAL',
-    startDate: '2026-07-14', endDate: '2026-07-14', justifiedMinutes: 180, title: 'Afastamento parcial demonstrativo', source: 'DEMO',
+    startDate: '2026-07-14', endDate: '2026-07-14', justifiedMinutes: 180, title: 'Afastamento parcial corporativo', source: 'DEMO',
     recordedBy: 'supervisor-demo-001', createdAt: '2026-07-14T12:00:00.000Z',
   },
   {
     id: 'medical-full-demo', collaboratorId: 'demo-collaborator-001', type: 'MEDICAL_LEAVE_FULL',
-    startDate: '2026-07-16', endDate: '2026-07-16', title: 'Afastamento integral demonstrativo', source: 'DEMO',
+    startDate: '2026-07-16', endDate: '2026-07-16', title: 'Afastamento integral corporativo', source: 'DEMO',
     recordedBy: 'supervisor-demo-001', createdAt: '2026-07-16T12:00:00.000Z',
   },
 ]

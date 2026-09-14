@@ -6,6 +6,8 @@ export type DemoSession = {
   role: DemoRole
   createdAt: string
   explicitLoginAt: string
-  isDemo: true
+  isDemo: boolean
   version: 2
+  email?: string
+  authProvider?: 'demo' | 'microsoft'
 }

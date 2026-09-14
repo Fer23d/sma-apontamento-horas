@@ -16,7 +16,7 @@ class MemoryStorage implements StorageLike {
 
 const assignment: AssignmentSnapshot = {
   squadId: 'squad-automation', squadName: 'Engenharia de Automação',
-  supervisorId: 'supervisor-demo-001', supervisorName: 'Supervisora Demonstração',
+  supervisorId: 'supervisor-demo-001', supervisorName: 'Jeen Carlos E. Azevedo',
 }
 
 function buildService(storage: StorageLike, today = '2026-07-20') {
@@ -52,6 +52,53 @@ describe('LocalTimeOffService', () => {
     expect(created).toMatchObject({ status: 'PENDING', date: '2026-07-25', reason: 'Compromisso familiar', assignmentSnapshot: assignment })
     expect(audits.map((event) => event.type)).toEqual(['TIME_OFF_REQUESTED'])
     expect(notifications.map((notification) => notification.type)).toEqual(['TIME_OFF_REQUESTED'])
+  })
+
+  it('grava ausência na chave compartilhada ausencias_sma com campos de aprovação', async () => {
+    const storage = new MemoryStorage()
+    const { service } = buildService(storage)
+
+    await service.create('collaborator-1', {
+      absenceType: 'Férias',
+      startDate: '2026-07-25',
+      endDate: '2026-07-28',
+      reason: 'Descanso programado',
+      collaboratorName: 'Ana Lima',
+    })
+
+    const persisted = JSON.parse(storage.getItem(TIME_OFF_STORAGE_KEY) ?? '[]') as Array<Record<string, unknown>>
+    expect(TIME_OFF_STORAGE_KEY).toBe('ausencias_sma')
+    expect(persisted).toEqual([expect.objectContaining({
+      id: 'time-off-1',
+      colaborador: 'Ana Lima',
+      colaboradorId: 'collaborator-1',
+      tipo: 'Férias',
+      dataInicio: '2026-07-25',
+      dataRetorno: '2026-07-28',
+      justificativa: 'Descanso programado',
+      status: 'Pendente',
+    })])
+  })
+
+  it('aprova ausencia gravada no formato simples da chave compartilhada', async () => {
+    const storage = new MemoryStorage()
+    storage.setItem(TIME_OFF_STORAGE_KEY, JSON.stringify([{
+      id: 'absence-raw-1',
+      colaborador: 'Ana Lima',
+      colaboradorId: 'collaborator-1',
+      tipo: 'FÃ©rias',
+      dataInicio: '2026-07-25',
+      dataRetorno: '2026-07-28',
+      justificativa: 'Descanso programado',
+      status: 'Pendente',
+    }]))
+    const { service } = buildService(storage)
+
+    const approved = await service.approve('supervisor-demo-001', 'absence-raw-1')
+
+    expect(approved.status).toBe('APPROVED')
+    const persisted = JSON.parse(storage.getItem(TIME_OFF_STORAGE_KEY) ?? '[]') as Array<Record<string, unknown>>
+    expect(persisted[0]).toMatchObject({ id: 'absence-raw-1', status: 'Aprovado' })
   })
 
   it('bloqueia solicitação para hoje ou para o passado', async () => {

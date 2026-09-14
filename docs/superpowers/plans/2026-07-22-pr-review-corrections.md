@@ -254,7 +254,7 @@ Expected: storage bloqueado não derruba a aplicação e temas existentes contin
 
 ```bash
 git add frontend/src/services/storage.ts frontend/src/services/storage.test.ts frontend/src/app/ThemeProvider.tsx
-git commit -m "fix(storage): manter demonstracao ativa sem localStorage"
+git commit -m "fix(storage): manter producao ativa sem localStorage"
 ```
 
 ### Task 6: Verificação e nova revisão técnica
@@ -320,7 +320,7 @@ Adicionar testes explícitos de data futura. `deriveDayApprovalStatus` e `getFor
 
 - [ ] **Step 5: Atualizar documentação canônica**
 
-Corrigir somente afirmações que ficaram históricas: ciclo de vida de apontamentos, calendário/eventos, aprovação demonstrativa e migração encadeada `v1 → v2 → v3`. Manter explícitas as limitações de backend e autenticação real.
+Corrigir somente afirmações que ficaram históricas: ciclo de vida de apontamentos, calendário/eventos, aprovação corporativa e migração encadeada `v1 → v2 → v3`. Manter explícitas as limitações de backend e autenticação real.
 
 - [ ] **Step 6: Repetir gates e revisão independente**
 

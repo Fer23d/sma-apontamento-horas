@@ -96,6 +96,21 @@ export class LocalDayApprovalService {
     return canMutateDay(stored, competency)
   }
 
+  async canMutateRange(collaboratorId: string, dates: string[]) {
+    if (dates.length === 0) return false
+    const monthKey = getMonthKey(dates[0])
+    const competency = this.getCompetency(monthKey)
+    const storedApprovals = this.readRecord<DayApproval>(APPROVAL_STORAGE_KEY)
+    const competencyOpen = competency.status === 'OPEN' || competency.status === 'REOPENED'
+    if (!competencyOpen) return false
+
+    return dates.every((date) => {
+      if (getMonthKey(date) !== monthKey) return false
+      const stored = storedApprovals[this.approvalKey(collaboratorId, date)] ?? null
+      return canMutateDay(stored, competency)
+    })
+  }
+
   async save(approval: DayApproval) {
     const current = this.readRecord<DayApproval>(APPROVAL_STORAGE_KEY)
     current[this.approvalKey(approval.collaboratorId, approval.entryDate)] = approval

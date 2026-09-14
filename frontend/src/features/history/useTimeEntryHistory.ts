@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { dayApprovalService } from '../../services/dayApprovalService'
 import { timeEntryService } from '../../services/timeEntryService'
 import type { DayApproval } from '../approvals/types'
 import { isDayApprovalApplicable } from '../approvals/domain'
 import type { DisciplineCode, DocumentTypeCode, TimeEntry } from '../time-entries/types'
-import { getCorporateToday, getMonthKey } from '../../shared/utils/date'
+import { getCorporateToday, getMonthKey, isIsoDate } from '../../shared/utils/date'
 import { useSession } from '../session/useSession'
 import {
   getInitialHistoryPagination,
@@ -21,6 +22,7 @@ import { workloadService } from '../../services/workloadService'
 import { calculateDaySummary, calculatePeriodSummary } from '../calendar/domain'
 import type { CalendarEvent, DailySummary, PeriodSummary } from '../calendar/types'
 import type { TimeOffRequest } from '../time-off/types'
+import { requestAppliesToDate } from '../time-off/types'
 
 export type HistoryFiltersValue = {
   mode: HistoryPeriodMode
@@ -46,9 +48,21 @@ export type HistoryRow = {
 }
 
 const today = getCorporateToday()
-const initialFilters: HistoryFiltersValue = {
-  mode: 'MONTH', day: today, month: getMonthKey(today), startDate: `${getMonthKey(today)}-01`, endDate: today,
-  clientName: '', projectCode: '', activityId: '', disciplineCode: '', documentTypeCode: '', status: 'ACTIVE',
+function createInitialFilters(date = today): HistoryFiltersValue {
+  const safeDate = isIsoDate(date) ? date : today
+  return {
+    mode: safeDate === today ? 'MONTH' : 'DAY',
+    day: safeDate,
+    month: getMonthKey(safeDate),
+    startDate: `${getMonthKey(safeDate)}-01`,
+    endDate: safeDate,
+    clientName: '',
+    projectCode: '',
+    activityId: '',
+    disciplineCode: '',
+    documentTypeCode: '',
+    status: 'ACTIVE',
+  }
 }
 
 function holidaysToEvents(collaboratorId: string, holidays: Awaited<ReturnType<typeof holidayProvider.list>>): CalendarEvent[] {
@@ -60,6 +74,8 @@ function holidaysToEvents(collaboratorId: string, holidays: Awaited<ReturnType<t
 
 export function useTimeEntryHistory() {
   const { profile } = useSession()
+  const [searchParams] = useSearchParams()
+  const initialFilters = createInitialFilters(searchParams.get('date') ?? today)
   const [draftFilters, setDraftFilters] = useState(initialFilters)
   const [filters, setFilters] = useState(initialFilters)
   const [rows, setRows] = useState<HistoryRow[]>([])
@@ -113,7 +129,7 @@ export function useTimeEntryHistory() {
       const enriched = await Promise.all(page.items.map(async (entry) => {
         const entriesOfDay = periodEntries.filter((item) => item.entryDate === entry.entryDate)
         const eventsOfDay = allEvents.filter((event) => event.startDate <= entry.entryDate && event.endDate >= entry.entryDate)
-        const timeOffOfDay = timeOffRequests.filter((request) => request.date === entry.entryDate && request.status !== 'CANCELLED')
+        const timeOffOfDay = timeOffRequests.filter((request) => requestAppliesToDate(request, entry.entryDate) && request.status !== 'CANCELLED')
         const daySummary = calculateDaySummary({ date: entry.entryDate, today, collaboratorId: profile.id, entries: entriesOfDay, events: eventsOfDay, timeOffRequests, workloadVersions })
         const approval = await dayApprovalService.getForDate(
           profile.id,

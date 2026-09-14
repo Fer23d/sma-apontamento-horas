@@ -19,8 +19,8 @@ Definir o comportamento esperado da área do Colaborador e registrar as decisõe
 
 ## 3. Fluxo do Colaborador
 
-1. Entrar por uma sessão demonstrativa escolhendo um dos três perfis disponíveis; somente o perfil Colaborador possui área funcional completa nesta branch.
-2. Consultar o perfil profissional, a squad vigente e a carga horária versionada; alterações locais continuam demonstrativas e sem valor corporativo oficial.
+1. Entrar por uma sessão corporativa escolhendo um dos três perfis disponíveis; somente o perfil Colaborador possui área funcional completa nesta branch.
+2. Consultar o perfil profissional, a squad vigente e a carga horária versionada; alterações locais continuam corporativas e sem valor corporativo oficial.
 3. Abrir o dashboard individual para ver período, jornada prevista, total apontado e saldo calculado.
 4. Selecionar uma data pelo calendário ou pela rota de novo apontamento.
 5. Escolher o cliente, digitar exatamente o número do projeto atual e escolher a atividade.
@@ -119,7 +119,7 @@ Um apontamento que cruza o limite diário continua sendo uma unidade. O resultad
 
 `Editado` é evento/característica histórica, não status. A edição usa `version`, `updatedAt` e `lastEditReason`; duplicação cria novo registro com `sourceEntryId`. Rascunho persistido e homologação corporativa permanecem posteriores e separados desse status.
 
-### 6.1 Aprovação diária demonstrativa
+### 6.1 Aprovação diária corporativa
 
 A implementação atual mantém a aprovação separada de `TimeEntry`, consolidada por colaborador e data em `DayApproval`. Os estados são `IN_PROGRESS`, `AVAILABLE_FOR_APPROVAL`, `CORRECTION_REQUESTED`, `APPROVED`, `REOPENED` e `NO_SUBMISSION`. O dashboard e o histórico apresentam esse eixo; o calendário continua comunicando somente a situação da jornada.
 
@@ -129,7 +129,7 @@ Datas futuras, dias sem jornada e sem trabalho e datas com evento integral não 
 
 - `TimeEntry`: tempo trabalhado em cliente, projeto e atividade; implementado nesta fatia.
 - `DailySummary`: valores derivados de jornada e apontamentos ativos; implementado nesta fatia.
-- `CalendarEvent`: férias, afastamentos e feriados demonstrativos; folgas usam solicitação própria e alimentam os resumos quando aprovadas.
+- `CalendarEvent`: férias, afastamentos e feriados corporativos; folgas usam solicitação própria e alimentam os resumos quando aprovadas.
 
 ## 7. Jornada e saldo
 
@@ -277,7 +277,7 @@ Filtros devem compor uma consulta, refletir-se na URL quando adequado e poder se
 
 ### 10.3 Paginação
 
-O contrato do service aceita `pageSize` e cursor, retornando `items`, `nextCursor` e total. A implementação local é demonstrativa; a API futura deverá processar filtros e paginação sem carregar todo o histórico no navegador.
+O contrato do service aceita `pageSize` e cursor, retornando `items`, `nextCursor` e total. A implementação local é corporativa; a API futura deverá processar filtros e paginação sem carregar todo o histórico no navegador.
 
 ## 11. Edição, duplicação e cancelamento
 
@@ -315,28 +315,28 @@ O contrato do service aceita `pageSize` e cursor, retornando `items`, `nextCurso
 Enquanto não houver backend:
 
 - usar service assíncrono por interface, com adaptador local/mocks;
-- isolar chaves por `collaboratorId` demonstrativo;
+- isolar chaves por `collaboratorId` corporativo;
 - versionar o schema persistido;
 - guardar somente dados não sensíveis necessários ao protótipo;
 - validar e migrar dados lidos do armazenamento;
-- oferecer reset apenas dos dados demonstrativos do próprio usuário;
+- oferecer reset apenas dos dados corporativos do próprio usuário;
 - não tratar `localStorage` como segurança ou fonte definitiva;
 - manter cálculos derivados fora do armazenamento sempre que puderem ser reproduzidos.
 
 ### 12.1 Estado persistido atual
 
-- chave atual `sma:time-entries:v4`;
+- chave compartilhada atual `apontamentos_sma`, com payload versionado em `v4`;
 - migração encadeada e idempotente `v1 → v2 → v3 → v4`, executada somente quando a versão seguinte ainda não existe validamente;
 - conversão de `projectId` antigo pelo mapa temporário de compatibilidade; quando desconhecido, o próprio valor antigo é preservado como `projectCode`;
 - cada etapa só conclui após gravar, reler e validar integralmente o conteúdo persistido; falhas retornam coleção vazia controlada;
 - `v1`, `v2` e `v3` permanecem como backups inalterados, enquanto consultas normais usam exclusivamente a `v4` validada;
 - a migração `v3 → v4` converte IDs demonstrativos conhecidos em nomes e preserva um `clientId` desconhecido como `clientName`, sem descartar o registro;
 - registros agrupados e consultados por `collaboratorId`;
-- sessão demonstrativa restaurada localmente e separada do service de apontamentos;
+- sessão corporativa restaurada localmente e separada do service de apontamentos;
 - leitura defensiva: JSON inválido gera erro de desenvolvimento e coleção vazia segura;
-- carga horária demonstrativa versionada, inicialmente de 480 minutos de segunda a sexta e zero no fim de semana;
+- carga horária corporativa versionada, inicialmente de 480 minutos de segunda a sexta e zero no fim de semana;
 - duração máxima provisória de 1.440 minutos;
-- feriados, férias, afastamentos e folgas usam fontes/coleções demonstrativas próprias;
+- feriados, férias, afastamentos e folgas usam fontes/coleções corporativas próprias;
 - edição, duplicação, cancelamento lógico, histórico paginado, calendário mensal, importação opcional de LD e geração opcional de RDO estão implementados; rascunho, avanço, exportação individual estruturada, agregado de squad e homologação corporativa permanecem fora do escopo.
 
 ## 13. Privacidade e visão agregada da squad

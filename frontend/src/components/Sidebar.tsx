@@ -3,6 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import { collaboratorNavigation } from '../mocks/navigation'
 import { useSession } from '../features/session/useSession'
 import { profileService } from '../services/profileService'
+import { InstallAppButton } from './InstallAppButton'
 
 type SidebarContentProps = {
   onNavigate: () => void
@@ -50,7 +51,7 @@ function SidebarContent({ onNavigate }: SidebarContentProps) {
         </section>
       )}
 
-      <nav className="flex-1 space-y-2 p-4" aria-label="Navegação do colaborador">
+      <nav className="tour-menu flex-1 space-y-2 p-4" aria-label="Navegação do colaborador">
         {collaboratorNavigation.map((item) => (
           <NavLink
             key={item.path}
@@ -58,15 +59,15 @@ function SidebarContent({ onNavigate }: SidebarContentProps) {
             end={item.path === '/colaborador'}
             onClick={onNavigate}
             className={({ isActive }) =>
-              `flex items-center gap-3 rounded-xl border-l-4 px-3 py-3 text-sm font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-sidebar-text)] ${
-                isActive ? 'border-[var(--color-sidebar-text)] bg-[var(--color-navigation-active)] text-[var(--color-navigation-active-text)]' : 'border-transparent text-[var(--color-sidebar-text-muted)] hover:bg-[var(--color-navigation-hover)] hover:text-[var(--color-sidebar-text)]'
+              `flex items-center gap-3 rounded-xl border-l-4 px-3 py-3 text-sm font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-sidebar-text)] ${item.path === '/colaborador/apontamentos/novo' ? 'tour-btn-apontar' : ''} ${
+                isActive ? 'border-[var(--color-primary)] bg-[var(--color-navigation-active)] text-[var(--color-navigation-active-text)]' : 'border-transparent text-[var(--color-sidebar-text-muted)] hover:bg-[var(--color-navigation-hover)] hover:text-[var(--color-sidebar-text)]'
               }`
             }
           >
             {({ isActive }) => (
               <>
-                <span className={`flex h-8 w-8 items-center justify-center rounded-lg text-xs ${isActive ? 'bg-[var(--color-navigation-active-detail)]' : 'bg-[var(--color-sidebar-surface)]'}`}>{item.shortLabel}</span>
-                <span className="flex-1">{item.label}</span>
+                <span className={`flex h-8 w-8 items-center justify-center rounded-lg text-xs ${isActive ? 'bg-[var(--color-navigation-active-detail)] text-[var(--color-primary)]' : 'bg-[var(--color-sidebar-surface)]'}`}>{item.shortLabel}</span>
+                <span className={`flex-1 ${item.path === '/colaborador/avisos' ? 'tour-avisos' : ''}`}>{item.label}</span>
                 {isActive && <span className="text-[10px] font-extrabold uppercase" aria-label="Página atual">Atual</span>}
               </>
             )}
@@ -75,8 +76,9 @@ function SidebarContent({ onNavigate }: SidebarContentProps) {
       </nav>
 
       <div className="border-t border-[var(--color-sidebar-border)] p-4">
+        <InstallAppButton />
         <button type="button" onClick={handleSignOut} className="w-full rounded-xl border border-[var(--color-sidebar-border)] px-4 py-3 text-left text-sm font-bold text-[var(--color-sidebar-text)] hover:bg-[var(--color-navigation-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-sidebar-text)]">
-          Sair da demonstração
+          Sair do sistema
         </button>
         <p className="mt-3 px-1 text-xs text-[var(--color-sidebar-text-muted)]">Dados armazenados somente neste navegador.</p>
       </div>
@@ -89,7 +91,7 @@ export function DesktopSidebar() {
     <aside
       data-desktop-sidebar
       aria-label="Menu lateral do colaborador"
-      className="hidden h-[calc(100vh-5rem)] w-64 min-w-0 flex-col overflow-y-auto bg-[var(--color-sidebar)] text-[var(--color-sidebar-text)] lg:sticky lg:top-20 lg:flex lg:self-start"
+      className="hidden h-[calc(100vh-5rem)] w-64 min-w-0 flex-col overflow-y-auto bg-[var(--color-sidebar)] text-[var(--color-sidebar-text)] md:sticky md:top-20 md:flex md:self-start"
     >
       <SidebarContent onNavigate={() => undefined} />
     </aside>
@@ -104,7 +106,7 @@ export function MobileDrawer({ isOpen, onClose, onNavigate, onKeyDown }: MobileD
       data-drawer-panel
       onKeyDown={onKeyDown}
       aria-label="Menu móvel do colaborador"
-      className={`${isOpen ? 'visible translate-x-0' : 'invisible -translate-x-full'} fixed bottom-0 left-0 top-20 z-30 flex w-72 min-w-0 flex-col overflow-y-auto bg-[var(--color-sidebar)] text-[var(--color-sidebar-text)] shadow-2xl transition-[translate,visibility] duration-200 lg:hidden`}
+      className={`${isOpen ? 'visible translate-x-0' : 'invisible -translate-x-full'} fixed bottom-0 left-0 top-20 z-30 flex w-72 min-w-0 flex-col overflow-y-auto bg-[var(--color-sidebar)] text-[var(--color-sidebar-text)] shadow-2xl transition-[translate,visibility] duration-200 md:hidden`}
     >
       <div className="flex items-center justify-between border-b border-[var(--color-sidebar-border)] px-4 py-3">
         <p className="font-bold">Navegação</p>

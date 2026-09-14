@@ -4,7 +4,7 @@
 
 **Objetivo:** evoluir a primeira fatia React para a área completa do Colaborador, com domínio testável, persistência local migrável, fluxos funcionais, responsividade e acessibilidade.
 
-**Arquitetura:** features por domínio, regras puras, repositórios assíncronos atrás de interfaces e hooks finos para coordenação. `localStorage` é apenas adaptador demonstrativo; componentes não conhecem chaves nem formato persistido.
+**Arquitetura:** features por domínio, regras puras, repositórios assíncronos atrás de interfaces e hooks finos para coordenação. `localStorage` é apenas adaptador corporativo; componentes não conhecem chaves nem formato persistido.
 
 **Stack:** React 19, TypeScript 6, Vite 8, Tailwind CSS 4, React Router 7, Vitest 4 e oxlint já instalados. Nenhuma dependência será adicionada.
 

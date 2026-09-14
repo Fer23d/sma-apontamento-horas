@@ -1,6 +1,6 @@
 import type { AssignmentSnapshot } from '../squads/types'
 
-export type TimeEntryStatus = 'ACTIVE' | 'CANCELLED'
+export type TimeEntryStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'ACTIVE' | 'CANCELLED'
 export type DisciplineCode = '—' | 'A' | 'E' | 'G' | 'M'
 export type ManualDocumentTypeCode =
   | '—'
@@ -68,6 +68,9 @@ export type CreateTimeEntryData = Pick<
   | 'documentTypeCode'
   | 'durationMinutes'
   | 'details'
->
+> & {
+  endDate?: string
+  weekdaysOnly?: boolean
+}
 
 export type TimeEntryValidationErrors = Partial<Record<keyof CreateTimeEntryData, string>>

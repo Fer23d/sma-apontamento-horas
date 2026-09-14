@@ -4,7 +4,7 @@ import type { TimeEntryFormValues } from './useTimeEntryForm'
 import { disciplines, documentTypes, isManualDocumentType } from './documentCatalog'
 import { MAX_CLIENT_NAME_LENGTH } from '../../config/business'
 
-export const fieldClassName = 'mt-2 w-full ui-field rounded-xl px-3 py-2.5 text-sm ui-text shadow-sm outline-none transition focus:ring-2 disabled:cursor-not-allowed disabled:bg-[var(--color-surface-subtle)]'
+export const fieldClassName = 'mt-2 w-full ui-field rounded-xl px-3 py-2.5 text-base ui-text shadow-sm outline-none transition focus:ring-2 disabled:cursor-not-allowed disabled:bg-[var(--color-surface-subtle)]'
 
 export function FieldError({ id, message }: { id: string; message?: string | null }) {
   if (!message) return null
@@ -15,16 +15,32 @@ type TimeEntryFieldsProps = {
   values: TimeEntryFormValues
   errors: TimeEntryValidationErrors
   maxDate: string
+  allowBatchMode?: boolean
   onChange: <Key extends keyof TimeEntryFormValues>(field: Key, value: TimeEntryFormValues[Key]) => void
 }
 
-export function TimeEntryFields({ values, errors, maxDate, onChange }: TimeEntryFieldsProps) {
+export function TimeEntryFields({ values, errors, maxDate, allowBatchMode = true, onChange }: TimeEntryFieldsProps) {
   return (
     <div className="grid gap-5 md:grid-cols-2">
-      <div>
-        <label htmlFor="entry-date" className="text-sm font-bold ui-text">Data</label>
-        <input id="entry-date" name="entryDate" type="date" max={maxDate} value={values.entryDate} onChange={(event) => onChange('entryDate', event.target.value)} className={fieldClassName} aria-invalid={Boolean(errors.entryDate)} aria-describedby={errors.entryDate ? 'entry-date-error' : undefined} />
-        <FieldError id="entry-date-error" message={errors.entryDate} />
+      <div className="md:col-span-2">
+        <div className="grid gap-4 md:grid-cols-2">
+          <div>
+            <label htmlFor="entry-start-date" className="text-sm font-bold ui-text">Data Inicial</label>
+            <input id="entry-start-date" name="startDate" type="date" max={maxDate} value={values.startDate} onChange={(event) => onChange('startDate', event.target.value)} className={fieldClassName} aria-invalid={Boolean(errors.entryDate)} aria-describedby={errors.entryDate ? 'entry-start-date-error' : undefined} />
+            <FieldError id="entry-start-date-error" message={errors.entryDate} />
+          </div>
+          <div>
+            <label htmlFor="entry-end-date" className="text-sm font-bold ui-text">Data Final</label>
+            <input id="entry-end-date" name="endDate" type="date" min={values.startDate} max={maxDate} value={values.endDate} onChange={(event) => onChange('endDate', event.target.value)} className={fieldClassName} disabled={!allowBatchMode} />
+          </div>
+        </div>
+        <p className="mt-2 text-xs ui-text-subtle">
+          Se a data final for diferente, o sistema criará automaticamente lançamentos individuais para cada dia do período.
+        </p>
+        <label className={`mt-3 inline-flex items-center gap-2 text-sm font-semibold ui-text ${allowBatchMode ? '' : 'opacity-60'}`}>
+          <input type="checkbox" checked={values.weekdaysOnly} onChange={(event) => onChange('weekdaysOnly', event.target.checked)} disabled={!allowBatchMode} className="h-4 w-4 rounded border-[var(--color-border)] bg-[var(--color-surface)] accent-[var(--color-primary)]" />
+          Somente dias úteis
+        </label>
       </div>
 
       <div>
@@ -35,15 +51,8 @@ export function TimeEntryFields({ values, errors, maxDate, onChange }: TimeEntry
       </div>
 
       <div>
-        <label htmlFor="project-code" className="text-sm font-bold ui-text">Número do projeto</label>
-        <input id="project-code" name="projectCode" type="text" maxLength={80} value={values.projectCode} onChange={(event) => onChange('projectCode', event.target.value)} autoCapitalize="none" autoCorrect="off" spellCheck={false} className={fieldClassName} aria-invalid={Boolean(errors.projectCode)} aria-describedby={errors.projectCode ? 'project-code-help project-code-error' : 'project-code-help'} />
-        <p id="project-code-help" className="mt-1.5 text-xs ui-text-subtle">* Escreva exatamente a numeração do projeto atual, caso já possua.</p>
-        <FieldError id="project-code-error" message={errors.projectCode} />
-      </div>
-
-      <div>
         <label htmlFor="contractor-number" className="text-sm font-bold ui-text">Número da contratada</label>
-        <input id="contractor-number" name="contractorNumber" value={values.contractorNumber ?? ''} onChange={(event) => onChange('contractorNumber', event.target.value)} autoCapitalize="none" autoCorrect="off" spellCheck={false} className={fieldClassName} aria-invalid={Boolean(errors.contractorNumber)} aria-describedby="contractor-number-help contractor-number-error" />
+        <input id="contractor-number" name="contractorNumber" maxLength={160} value={values.contractorNumber ?? ''} onChange={(event) => onChange('contractorNumber', event.target.value)} autoCapitalize="none" autoCorrect="off" spellCheck={false} className={fieldClassName} aria-invalid={Boolean(errors.contractorNumber)} aria-describedby="contractor-number-help contractor-number-error" />
         <p id="contractor-number-help" className="mt-1.5 text-xs ui-text-subtle">Opcional. Preencha manualmente ou selecione um documento da LD.</p>
         <FieldError id="contractor-number-error" message={errors.contractorNumber} />
       </div>

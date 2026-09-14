@@ -17,7 +17,11 @@ export function BrandMark({ alt = defaultAlt, variant = 'compact', src = officia
   return (
     <span className={`brand-mark brand-mark--${variant} ${className}`} data-brand-variant={variant}>
       {showImage
-        ? <img src={src} alt={alt} className="h-full w-full object-contain" onError={() => setFailed(true)} />
+        ? (
+            <span className="brand-mark__image-frame">
+              <img src={src} alt={alt} className="h-full w-full object-contain" onError={() => setFailed(true)} />
+            </span>
+          )
         : <span className="brand-mark__fallback" role="img" aria-label={alt}>SM&amp;A</span>}
     </span>
   )

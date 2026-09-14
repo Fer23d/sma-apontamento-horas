@@ -16,18 +16,18 @@ A linha de base foi confirmada antes das alterações: árvore limpa, branch sin
 | Catálogo incompleto | `demoActivities` possui seis itens. | Vinte atividades aprovadas, exatamente na ordem definida, sem eventos administrativos. |
 | Projeção futura | `PeriodSummary`, dashboard e histórico apresentam saldo hipotético. | Somente saldo real até hoje; futuro não gera déficit e recebe nota discreta quando necessário. |
 | Evento integral incoerente | A jornada é zerada, mas trabalho conflitante ainda produz extras/saldo; o formulário só consulta aprovação. | Evento integral neutraliza o resumo, preserva o registro para auditoria, sinaliza conflito e bloqueia novos lançamentos. |
-| Aviso técnico | `MonthlyCalendar` expõe “provider demonstrativo e determinístico”. | Linguagem clara de calendário demonstrativo, sem alegar fonte oficial. |
+| Aviso técnico | `MonthlyCalendar` expõe “provider corporativo e determinístico”. | Linguagem clara de calendário corporativo, sem alegar fonte oficial. |
 | Situação ambígua | Valor vazio significa “Ativos e cancelados”. | “Situação do apontamento”: Somente ativos (padrão), Somente cancelados e Todos. |
 | Edição discreta | A versão aparece apenas em rodapé. | Badge textual “Editado” para versão maior que 1 e detalhe com data/hora/versão. |
 | Marca duplicada | “SM&A” está escrito diretamente em múltiplos componentes. | `BrandMark` reutilizável com fallback atual, sem logo ou paleta fictícia. |
-| Acesso demonstrativo | `/login` já sustenta a revisão local. | Preservar o acesso existente sem criar autenticação, perfil ou rota nova. |
+| Acesso corporativo | `/login` já sustenta a revisão local. | Preservar o acesso existente sem criar autenticação, perfil ou rota nova. |
 
 ## App Shell e navegação
 
 - O `Header` ocupa toda a largura e contém marca compacta, botão do drawer, contexto compacto e tema.
 - No breakpoint `lg` existente, a `Sidebar` participa do fluxo ao lado da área principal, abaixo do header, sem margem/offset duplicado.
 - A sidebar apresenta iniciais, nome, cargo, squad ativa, Visão geral, Novo apontamento, Histórico, Folgas e Perfil.
-- A saída demonstrativa já funcional é preservada; não se cria novo fluxo de login.
+- A saída corporativa já funcional é preservada; não se cria novo fluxo de login.
 - A área principal usa `min-width: 0`, largura integral e controle de overflow; `PageContainer` centraliza o conteúdo somente dentro da coluna disponível.
 - No mobile, o drawer abre pelo header, fecha ao navegar, por Escape e pelo backdrop. O foco entra no drawer, fica contido enquanto aberto e retorna ao acionador ao fechar. A rolagem vertical permanece possível.
 
@@ -49,7 +49,7 @@ type MonthGridCell =
 
 ## Catálogo de atividades
 
-O catálogo de criação continua demonstrativo, centralizado em `src/mocks/demoData.ts`, e contém exatamente:
+O catálogo de criação continua corporativo, centralizado em `src/mocks/demoData.ts`, e contém exatamente:
 
 1. Análise de documento
 2. Apoio a colaborador
@@ -115,9 +115,9 @@ Afastamento parcial não bloqueia. Aprovação/competência permanece uma polít
 
 O modelo já distingue origem `DEMO`/`OFFICIAL`; somente `DEMO` é usado. A interface apresenta:
 
-> Calendário de demonstração: os feriados nacionais, estaduais e municipais ainda não estão integrados a uma fonte oficial.
+> Calendário de produ??o: os feriados nacionais, estaduais e municipais ainda não estão integrados a uma fonte oficial.
 
-`BrandMark` aceita variante compacta/completa, texto alternativo e futura origem de imagem/SVG, mas nesta rodada usa apenas o fallback “SM&A”. Header, sidebar e acesso demonstrativo reutilizam o componente. Não se cria imagem, SVG, logo ou nova paleta. Tokens dos componentes afetados ficam centralizados em `styles/index.css`; tema claro/escuro e seletor permanecem operacionais.
+`BrandMark` aceita variante compacta/completa, texto alternativo e futura origem de imagem/SVG, mas nesta rodada usa apenas o fallback “SM&A”. Header, sidebar e acesso corporativo reutilizam o componente. Não se cria imagem, SVG, logo ou nova paleta. Tokens dos componentes afetados ficam centralizados em `styles/index.css`; tema claro/escuro e seletor permanecem operacionais.
 
 ## Persistência
 

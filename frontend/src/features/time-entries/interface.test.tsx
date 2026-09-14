@@ -7,7 +7,7 @@ import { TimeEntryFields } from './TimeEntryFields'
 import type { TimeEntryFormValues } from './useTimeEntryForm'
 
 const values: TimeEntryFormValues = {
-  entryDate: '2026-07-20', clientName: '', projectCode: '', activityId: '', disciplineCode: '', documentTypeCode: '',
+  startDate: '2026-07-20', endDate: '2026-07-20', weekdaysOnly: true, clientName: '', contractorNumber: '', activityId: '', disciplineCode: '', documentTypeCode: '',
   hours: '', minutes: '', details: '', editReason: '',
 }
 
@@ -25,12 +25,15 @@ describe('markup acessível de apontamentos e histórico', () => {
   })
   it('associa labels aos campos obrigatórios e limita a data ao dia corporativo', () => {
     const markup = renderToStaticMarkup(<TimeEntryFields values={values} errors={{}} maxDate="2026-07-20" onChange={vi.fn()} />)
-    expect(markup).toContain('for="entry-date"')
+    expect(markup).toContain('for="entry-start-date"')
+    expect(markup).toContain('for="entry-end-date"')
     expect(markup).toContain('max="2026-07-20"')
     expect(markup).toContain('for="client"')
-    expect(markup).toContain('for="project-code"')
+    expect(markup).not.toContain('for="project-code"')
+    expect(markup).toContain('for="contractor-number"')
     expect(markup).toContain('for="discipline"')
     expect(markup).toContain('for="document-type"')
+    expect(markup).toContain('text-base')
   })
 
   it('usa campo textual para cliente em vez do catálogo demonstrativo', () => {
@@ -47,10 +50,11 @@ describe('markup acessível de apontamentos e histórico', () => {
     expect(markup).toContain('Identificado automaticamente pela LD')
   })
 
-  it('preserva o texto do número do projeto, a atividade Outros e remove campos descontinuados', () => {
+  it('mantém a contratada, a atividade Outros e remove campos descontinuados', () => {
     const markup = renderToStaticMarkup(<TimeEntryFields values={values} errors={{}} maxDate="2026-07-20" onChange={vi.fn()} />)
-    expect(markup).toContain('* Escreva exatamente a numeração do projeto atual, caso já possua.')
+    expect(markup).not.toContain('Número do projeto')
     expect(markup).toContain('Outros')
+    expect(markup).toContain('Se a data final for diferente')
     expect(markup).not.toContain('Avanço')
     expect(markup).not.toContain('Documento (LD)')
   })

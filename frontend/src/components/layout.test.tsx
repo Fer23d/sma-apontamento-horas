@@ -24,7 +24,7 @@ const collaboratorSession: DemoSession = {
 const supervisorSession: DemoSession = {
   ...collaboratorSession,
   id: 'demo-supervisor-001',
-  name: 'Supervisor Demonstração',
+  name: 'Supervisor',
   role: 'SUPERVISOR',
 }
 
@@ -69,7 +69,7 @@ describe('layout responsivo do colaborador', () => {
     expect(desktopStart).toBeLessThan(markup.indexOf('id="main-content"'))
     expect(markup.indexOf('id="main-content"')).toBeLessThan(markup.indexOf('data-mobile-drawer="true"'))
     expect(desktopMarkup).toContain('w-64')
-    expect(desktopMarkup).toContain('lg:flex')
+    expect(desktopMarkup).toContain('md:flex')
     expect(desktopMarkup).not.toContain('invisible')
     expect(desktopMarkup).not.toContain('translate-x')
   })
@@ -107,19 +107,19 @@ describe('layout responsivo do colaborador', () => {
 
     expect(markup).toContain('top-20')
     expect(drawerMarkup).toContain('-translate-x-full')
-    expect(drawerMarkup).toContain('lg:hidden')
-    expect(drawerMarkup).not.toContain('lg:translate-x-0')
-    expect(markup).toContain('lg:grid-cols-[16rem_minmax(0,1fr)]')
+    expect(drawerMarkup).toContain('md:hidden')
+    expect(drawerMarkup).not.toContain('md:translate-x-0')
+    expect(markup).toContain('md:grid-cols-[16rem_minmax(0,1fr)]')
     expect(markup).toContain('overflow-x-clip')
   })
 
   it('exibe o resumo profissional e todos os links principais na sidebar', () => {
     const markup = renderLayout()
 
-    expect(markup).toContain('Colaborador Demonstração')
+    expect(markup).toContain('Colaborador')
     expect(markup).toContain('Projetista')
     expect(markup).toContain('Engenharia de Automação')
-    for (const label of ['Visão geral', 'Novo apontamento', 'Histórico', 'Folgas', 'Meu perfil']) {
+    for (const label of ['Visão geral', 'Novo apontamento', 'Histórico', 'Ausências', 'Meu perfil']) {
       expect(markup).toContain(label)
     }
   })
@@ -177,7 +177,7 @@ describe('layout responsivo do colaborador', () => {
   })
 })
 
-describe('guardas da sessão demonstrativa', () => {
+describe('guardas da sessão corporativa', () => {
   it('autoriza a área pelo papel da sessão mesmo quando não existe perfil de colaborador', () => {
     const markup = renderGuard(
       <ProtectedRoute allowedRoles={['SUPERVISOR']}><p>Área da supervisão</p></ProtectedRoute>,

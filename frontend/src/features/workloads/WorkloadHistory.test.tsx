@@ -8,7 +8,7 @@ const request: WorkloadChangeRequest = {
   collaboratorId: 'collaborator-1',
   requestedDailyMinutes: 480,
   requestedEffectiveFrom: '2026-08-01',
-  justification: 'Ajuste demonstrativo',
+  justification: 'Ajuste corporativo',
   status: 'PENDING',
   assignmentSnapshot: null,
   createdAt: '2026-07-20T12:00:00.000Z',

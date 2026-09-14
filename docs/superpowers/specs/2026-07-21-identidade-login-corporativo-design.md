@@ -1,8 +1,8 @@
-# Especificação de design — Identidade SM&A e login demonstrativo
+# Especificação de design — Identidade SM&A e login corporativo
 
 ## Objetivo e linha de base
 
-Esta rodada aplica a identidade oficial da SM&A, remove os três atalhos redundantes da Visão geral e introduz uma sessão demonstrativa explícita para Colaborador, Supervisor e Diretor/Administração. As regras funcionais já aprovadas do Colaborador permanecem inalteradas.
+Esta rodada aplica a identidade oficial da SM&A, remove os três atalhos redundantes da Visão geral e introduz uma sessão corporativa explícita para Colaborador, Supervisor e Diretor/Administração. As regras funcionais já aprovadas do Colaborador permanecem inalteradas.
 
 Linha de base confirmada em 21 de julho de 2026:
 
@@ -120,7 +120,7 @@ Os pares texto:fundo permanecem acima de `4,5:1` e borda:canvas acima de `3:1`. 
 - sidebar: não repete a logo no cartão da squad;
 - tema escuro: contêiner claro discreto, sem filtro ou inversão.
 
-## Sessão demonstrativa por perfil
+## Sessão corporativa por perfil
 
 Tipos explícitos:
 
@@ -138,7 +138,7 @@ export type DemoSession = {
 }
 ```
 
-O contexto fornece `session`, `profile`, `isLoading`, `signIn(role)` e `signOut()`. `profile` existe somente para a sessão Colaborador e continua apontando para o colaborador demonstrativo atual; nenhum hook funcional do Colaborador muda de dono.
+O contexto fornece `session`, `profile`, `isLoading`, `signIn(role)` e `signOut()`. `profile` existe somente para a sessão Colaborador e continua apontando para o colaborador corporativo atual; nenhum hook funcional do Colaborador muda de dono.
 
 Persistência:
 
@@ -157,7 +157,7 @@ Não há senha, token, segredo, credencial Microsoft ou alegação de autentica�
 
 | Perfil | Rota inicial | Conteúdo nesta rodada |
 |---|---|---|
-| Sem sessão | `/login` | seleção demonstrativa |
+| Sem sessão | `/login` | seleção corporativa |
 | Colaborador | `/colaborador` | área funcional atual preservada |
 | Supervisor | `/supervisor` | placeholder honesto |
 | Diretor/Administração | `/administracao` | placeholder honesto |
@@ -166,13 +166,13 @@ Não há senha, token, segredo, credencial Microsoft ou alegação de autentica�
 
 ## Login e placeholders
 
-O login apresenta uma única logo, título, texto “Ambiente de demonstração”, explicação sem senha e três cards:
+O login apresenta uma única logo, título, texto “Ambiente de produ??o”, explicação sem senha e três cards:
 
 1. Colaborador — apontamentos, saldos, histórico, folgas e perfil;
 2. Supervisor — equipes, aprovações e solicitações;
 3. Diretor/Administração — visão administrativa e gerencial.
 
-Supervisor e Diretor/Administração recebem páginas simples “em desenvolvimento”, identificação do perfil e botão “Sair da demonstração”. Nenhuma funcionalidade fictícia é apresentada.
+Supervisor e Diretor/Administração recebem páginas simples “em desenvolvimento”, identificação do perfil e botão “Sair da produ??o”. Nenhuma funcionalidade fictícia é apresentada.
 
 ## Visão geral e shell
 

@@ -1,93 +1,90 @@
-import { useLocation, useNavigate, type NavigateFunction } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { useState } from 'react'
+import { InteractionStatus } from '@azure/msal-browser'
+import { useMsal } from '@azure/msal-react'
+import { isMsalConfigured, loginRequest } from '../authConfig'
 import { BrandMark } from '../components/BrandMark'
 import { ThemeToggle } from '../components/ThemeToggle'
 import { canAccessDemoPath, getDemoHomePath } from '../features/session/routePolicy'
-import type { SessionContextValue } from '../features/session/sessionContext'
-import type { DemoRole } from '../features/session/types'
-import { useSession } from '../features/session/useSession'
-
-type DemoProfileCard = {
-  role: DemoRole
-  name: string
-  description: string
-  actionLabel: string
-}
-
-const DEMO_PROFILE_CARDS: readonly DemoProfileCard[] = [
-  {
-    role: 'COLLABORATOR',
-    name: 'Colaborador',
-    description: 'Apontamentos, saldos, histórico, folgas e perfil.',
-    actionLabel: 'Entrar como Colaborador',
-  },
-  {
-    role: 'SUPERVISOR',
-    name: 'Supervisor',
-    description: 'Equipes, aprovações e solicitações.',
-    actionLabel: 'Entrar como Supervisor',
-  },
-  {
-    role: 'DIRECTOR_ADMIN',
-    name: 'Diretor/Administração',
-    description: 'Visão administrativa e gerencial.',
-    actionLabel: 'Entrar como Diretor/Administração',
-  },
-]
+import { mapMicrosoftClaimsToRole } from '../features/session/claims'
+import { demoSessionService } from '../services/demoSessionService'
 
 type LoginPageContentProps = {
-  from: unknown
-  signIn: SessionContextValue['signIn']
-  navigate: NavigateFunction
+  handleLogin: () => Promise<void>
+  isProcessing?: boolean
+  authError: string | null
 }
 
-export function LoginPageContent({ from, signIn, navigate }: LoginPageContentProps) {
-  const enterDemo = (role: DemoRole) => {
-    const destination = typeof from === 'string' && canAccessDemoPath(role, from)
-      ? from
-      : getDemoHomePath(role)
-    signIn(role)
-    navigate(destination, { replace: true })
-  }
-
+export function LoginPageContent({ handleLogin, isProcessing = false, authError }: LoginPageContentProps) {
   return (
     <main className="relative flex min-h-screen items-center justify-center bg-[var(--color-background)] px-4 py-20 text-[var(--color-text)] sm:px-6">
       <div className="absolute right-4 top-4"><ThemeToggle /></div>
       <section className="w-full max-w-6xl" aria-labelledby="demo-login-title">
         <header className="mx-auto mb-10 flex max-w-2xl flex-col items-center text-center">
           <BrandMark variant="full" className="mb-7" />
-          <p className="ui-badge-secondary">Ambiente de demonstração</p>
+          <p className="ui-badge-secondary">Ambiente corporativo</p>
           <h1 id="demo-login-title" className="mt-4 text-3xl font-extrabold text-[var(--color-primary)] sm:text-4xl">
-            Escolha seu perfil
+            Acesso corporativo
           </h1>
           <p className="mt-4 text-sm leading-6 text-[var(--color-text-muted)] sm:text-base">
-            Entre sem senha para conhecer o ambiente. Este acesso é apenas demonstrativo e não realiza autenticação real.
+            Acesse o sistema com sua conta corporativa Microsoft.
           </p>
+          {isProcessing
+            ? <p className="mt-6 text-sm font-semibold text-[var(--color-text-muted)]" role="status" aria-live="polite">Processando autenticação...</p>
+            : <button type="button" onClick={() => void handleLogin()} className="ui-button-secondary mt-6">Entrar com Microsoft</button>}
+          {authError && <p role="alert" className="mt-3 text-sm font-semibold text-[var(--color-danger)]">{authError}</p>}
         </header>
 
-        <div className="grid gap-5 md:grid-cols-3">
-          {DEMO_PROFILE_CARDS.map((profile) => (
-            <article key={profile.role} className="ui-card flex min-h-64 flex-col rounded-2xl p-6">
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-secondary)]">
-                Perfil demonstrativo
-              </p>
-              <h2 className="mt-3 text-xl font-extrabold text-[var(--color-text)]">{profile.name}</h2>
-              <p className="mt-3 flex-1 text-sm leading-6 text-[var(--color-text-muted)]">{profile.description}</p>
-              <button type="button" onClick={() => enterDemo(profile.role)} className="ui-button-primary mt-6 w-full">
-                {profile.actionLabel}
-              </button>
-            </article>
-          ))}
-        </div>
       </section>
     </main>
   )
 }
 
 export function LoginPage() {
-  const { signIn } = useSession()
+  const { instance, inProgress } = useMsal()
   const navigate = useNavigate()
   const location = useLocation()
   const from = (location.state as { from?: unknown } | null)?.from
+  const [authError, setAuthError] = useState<string | null>(null)
+  const [isSigningIn, setIsSigningIn] = useState(false)
 
-  return <LoginPageContent from={from} signIn={signIn} navigate={navigate} />
+  async function handleLogin() {
+    if (isSigningIn || inProgress !== InteractionStatus.None) return
+    setAuthError(null)
+    if (!isMsalConfigured) {
+      setAuthError('Configure VITE_MSAL_CLIENT_ID e VITE_MSAL_TENANT_ID no arquivo frontend/.env e reinicie o servidor.')
+      return
+    }
+    setIsSigningIn(true)
+    try {
+      const response = await instance.loginPopup(loginRequest)
+      const account = response.account
+      if (account) {
+        instance.setActiveAccount(account)
+        window.localStorage.setItem('sma:microsoft-user:v1', JSON.stringify({
+          name: account.name ?? account.username,
+          email: account.username,
+          homeAccountId: account.homeAccountId,
+        }))
+        const claims = account.idTokenClaims as { roles?: unknown; groups?: unknown } | undefined
+        const role = mapMicrosoftClaimsToRole(claims)
+        demoSessionService.signInWithMicrosoft({
+          id: account.homeAccountId,
+          name: account.name ?? account.username,
+          email: account.username,
+          role,
+        })
+        const destination = typeof from === 'string' && canAccessDemoPath(role, from)
+          ? from
+          : getDemoHomePath(role)
+        navigate(destination, { replace: true })
+      }
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : 'Não foi possível autenticar com a Microsoft.')
+    } finally {
+      setIsSigningIn(false)
+    }
+  }
+
+  return <LoginPageContent handleLogin={handleLogin} isProcessing={isSigningIn || inProgress !== InteractionStatus.None} authError={authError} />
 }

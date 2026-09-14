@@ -4,16 +4,19 @@ import { dayApprovalService } from '../../services/dayApprovalService'
 import { entryDateAvailabilityService } from '../../services/entryDateAvailabilityService'
 import { timeEntryService } from '../../services/timeEntryService'
 import type { CreateTimeEntryData, TimeEntry, TimeEntryValidationErrors } from './types'
+import { expandTimeEntryDates } from './domain'
 import { getCorporateToday, isIsoDate } from '../../shared/utils/date'
 import { useSession } from '../session/useSession'
 import { areValidDurationParts, hoursAndMinutesToMinutes, validateTimeEntry } from './domain'
 import { applyLdDocument, type LdDocument } from '../document-list/ldImport'
 import { isManualDocumentType } from './documentCatalog'
+import { offlineQueueService } from '../../services/offlineQueueService'
 
 export type TimeEntryFormValues = {
-  entryDate: string
+  startDate: string
+  endDate: string
+  weekdaysOnly: boolean
   clientName: string
-  projectCode: string
   contractorNumber?: string
   ldDocument?: CreateTimeEntryData['ldDocument']
   activityId: string
@@ -26,9 +29,10 @@ export type TimeEntryFormValues = {
 }
 
 const emptyValues = (entryDate: string): TimeEntryFormValues => ({
-  entryDate,
+  startDate: entryDate,
+  endDate: entryDate,
+  weekdaysOnly: true,
   clientName: '',
-  projectCode: '',
   contractorNumber: '',
   activityId: '',
   disciplineCode: '',
@@ -41,9 +45,10 @@ const emptyValues = (entryDate: string): TimeEntryFormValues => ({
 
 function valuesFromEntry(entry: TimeEntry): TimeEntryFormValues {
   return {
-    entryDate: entry.entryDate,
+    startDate: entry.entryDate,
+    endDate: entry.entryDate,
+    weekdaysOnly: true,
     clientName: entry.clientName,
-    projectCode: entry.projectCode,
     contractorNumber: entry.contractorNumber ?? '',
     ldDocument: entry.ldDocument,
     activityId: entry.activityId,
@@ -91,7 +96,11 @@ export function useTimeEntryForm({ initialDate, entryId, duplicateId }: { initia
   }, [profile, sourceId])
 
   const setField = useCallback(<Key extends keyof TimeEntryFormValues>(field: Key, value: TimeEntryFormValues[Key]) => {
-    setValues((current) => ({ ...current, [field]: value }))
+    setValues((current) => {
+      if (field !== 'startDate' || typeof value !== 'string') return { ...current, [field]: value }
+      const shouldResetEndDate = !current.endDate || current.endDate < value || current.endDate === current.startDate
+      return { ...current, startDate: value, endDate: shouldResetEndDate ? value : current.endDate }
+    })
     if (field === 'editReason') setEditReasonError(null)
     else setErrors((current) => ({ ...current, [field]: undefined }))
   }, [])
@@ -102,10 +111,17 @@ export function useTimeEntryForm({ initialDate, entryId, duplicateId }: { initia
     setSuccessMessage(null)
     const durationHours = Number(values.hours || 0)
     const durationRemainderMinutes = Number(values.minutes || 0)
+    const effectiveEndDate = mode === 'CREATE' ? values.endDate : values.startDate
+    const effectiveWeekdaysOnly = mode === 'CREATE' ? values.weekdaysOnly : true
+    const periodDates = mode === 'CREATE'
+      ? expandTimeEntryDates(values.startDate, effectiveEndDate, effectiveWeekdaysOnly)
+      : [values.startDate]
     const data: CreateTimeEntryData = {
-      entryDate: values.entryDate,
+      entryDate: values.startDate,
+      endDate: effectiveEndDate,
+      weekdaysOnly: effectiveWeekdaysOnly,
       clientName: values.clientName,
-      projectCode: values.projectCode,
+      projectCode: values.contractorNumber?.trim() ?? '',
       contractorNumber: values.contractorNumber,
       ldDocument: values.ldDocument,
       activityId: values.activityId,
@@ -118,19 +134,38 @@ export function useTimeEntryForm({ initialDate, entryId, duplicateId }: { initia
     let dateBlock = { blocked: false } as Awaited<ReturnType<typeof entryDateAvailabilityService.getBlock>>
     if (isIsoDate(data.entryDate)) {
       try {
-        [canMutateDate, dateBlock] = await Promise.all([
-          dayApprovalService.canMutate(profile.id, data.entryDate),
-          entryDateAvailabilityService.getBlock(profile.id, data.entryDate),
+        const datesToCheck = periodDates.length > 0 ? periodDates : [data.entryDate]
+        const [mutationAllowed, dateBlocks] = await Promise.all([
+          mode === 'CREATE' && periodDates.length > 0
+            ? dayApprovalService.canMutateRange(profile.id, periodDates)
+            : dayApprovalService.canMutate(profile.id, data.entryDate),
+          Promise.all(datesToCheck.map((date) => entryDateAvailabilityService.getBlock(profile.id, date))),
         ])
+        canMutateDate = mutationAllowed
+        dateBlock = dateBlocks.find((block) => block.blocked) ?? { blocked: false }
       } catch {
         setSubmitError('Não foi possível verificar os eventos desta data. Tente novamente.')
         return false
       }
     }
     const validationErrors = validateTimeEntry(data, demoActivities, { today: getCorporateToday(), canMutateDate })
+    if (validationErrors.projectCode) {
+      validationErrors.contractorNumber = 'Informe o número da contratada.'
+      delete validationErrors.projectCode
+    }
     if (dateBlock.blocked) validationErrors.entryDate = dateBlock.message
     if (!areValidDurationParts(durationHours, durationRemainderMinutes)) {
       validationErrors.durationMinutes = 'Informe horas inteiras entre 0 e 24 e minutos inteiros entre 0 e 59, com total máximo de 24 horas.'
+    }
+    if (mode === 'CREATE') {
+      if (!isIsoDate(values.endDate)) {
+        validationErrors.entryDate = validationErrors.entryDate ?? 'Informe uma data final válida.'
+      } else if (values.endDate < values.startDate) {
+        validationErrors.entryDate = validationErrors.entryDate ?? 'A data final deve ser igual ou posterior à data inicial.'
+      } else if (values.startDate !== values.endDate && periodDates.length === 0) {
+        setSubmitError('O período selecionado não contém dias úteis para lançamento.')
+        return false
+      }
     }
     const reasonError = mode === 'EDIT' && !values.editReason.trim() ? 'Informe o motivo da edição.' : null
     setErrors(validationErrors)
@@ -152,8 +187,20 @@ export function useTimeEntryForm({ initialDate, entryId, duplicateId }: { initia
         await timeEntryService.duplicate(profile.id, source.id, source.version, data)
         setSuccessMessage('Apontamento duplicado com sucesso.')
       } else {
-        await timeEntryService.create(profile.id, data)
-        setSuccessMessage('Apontamento salvo com sucesso.')
+        if (typeof navigator !== 'undefined' && !navigator.onLine) {
+          await offlineQueueService.enqueue({
+            id: crypto.randomUUID(),
+            status: 'PENDING',
+            collaboratorId: profile.id,
+            data,
+          })
+          setSuccessMessage('Sem conexão. Apontamento salvo localmente e aguardando rede.')
+        } else {
+          await timeEntryService.create(profile.id, data)
+          setSuccessMessage(periodDates.length > 1
+            ? `${periodDates.length} lançamentos salvos com sucesso para o período selecionado.`
+            : 'Apontamento salvo com sucesso.')
+        }
       }
       setErrors({})
       setEditReasonError(null)

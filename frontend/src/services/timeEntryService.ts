@@ -4,6 +4,7 @@ import type { DailySummary } from '../features/calendar/types'
 import type { AuditEvent } from '../features/audit/types'
 import type { AssignmentSnapshot } from '../features/squads/types'
 import type { CreateTimeEntryData, DisciplineCode, DocumentTypeCode, TimeEntry } from '../features/time-entries/types'
+import { expandTimeEntryDates } from '../features/time-entries/domain'
 import type { WorkloadVersion } from '../features/workloads/types'
 import { isIsoDate } from '../shared/utils/date'
 import { createBrowserStorage, type StorageLike } from './storage'
@@ -27,7 +28,7 @@ import {
 export { LEGACY_V1_TIME_ENTRY_STORAGE_KEY, LEGACY_V2_TIME_ENTRY_STORAGE_KEY, LEGACY_V3_TIME_ENTRY_STORAGE_KEY } from './timeEntryMigration'
 export type { StorageLike } from './storage'
 
-export const TIME_ENTRY_STORAGE_KEY = 'sma:time-entries:v4'
+export const TIME_ENTRY_STORAGE_KEY = 'apontamentos_sma'
 
 export type TimeEntryFilters = {
   clientName?: string
@@ -55,6 +56,7 @@ export type TimeEntryPage = {
 
 export interface EntryMutationPolicy {
   canMutate(collaboratorId: string, date: string): Promise<boolean>
+  canMutateRange?(collaboratorId: string, dates: string[]): Promise<boolean>
 }
 
 export interface EntryDateGuard {
@@ -95,10 +97,13 @@ type ReadResult = {
 }
 
 function normalizeCreateData(data: CreateTimeEntryData): CreateTimeEntryData {
+  const { endDate: _endDate, weekdaysOnly: _weekdaysOnly, ...baseData } = data
   const projectCode = data.projectCode.trim()
   const clientName = data.clientName.trim()
   const details = data.details.trim()
   if (!isIsoDate(data.entryDate)) throw new Error('Informe uma data válida.')
+  if (data.endDate && !isIsoDate(data.endDate)) throw new Error('Informe uma data final válida.')
+  if (data.endDate && data.endDate < data.entryDate) throw new Error('A data final deve ser igual ou posterior à data inicial.')
   if (!clientName || clientName.length > MAX_CLIENT_NAME_LENGTH) throw new Error('Informe um cliente válido.')
   if (!projectCode || projectCode.length > MAX_PROJECT_CODE_LENGTH) throw new Error('Informe um código de projeto válido.')
   if (!data.activityId) throw new Error('Informe a atividade.')
@@ -109,7 +114,7 @@ function normalizeCreateData(data: CreateTimeEntryData): CreateTimeEntryData {
   if (!Number.isInteger(data.durationMinutes) || data.durationMinutes <= 0 || data.durationMinutes > MAX_ENTRY_MINUTES) {
     throw new Error('Informe uma duração válida.')
   }
-  return { ...data, clientName, projectCode, details, contractorNumber: data.contractorNumber?.trim() }
+  return { ...baseData, clientName, projectCode, details, contractorNumber: data.contractorNumber?.trim() }
 }
 
 function emptyStorage(): TimeEntryStorageV4 {
@@ -217,6 +222,16 @@ export class LocalStorageTimeEntryService implements TimeEntryService {
     }
   }
 
+  private async ensureMutableRange(collaboratorId: string, dates: string[]) {
+    if (dates.length > 1 && this.mutationPolicy.canMutateRange) {
+      if (!await this.mutationPolicy.canMutateRange(collaboratorId, dates)) {
+        throw new Error('Este período está somente leitura ou fora de uma competência aberta.')
+      }
+      return
+    }
+    for (const date of dates) await this.ensureMutable(collaboratorId, date)
+  }
+
   private async ensureDateAvailable(collaboratorId: string, date: string) {
     const block = await this.dateGuard.getBlock(collaboratorId, date)
     if (block.blocked) throw new Error(block.message)
@@ -262,7 +277,7 @@ export class LocalStorageTimeEntryService implements TimeEntryService {
       .filter((entry) => !filters.activityId || entry.activityId === filters.activityId)
       .filter((entry) => !filters.disciplineCode || entry.disciplineCode === filters.disciplineCode)
       .filter((entry) => !filters.documentTypeCode || entry.documentTypeCode === filters.documentTypeCode)
-      .filter((entry) => !filters.status || entry.status === filters.status)
+      .filter((entry) => !filters.status || (filters.status === 'ACTIVE' ? entry.status !== 'CANCELLED' : entry.status === filters.status))
       .sort((left, right) => right.entryDate.localeCompare(left.entryDate) || right.createdAt.localeCompare(left.createdAt))
     const items = entries.slice(offset, offset + pageSize)
     const nextOffset = offset + items.length
@@ -286,29 +301,38 @@ export class LocalStorageTimeEntryService implements TimeEntryService {
   }
 
   async create(collaboratorId: string, data: CreateTimeEntryData) {
+    const endDate = data.endDate ?? data.entryDate
+    const weekdaysOnly = data.weekdaysOnly ?? true
     const normalized = normalizeCreateData(data)
-    await this.ensureMutable(collaboratorId, normalized.entryDate)
-    await this.ensureDateAvailable(collaboratorId, normalized.entryDate)
+    const dates = expandTimeEntryDates(normalized.entryDate, endDate, weekdaysOnly)
+    if (dates.length === 0) {
+      throw new Error('O período selecionado não contém dias válidos para lançamento.')
+    }
+    await this.ensureMutableRange(collaboratorId, dates)
+    for (const date of dates) {
+      await this.ensureDateAvailable(collaboratorId, date)
+    }
     const assignmentSnapshot = this.resolveAssignment(collaboratorId)
     if (!assignmentSnapshot) throw new Error('Não existe squad ativa para vincular o apontamento.')
     const readResult = this.read()
     if (!readResult.canWrite) throw new Error('Não foi possível preparar o armazenamento local para gravação.')
     const timestamp = this.now()
-    const entry: TimeEntry = {
+    const createdEntries: TimeEntry[] = dates.map((date) => ({
       id: this.createId(),
       collaboratorId,
       ...normalized,
+      entryDate: date,
       assignmentSnapshot,
-      status: 'ACTIVE',
+      status: 'PENDING',
       version: 1,
       createdAt: timestamp,
       updatedAt: timestamp,
-    }
+    }))
     const current = readResult.data.entriesByCollaborator[collaboratorId] ?? []
-    readResult.data.entriesByCollaborator[collaboratorId] = [...current, entry]
+    readResult.data.entriesByCollaborator[collaboratorId] = [...current, ...createdEntries]
     this.writeAndValidate(readResult.data)
-    await this.record('TIME_ENTRY_CREATED', collaboratorId, entry, { newValue: entry })
-    return entry
+    await Promise.all(createdEntries.map((entry) => this.record('TIME_ENTRY_CREATED', collaboratorId, entry, { newValue: entry })))
+    return createdEntries[0]
   }
 
   async update(collaboratorId: string, id: string, expectedVersion: number, data: CreateTimeEntryData, reason: string) {
@@ -365,7 +389,7 @@ export class LocalStorageTimeEntryService implements TimeEntryService {
       collaboratorId: collaborId,
       ...normalized,
       assignmentSnapshot,
-      status: 'ACTIVE',
+      status: 'PENDING',
       version: 1,
       createdAt: timestamp,
       updatedAt: timestamp,

@@ -5,7 +5,7 @@ import { resolveEntryDateBlock } from './entryDatePolicy'
 function event(type: CalendarEvent['type'], date = '2026-07-20'): CalendarEvent {
   return {
     id: `event-${type}`, collaboratorId: 'demo-collaborator-001', type, startDate: date, endDate: date,
-    title: 'Evento demonstrativo', source: 'DEMO', createdAt: '2026-07-01T12:00:00.000Z',
+    title: 'Evento corporativo', source: 'DEMO', createdAt: '2026-07-01T12:00:00.000Z',
   }
 }
 
