@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "npm --prefix frontend run build",
+    "build": "npm install --prefix frontend && npm --prefix frontend run build",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
