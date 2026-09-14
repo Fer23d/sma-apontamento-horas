@@ -1,7 +1,7 @@
 import { useLocation, useNavigate } from 'react-router-dom'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { InteractionStatus } from '@azure/msal-browser'
-import { useMsal } from '@azure/msal-react'
+import { useIsAuthenticated, useMsal } from '@azure/msal-react'
 import { isMsalConfigured, loginRequest } from '../authConfig'
 import { BrandMark } from '../components/BrandMark'
 import { ThemeToggle } from '../components/ThemeToggle'
@@ -41,12 +41,40 @@ export function LoginPageContent({ handleLogin, isProcessing = false, authError 
 }
 
 export function LoginPage() {
-  const { instance, inProgress } = useMsal()
+  const { instance, accounts, inProgress } = useMsal()
+  const isAuthenticated = useIsAuthenticated()
   const navigate = useNavigate()
   const location = useLocation()
   const from = (location.state as { from?: unknown } | null)?.from
   const [authError, setAuthError] = useState<string | null>(null)
   const [isSigningIn, setIsSigningIn] = useState(false)
+
+  useEffect(() => {
+    if (!isAuthenticated || inProgress !== InteractionStatus.None) return
+
+    const account = instance.getActiveAccount() ?? accounts[0]
+    if (!account) return
+
+    instance.setActiveAccount(account)
+    const claims = account.idTokenClaims as { roles?: unknown; groups?: unknown } | undefined
+    const role = mapMicrosoftClaimsToRole(claims)
+
+    try {
+      demoSessionService.signInWithMicrosoft({
+        id: account.homeAccountId,
+        name: account.name ?? account.username,
+        email: account.username,
+        role,
+      })
+      const destination = typeof from === 'string' && canAccessDemoPath(role, from)
+        ? from
+        : getDemoHomePath(role)
+      navigate(destination, { replace: true })
+    } catch (error) {
+      console.error('Erro ao preparar a sessão Microsoft:', error)
+      setAuthError('Não foi possível preparar sua sessão corporativa.')
+    }
+  }, [accounts, from, inProgress, instance, isAuthenticated, navigate])
 
   async function handleLogin() {
     if (isSigningIn || inProgress !== InteractionStatus.None) return
@@ -57,29 +85,9 @@ export function LoginPage() {
     }
     setIsSigningIn(true)
     try {
-      const response = await instance.loginPopup(loginRequest)
-      const account = response.account
-      if (account) {
-        instance.setActiveAccount(account)
-        window.localStorage.setItem('sma:microsoft-user:v1', JSON.stringify({
-          name: account.name ?? account.username,
-          email: account.username,
-          homeAccountId: account.homeAccountId,
-        }))
-        const claims = account.idTokenClaims as { roles?: unknown; groups?: unknown } | undefined
-        const role = mapMicrosoftClaimsToRole(claims)
-        demoSessionService.signInWithMicrosoft({
-          id: account.homeAccountId,
-          name: account.name ?? account.username,
-          email: account.username,
-          role,
-        })
-        const destination = typeof from === 'string' && canAccessDemoPath(role, from)
-          ? from
-          : getDemoHomePath(role)
-        navigate(destination, { replace: true })
-      }
+      await instance.loginPopup(loginRequest)
     } catch (error) {
+      console.error('Erro no popup:', error)
       setAuthError(error instanceof Error ? error.message : 'Não foi possível autenticar com a Microsoft.')
     } finally {
       setIsSigningIn(false)
