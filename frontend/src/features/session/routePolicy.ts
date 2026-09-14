@@ -8,6 +8,11 @@ const HOME_PATH_BY_ROLE: Record<DemoRole, string> = {
 
 const POLICY_ORIGIN = 'https://demo-session.invalid'
 
+function toAbsoluteInternalPath(path: string) {
+  const normalized = path.trim()
+  return normalized.startsWith('/') ? normalized : `/${normalized}`
+}
+
 type DemoRouteLocation = {
   pathname: string
   search: string
@@ -34,7 +39,7 @@ function getSafePathname(path: string) {
 }
 
 export function getDemoHomePath(role: DemoRole) {
-  return HOME_PATH_BY_ROLE[role]
+  return toAbsoluteInternalPath(HOME_PATH_BY_ROLE[role])
 }
 
 export function canAccessDemoPath(role: DemoRole, path: string) {
