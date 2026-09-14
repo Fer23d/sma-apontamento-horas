@@ -1,14 +1,23 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Autenticação SM&amp;A</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Autenticando...</title>
     <script>
-      if (window.opener && window.opener !== window) {
-        window.setTimeout(function () { window.close(); }, 1000);
-      }
+      window.onload = function () {
+        if (window.opener && window.opener !== window) {
+          try {
+            window.opener.postMessage(window.location.hash, window.location.origin);
+            window.close();
+          } catch (e) {
+            console.error('Erro ao fechar aba de autenticação', e);
+          }
+        }
+      };
     </script>
   </head>
-  <body></body>
+  <body>
+    <p>Autenticação concluída. Redirecionando...</p>
+  </body>
 </html>

@@ -2,7 +2,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { InteractionStatus } from '@azure/msal-browser'
 import { useIsAuthenticated, useMsal } from '@azure/msal-react'
-import { isMsalConfigured, loginRequest } from '../authConfig'
+import { getMsalRedirectUri, isMsalConfigured, loginRequest } from '../authConfig'
 import { BrandMark } from '../components/BrandMark'
 import { ThemeToggle } from '../components/ThemeToggle'
 import { canAccessDemoPath, getDemoHomePath } from '../features/session/routePolicy'
@@ -85,7 +85,10 @@ export function LoginPage() {
     }
     setIsSigningIn(true)
     try {
-      await instance.loginPopup(loginRequest)
+      await instance.loginPopup({
+        ...loginRequest,
+        redirectUri: getMsalRedirectUri(),
+      })
     } catch (error) {
       console.error('Erro no popup:', error)
       setAuthError(error instanceof Error ? error.message : 'Não foi possível autenticar com a Microsoft.')

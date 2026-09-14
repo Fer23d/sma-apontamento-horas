@@ -5,13 +5,16 @@ const tenantId = import.meta.env.VITE_MSAL_TENANT_ID?.trim() ?? ''
 
 export const isMsalConfigured = Boolean(clientId && tenantId)
 
+export function getMsalRedirectUri() {
+  if (typeof window === 'undefined') return '/auth.html'
+  return new URL(`${import.meta.env.BASE_URL || '/'}auth.html`, window.location.origin).toString()
+}
+
 export const msalConfig: Configuration = {
   auth: {
     clientId,
     authority: `https://login.microsoftonline.com/${tenantId}`,
-    redirectUri: typeof window === 'undefined'
-      ? '/auth.html'
-      : new URL(`${import.meta.env.BASE_URL || '/'}auth.html`, window.location.origin).toString(),
+    redirectUri: getMsalRedirectUri(),
     // Compatibilidade explícita com o retorno do HashRouter.
     navigateToLoginRequestUrl: false,
   } as Configuration['auth'] & { navigateToLoginRequestUrl: false },
