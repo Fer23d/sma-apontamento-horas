@@ -20,7 +20,8 @@ export const msalConfig: Configuration = {
   } as Configuration['auth'] & { navigateToLoginRequestUrl: false },
   cache: {
     cacheLocation: 'localStorage',
-  },
+    storeAuthStateInCookie: false,
+  } as Configuration['cache'] & { storeAuthStateInCookie: false },
 }
 
 export const msalInstance = new PublicClientApplication(msalConfig)

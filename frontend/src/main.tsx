@@ -16,7 +16,11 @@ async function prepareMsal() {
   if (!isMsalConfigured) return
   try {
     await msalInstance.initialize()
-    const response = await msalInstance.handleRedirectPromise({ navigateToLoginRequestUrl: false })
+    const response = await msalInstance.handleRedirectPromise({ navigateToLoginRequestUrl: false }).catch((error: unknown) => {
+      const message = error instanceof Error ? error.message : String(error)
+      console.warn('Ignorando erro de cache de redirect (fluxo principal é popup):', message)
+      return null
+    })
     const account = response?.account ?? msalInstance.getActiveAccount() ?? msalInstance.getAllAccounts()[0]
     if (account) {
       msalInstance.setActiveAccount(account)
