@@ -1,7 +1,5 @@
 import type { ReactNode } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
-import { InteractionStatus } from '@azure/msal-browser'
-import { useIsAuthenticated, useMsal } from '@azure/msal-react'
 import { resolveProtectedDemoRoute } from './routePolicy'
 import type { DemoRole } from './types'
 import { useSession } from './useSession'
@@ -15,19 +13,17 @@ type ProtectedRouteProps = {
 
 export function ProtectedRoute({ children, allowedRoles = COLLABORATOR_ONLY }: ProtectedRouteProps) {
   const { session, isLoading } = useSession()
-  const { inProgress } = useMsal()
-  const isMsalAuthenticated = useIsAuthenticated()
   const location = useLocation()
 
-  if (isLoading || inProgress !== InteractionStatus.None) {
+  if (isLoading) {
     return (
       <main className="flex min-h-screen items-center justify-center ui-surface-subtle" aria-busy="true">
-        <p className="font-semibold ui-heading">{inProgress !== InteractionStatus.None ? 'Processando autenticação...' : 'Carregando ambiente corporativo...'}</p>
+        <p className="font-semibold ui-heading">Carregando ambiente corporativo...</p>
       </main>
     )
   }
 
-  if (!session && !isMsalAuthenticated) {
+  if (!session) {
     return <Navigate to="/login" replace state={{ from: `${location.pathname}${location.search}${location.hash}` }} />
   }
 

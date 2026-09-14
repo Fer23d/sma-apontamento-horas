@@ -3,11 +3,9 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
-const base = process.env.GITHUB_PAGES === 'true' ? '/sma-apontamento-horas/' : '/'
-
 // https://vite.dev/config/
 export default defineConfig({
-  base,
+  base: '/',
   plugins: [
     react(),
     tailwindcss(),
@@ -21,14 +19,14 @@ export default defineConfig({
         name: 'SM&A Horas',
         short_name: 'SM&A Horas',
         description: 'Sistema corporativo de apontamento e banco de horas da SM&A.',
-        start_url: './colaborador',
+        start_url: '/colaborador',
         display: 'standalone',
         theme_color: '#0A161E',
         background_color: '#0A161E',
         lang: 'pt-BR',
         icons: [
-          { src: 'sma-logo-192.png', sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
-          { src: 'sma-logo-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
+          { src: '/sma-logo-192.png', sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
+          { src: '/sma-logo-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
         ],
       },
     }),
