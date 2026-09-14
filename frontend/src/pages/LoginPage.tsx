@@ -1,6 +1,17 @@
 import { BrandMark } from '../components/BrandMark'
 import { ThemeToggle } from '../components/ThemeToggle'
 
+type AccessProfile = {
+  name: string
+  description: string
+}
+
+const ACCESS_PROFILES: readonly AccessProfile[] = [
+  { name: 'Colaborador', description: 'Apontamentos, saldos, histórico, ausências e perfil.' },
+  { name: 'Supervisão', description: 'Gestão de equipe, aprovações e solicitações.' },
+  { name: 'Direção', description: 'Visão macro, relatórios e gerenciamento de equipes.' },
+]
+
 export function LoginPage() {
   return (
     <main className="relative flex min-h-screen items-center justify-center bg-[var(--color-background)] px-4 py-20 text-[var(--color-text)] sm:px-6">
@@ -10,13 +21,22 @@ export function LoginPage() {
           <BrandMark variant="full" className="mb-7" />
           <p className="ui-badge-secondary">Ambiente corporativo</p>
           <h1 id="demo-login-title" className="mt-4 text-3xl font-extrabold text-[var(--color-primary)] sm:text-4xl">
-            Acesso corporativo
+            Escolha seu perfil
           </h1>
           <p className="mt-4 text-sm leading-6 text-[var(--color-text-muted)] sm:text-base">
-            Acesse o sistema com sua conta corporativa Microsoft.
+            Selecione a área de acesso e entre com sua conta corporativa Microsoft.
           </p>
-          <a href="/api/login" className="ui-button-secondary mt-6">Entrar com Microsoft</a>
         </header>
+        <div className="grid gap-5 md:grid-cols-3">
+          {ACCESS_PROFILES.map((profile) => (
+            <article key={profile.name} className="ui-card flex min-h-64 flex-col rounded-2xl p-6">
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-secondary)]">Perfil de acesso</p>
+              <h2 className="mt-3 text-xl font-extrabold text-[var(--color-text)]">{profile.name}</h2>
+              <p className="mt-3 flex-1 text-sm leading-6 text-[var(--color-text-muted)]">{profile.description}</p>
+              <a href="/api/login" className="ui-button-primary mt-6 w-full text-center">Entrar com Microsoft</a>
+            </article>
+          ))}
+        </div>
       </section>
     </main>
   )
