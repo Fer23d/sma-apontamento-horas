@@ -1,4 +1,4 @@
-import type { Configuration, PopupRequest } from '@azure/msal-browser'
+import { PublicClientApplication, type Configuration, type PopupRequest } from '@azure/msal-browser'
 
 const clientId = import.meta.env.VITE_MSAL_CLIENT_ID?.trim() ?? ''
 const tenantId = import.meta.env.VITE_MSAL_TENANT_ID?.trim() ?? ''
@@ -22,6 +22,8 @@ export const msalConfig: Configuration = {
     cacheLocation: 'localStorage',
   },
 }
+
+export const msalInstance = new PublicClientApplication(msalConfig)
 
 export const loginRequest: PopupRequest = {
   scopes: ['User.Read'],

@@ -29,9 +29,15 @@ export function LoginPageContent({ handleLogin, isProcessing = false, authError 
           <p className="mt-4 text-sm leading-6 text-[var(--color-text-muted)] sm:text-base">
             Acesse o sistema com sua conta corporativa Microsoft.
           </p>
-          {isProcessing
-            ? <p className="mt-6 text-sm font-semibold text-[var(--color-text-muted)]" role="status" aria-live="polite">Processando autenticação...</p>
-            : <button type="button" onClick={() => void handleLogin()} className="ui-button-secondary mt-6">Entrar com Microsoft</button>}
+          <button
+            type="button"
+            onClick={() => void handleLogin()}
+            disabled={isProcessing}
+            aria-busy={isProcessing}
+            className="ui-button-secondary mt-6"
+          >
+            {isProcessing ? 'Processando autenticação...' : 'Entrar com Microsoft'}
+          </button>
           {authError && <p role="alert" className="mt-3 text-sm font-semibold text-[var(--color-danger)]">{authError}</p>}
         </header>
 

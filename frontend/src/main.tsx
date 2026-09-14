@@ -1,17 +1,15 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { PublicClientApplication } from '@azure/msal-browser'
 import { MsalProvider } from '@azure/msal-react'
 import { App } from './app/App'
 import { ThemeProvider } from './app/ThemeProvider'
 import { DemoSessionProvider } from './features/session/DemoSessionProvider'
-import { isMsalConfigured, msalConfig } from './authConfig'
+import { isMsalConfigured, msalInstance } from './authConfig'
 import { demoSessionService } from './services/demoSessionService'
 import { mapMicrosoftClaimsToRole } from './features/session/claims'
 import { registerSW } from 'virtual:pwa-register'
 import './styles/index.css'
 
-const msalInstance = new PublicClientApplication(msalConfig)
 registerSW({ immediate: true })
 
 async function prepareMsal() {
