@@ -6,14 +6,16 @@
     <title>Autenticando...</title>
     <script>
       window.onload = function () {
-        if (window.opener && window.opener !== window) {
+        window.setTimeout(function () {
           try {
-            window.opener.postMessage(window.location.hash, window.location.origin);
-            window.close();
+            if (window.opener) {
+              window.opener.postMessage(window.location.hash, window.location.origin);
+            }
           } catch (e) {
-            console.error('Erro ao fechar aba de autenticação', e);
+            console.warn('Isolamento de aba detectado.');
           }
-        }
+          window.close();
+        }, 800);
       };
     </script>
   </head>

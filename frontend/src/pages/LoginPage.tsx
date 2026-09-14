@@ -56,6 +56,23 @@ export function LoginPage() {
   const [isSigningIn, setIsSigningIn] = useState(false)
 
   useEffect(() => {
+    const fallbackListener = (event: MessageEvent<unknown>) => {
+      if (
+        event.origin !== window.location.origin
+        || typeof event.data !== 'string'
+        || !event.data.includes('#code=')
+        || window.sessionStorage.getItem('sma:msal-fallback-reloaded') === 'true'
+      ) return
+
+      window.sessionStorage.setItem('sma:msal-fallback-reloaded', 'true')
+      window.location.reload()
+    }
+
+    window.addEventListener('message', fallbackListener)
+    return () => window.removeEventListener('message', fallbackListener)
+  }, [])
+
+  useEffect(() => {
     if (!isAuthenticated || inProgress !== InteractionStatus.None) return
 
     const account = instance.getActiveAccount() ?? accounts[0]
@@ -85,6 +102,7 @@ export function LoginPage() {
   async function handleLogin() {
     if (isSigningIn || inProgress !== InteractionStatus.None) return
     setAuthError(null)
+    window.sessionStorage.removeItem('sma:msal-fallback-reloaded')
     if (!isMsalConfigured) {
       setAuthError('Configure VITE_MSAL_CLIENT_ID e VITE_MSAL_TENANT_ID no arquivo frontend/.env e reinicie o servidor.')
       return
