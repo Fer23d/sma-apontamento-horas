@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { NavLink, useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import ExcelJS from 'exceljs'
 import { saveAs } from 'file-saver'
@@ -18,8 +18,9 @@ import { formatMinutes } from '../features/time-entries/domain'
 import { getCorporateToday, getMonthKey, getMonthRange, isIsoDate } from '../shared/utils/date'
 import { getAllColaboradores } from '../data/mockDEP'
 import { useTour } from '../components/tourContext'
+import { AvisosPage } from './AvisosPage'
 
-type ActiveView = 'entries' | 'requests' | 'history' | 'profile'
+type ActiveView = 'entries' | 'requests' | 'history' | 'profile' | 'announcements'
 type EntryStatusFilter = 'ALL' | SupervisorPendingEntry['status']
 type RejectionTarget =
   | { type: 'entry', item: SupervisorPendingEntry }
@@ -52,6 +53,7 @@ const supervisorNavigation: Array<{ id: ActiveView, label: string, shortLabel: s
   { id: 'requests', label: 'Solicitações', shortLabel: 'SO' },
   { id: 'history', label: 'Histórico', shortLabel: 'HI' },
   { id: 'profile', label: 'Meu Perfil', shortLabel: 'MP' },
+  { id: 'announcements', label: 'Avisos', shortLabel: 'AV' },
 ]
 
 function readSupervisorProfile(): SupervisorProfile {
@@ -132,10 +134,6 @@ function SupervisorSidebar({ activeView, profile, onChange, onSignOut }: {
             </button>
           )
         })}
-        <NavLink to="/avisos" className={({ isActive }) => `flex w-full items-center gap-3 rounded-xl border-l-4 px-3 py-3 text-left text-sm font-semibold transition ${isActive ? 'border-[var(--color-primary)] bg-[var(--color-navigation-active)] text-[var(--color-navigation-active-text)]' : 'border-transparent text-[var(--color-sidebar-text-muted)] hover:bg-[var(--color-navigation-hover)] hover:text-[var(--color-sidebar-text)]'}`}>
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--color-sidebar-surface)] text-xs">AV</span>
-          <span className="flex-1">Avisos</span>
-        </NavLink>
       </nav>
 
       <div className="border-t border-[var(--color-sidebar-border)] p-4">
@@ -257,6 +255,7 @@ export function SupervisorPage() {
   const { startTour } = useTour()
   const { session, signOut } = useSession()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const dashboard = useSupervisorDashboard(session?.id)
   const today = getCorporateToday()
   const monthKey = getMonthKey(today)
@@ -278,6 +277,15 @@ export function SupervisorPage() {
     setRange(monthRange)
     setAppliedRange(monthRange)
   }, [monthRange])
+
+  useEffect(() => {
+    setActiveView(searchParams.get('view') === 'avisos' ? 'announcements' : 'entries')
+  }, [searchParams])
+
+  function changeActiveView(view: ActiveView) {
+    setActiveView(view)
+    navigate(view === 'announcements' ? '/supervisor?view=avisos' : '/supervisor')
+  }
 
   const hasCustomRange = appliedRange.startDate !== monthRange.startDate || appliedRange.endDate !== monthRange.endDate
 
@@ -465,7 +473,7 @@ export function SupervisorPage() {
     : undefined
 
   return (
-    <main className="min-h-screen bg-[var(--color-background)] text-[var(--color-text)]">
+    <main className="min-h-screen overflow-x-clip bg-[var(--color-background)] text-[var(--color-text)]">
       <header data-layout-region="global-header" className="sticky top-0 z-40 flex h-20 w-full items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-header)] px-4 shadow-sm sm:px-6 lg:px-8">
         <div className="flex min-w-0 items-center gap-3">
           <BrandMark variant="compact" />
@@ -480,10 +488,10 @@ export function SupervisorPage() {
         </div>
       </header>
 
-      <section data-layout-body className="relative grid min-h-[calc(100vh-5rem)] min-w-0 grid-cols-1 lg:grid-cols-[16rem_minmax(0,1fr)]">
-        <SupervisorSidebar activeView={activeView} profile={supervisorProfile} onChange={setActiveView} onSignOut={exitDemo} />
+      <section data-layout-body className="relative grid min-h-[calc(100vh-5rem)] min-w-0 overflow-x-hidden grid-cols-1 lg:grid-cols-[16rem_minmax(0,1fr)]">
+        <SupervisorSidebar activeView={activeView} profile={supervisorProfile} onChange={changeActiveView} onSignOut={exitDemo} />
 
-        <div className="mx-auto w-full min-w-0 max-w-7xl p-4 sm:p-6 lg:p-8">
+        <div className="mx-auto w-full min-w-0 max-w-7xl overflow-x-hidden p-4 sm:p-6 lg:p-8">
           <div className="mb-6">
             <p className="ui-eyebrow mb-2 text-xs font-bold uppercase tracking-[0.2em]">SM&A</p>
             <h1 className="text-2xl font-extrabold text-[var(--color-primary)] sm:text-3xl">{supervisorNavigation.find((item) => item.id === activeView)?.label}</h1>
@@ -638,6 +646,7 @@ export function SupervisorPage() {
 
             {activeView === 'history' && <HistoryView entries={dashboard.entries} />}
             {activeView === 'profile' && <SupervisorProfileView profile={supervisorProfile} onSave={updateSupervisorProfile} onStartTour={() => { setActiveView('entries'); startTour() }} />}
+            {activeView === 'announcements' && <AvisosPage embedded />}
           </div>
         </div>
       </section>

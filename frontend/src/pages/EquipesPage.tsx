@@ -110,6 +110,10 @@ function DiretoriaSidebar({ onSignOut }: { onSignOut: () => void }) {
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--color-sidebar-surface)] text-xs">RE</span>
           <span className="flex-1">Relatórios</span>
         </NavLink>
+        <NavLink to="/administracao?view=avisos" className={linkClass}>
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--color-sidebar-surface)] text-xs">AV</span>
+          <span className="flex-1">Avisos</span>
+        </NavLink>
       </nav>
       <div className="border-t border-[var(--color-sidebar-border)] p-4">
         <button type="button" onClick={onSignOut} className="w-full rounded-xl border border-[var(--color-sidebar-border)] px-4 py-3 text-left text-sm font-bold text-[var(--color-sidebar-text)] hover:bg-[var(--color-navigation-hover)]">
@@ -307,7 +311,7 @@ export function EquipesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-text)]">
+    <div className="min-h-screen overflow-x-clip bg-[var(--color-background)] text-[var(--color-text)]">
       <header className="sticky top-0 z-40 flex h-20 w-full items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-header)] px-4 shadow-sm sm:px-6 lg:px-8">
         <div className="flex items-center gap-3">
           <BrandMark variant="compact" />
@@ -322,9 +326,9 @@ export function EquipesPage() {
         </div>
       </header>
 
-      <div className="flex">
+      <div className="flex min-w-0">
         <DiretoriaSidebar onSignOut={exitDemo} />
-        <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">
+        <main className="min-w-0 flex-1 overflow-x-hidden px-4 py-6 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-7xl space-y-6">
             <section>
               <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">

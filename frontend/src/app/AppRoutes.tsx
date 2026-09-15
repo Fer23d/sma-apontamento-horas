@@ -13,16 +13,14 @@ import { DiretoriaPage } from '../pages/DiretoriaPage'
 import { EquipesPage } from '../pages/EquipesPage'
 import { RelatoriosPage } from '../pages/RelatoriosPage'
 import { AvisosPage } from '../pages/AvisosPage'
-import { GestorLayout } from '../components/GestorLayout'
+import { ManagerNoticesRedirect } from '../features/session/ManagerNoticesRedirect'
 
 export function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="/login" element={<PublicOnlyRoute><LoginPage /></PublicOnlyRoute>} />
-      <Route path="/avisos" element={<ProtectedRoute allowedRoles={['SUPERVISOR', 'DIRECTOR_ADMIN']}><GestorLayout /></ProtectedRoute>}>
-        <Route index element={<AvisosPage />} />
-      </Route>
+      <Route path="/avisos" element={<ProtectedRoute allowedRoles={['SUPERVISOR', 'DIRECTOR_ADMIN']}><ManagerNoticesRedirect /></ProtectedRoute>} />
       <Route path="/colaborador" element={<ProtectedRoute allowedRoles={['COLLABORATOR']}><AppLayout /></ProtectedRoute>}>
         <Route index element={<ColaboradorPage />} />
         <Route path="apontamentos/novo" element={<NovoApontamentoPage />} />

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { NavLink, useNavigate } from 'react-router-dom'
+import { NavLink, useNavigate, useSearchParams } from 'react-router-dom'
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { BrandMark } from '../components/BrandMark'
 import { ThemeToggle } from '../components/ThemeToggle'
@@ -11,6 +11,7 @@ import { diretoriaService } from '../services/diretoriaService'
 import type { SupervisorPendingEntry } from '../features/supervisor/types'
 import { formatMinutes } from '../features/time-entries/domain'
 import { useTour } from '../components/tourContext'
+import { AvisosPage } from './AvisosPage'
 
 type DiretoriaEntry = {
   id: string
@@ -114,7 +115,7 @@ function EscalatedApprovals({ entries, directorId, onApproved }: { entries: Supe
   return <section className="rounded-2xl border border-[var(--color-danger)]/40 bg-[var(--color-surface)] p-5 shadow-sm" aria-labelledby="escalated-approvals-title"><div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-danger)]">Aprovações escaladas</p><h2 id="escalated-approvals-title" className="mt-1 text-xl font-extrabold text-[var(--color-text)]">Pendências transferidas para a Diretoria</h2></div><span className="text-sm text-[var(--color-text-muted)]">{entries.length} pendência(s)</span></div>{error && <p role="alert" className="mt-4 text-sm font-semibold text-[var(--color-danger)]">{error}</p>}{entries.length === 0 ? <p className="mt-4 text-sm text-[var(--color-text-muted)]">Nenhum apontamento foi escalado neste fechamento.</p> : <div className="mt-4 overflow-x-auto"><table className="w-full min-w-[620px] text-left text-sm"><thead className="border-b border-[var(--color-border)] text-xs uppercase tracking-wide text-[var(--color-text-muted)]"><tr><th className="px-3 py-3">Colaborador</th><th className="px-3 py-3">Data</th><th className="px-3 py-3">Projeto</th><th className="px-3 py-3">Horas</th><th className="px-3 py-3 text-right">Ação</th></tr></thead><tbody className="divide-y divide-[var(--color-border)]">{entries.map((entry) => <tr key={entry.id}><td className="px-3 py-3 font-bold">{entry.collaboratorName}</td><td className="px-3 py-3 text-[var(--color-text-muted)]">{entry.entryDate}</td><td className="px-3 py-3">{entry.projectCode}</td><td className="px-3 py-3">{formatMinutes(entry.durationMinutes)}</td><td className="px-3 py-3 text-right"><button type="button" className="ui-button-primary px-3 py-2" onClick={() => void approve(entry.id)} disabled={isMutating}>Aprovar</button></td></tr>)}</tbody></table></div>}</section>
 }
 
-function DiretoriaSidebar({ onSignOut }: { onSignOut: () => void }) {
+function DiretoriaSidebar({ onSignOut, isNotices }: { onSignOut: () => void, isNotices: boolean }) {
   const linkClass = ({ isActive }: { isActive: boolean }) => `flex w-full items-center gap-3 rounded-xl border-l-4 px-3 py-3 text-left text-sm font-semibold transition ${
     isActive
       ? 'border-[var(--color-primary)] bg-[var(--color-navigation-active)] text-[var(--color-navigation-active-text)]'
@@ -133,7 +134,7 @@ function DiretoriaSidebar({ onSignOut }: { onSignOut: () => void }) {
         </div>
       </section>
       <nav className="flex-1 space-y-2 p-4" aria-label="Menu lateral da diretoria">
-        <NavLink to="/administracao" end className={linkClass}>
+        <NavLink to="/administracao" end className={({ isActive }) => linkClass({ isActive: isActive && !isNotices })}>
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--color-navigation-active-detail)] text-xs text-[var(--color-primary)]">DI</span>
           <span className="flex-1">Painel Diretor</span>
         </NavLink>
@@ -145,8 +146,8 @@ function DiretoriaSidebar({ onSignOut }: { onSignOut: () => void }) {
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--color-sidebar-surface)] text-xs">RE</span>
           <span className="flex-1">Relatórios</span>
         </NavLink>
-        <NavLink to="/avisos" className={linkClass}>
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--color-sidebar-surface)] text-xs">AV</span>
+        <NavLink to="/administracao?view=avisos" className={() => linkClass({ isActive: isNotices })}>
+          <span className={`flex h-8 w-8 items-center justify-center rounded-lg text-xs ${isNotices ? 'bg-[var(--color-navigation-active-detail)] text-[var(--color-primary)]' : 'bg-[var(--color-sidebar-surface)]'}`}>AV</span>
           <span className="flex-1">Avisos</span>
         </NavLink>
       </nav>
@@ -163,6 +164,8 @@ export function DiretoriaPage() {
   const { startTour } = useTour()
   const { session, signOut } = useSession()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const isNotices = searchParams.get('view') === 'avisos'
   const [entries, setEntries] = useState<DiretoriaEntry[]>([])
   const [absences, setAbsences] = useState<DiretoriaAbsence[]>([])
   const [escalatedEntries, setEscalatedEntries] = useState<SupervisorPendingEntry[]>([])
@@ -206,7 +209,7 @@ export function DiretoriaPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-text)]">
+    <div className="min-h-screen overflow-x-clip bg-[var(--color-background)] text-[var(--color-text)]">
       <header className="sticky top-0 z-40 flex h-20 w-full items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-header)] px-4 shadow-sm sm:px-6 lg:px-8">
         <div className="flex items-center gap-3">
           <BrandMark variant="compact" />
@@ -221,10 +224,11 @@ export function DiretoriaPage() {
         </div>
       </header>
 
-      <div className="flex">
-        <DiretoriaSidebar onSignOut={exitDemo} />
-        <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">
+      <div className="flex min-w-0">
+        <DiretoriaSidebar onSignOut={exitDemo} isNotices={isNotices} />
+        <main className="min-w-0 flex-1 overflow-x-hidden px-4 py-6 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-7xl space-y-6">
+            {isNotices ? <AvisosPage embedded /> : <>
             <section>
               <p className="ui-eyebrow text-xs font-bold uppercase tracking-[0.16em]">Visão Macro</p>
               <h1 className="mt-2 text-3xl font-extrabold text-[var(--color-text)]">SM&A - Painel da Diretoria</h1>
@@ -264,6 +268,7 @@ export function DiretoriaPage() {
                 </ResponsiveContainer>
               </div>
             </section>
+            </>}
           </div>
         </main>
       </div>

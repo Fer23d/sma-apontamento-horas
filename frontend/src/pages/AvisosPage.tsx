@@ -84,7 +84,7 @@ function formatPublicationDate(date: string) {
   return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'long', timeZone: 'UTC' }).format(parsedDate)
 }
 
-export function AvisosPage() {
+export function AvisosPage({ embedded = false }: { embedded?: boolean }) {
   const { profile, session } = useSession()
   const [comunicados, setComunicados] = useState<Comunicado[]>(() => readAnnouncements(comunicadosMock))
 
@@ -110,12 +110,8 @@ export function AvisosPage() {
     return () => window.removeEventListener(ANNOUNCEMENTS_UPDATED_EVENT, reload)
   }, [])
 
-  return (
-    <PageContainer
-      title="Quadro de Avisos"
-      description="Acompanhe comunicados importantes da Diretoria, do RH e da supervisão da operação."
-      contained={false}
-    >
+  const content = (
+    <>
       <CriarAviso />
       <section className="space-y-4" aria-labelledby="announcements-title">
         <div className="flex items-center justify-between gap-4">
@@ -151,6 +147,18 @@ export function AvisosPage() {
           })}
         </div>
       </section>
+    </>
+  )
+
+  if (embedded) return content
+
+  return (
+    <PageContainer
+      title="Quadro de Avisos"
+      description="Acompanhe comunicados importantes da Diretoria, do RH e da supervisão da operação."
+      contained={false}
+    >
+      {content}
     </PageContainer>
   )
 }
