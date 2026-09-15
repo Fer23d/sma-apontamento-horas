@@ -23,4 +23,11 @@ describe('navegação da gestão', () => {
     expect(teamsSource).toContain('text-white')
     expect(teamsSource).not.toContain('text-[#06241f]')
   })
+
+  it('usa a mesma shell flexível da Direção na área da Supervisão', () => {
+    expect(supervisorSource).toContain('className="flex min-w-0"')
+    expect(supervisorSource).toContain('className="min-w-0 flex-1 overflow-x-hidden')
+    expect(supervisorSource).toContain('w-64 shrink-0')
+    expect(supervisorSource).not.toContain('grid-cols-1 lg:grid-cols-[16rem_minmax(0,1fr)]')
+  })
 })

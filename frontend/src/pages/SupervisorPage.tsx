@@ -97,7 +97,7 @@ function SupervisorSidebar({ activeView, profile, onChange, onSignOut }: {
   return (
     <aside
       data-desktop-sidebar
-      className="hidden h-[calc(100vh-5rem)] w-64 min-w-0 flex-col overflow-y-auto bg-[var(--color-sidebar)] text-[var(--color-sidebar-text)] lg:sticky lg:top-20 lg:flex lg:self-start"
+      className="hidden h-[calc(100vh-5rem)] w-64 shrink-0 flex-col overflow-y-auto bg-[var(--color-sidebar)] text-[var(--color-sidebar-text)] lg:sticky lg:top-20 lg:flex lg:self-start"
       aria-label="Menu lateral do supervisor"
     >
       <section className="border-b border-[var(--color-sidebar-border)] p-4" aria-label="Perfil atual do supervisor">
@@ -473,7 +473,7 @@ export function SupervisorPage() {
     : undefined
 
   return (
-    <main className="min-h-screen overflow-x-clip bg-[var(--color-background)] text-[var(--color-text)]">
+    <div className="min-h-screen overflow-x-clip bg-[var(--color-background)] text-[var(--color-text)]">
       <header data-layout-region="global-header" className="sticky top-0 z-40 flex h-20 w-full items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-header)] px-4 shadow-sm sm:px-6 lg:px-8">
         <div className="flex min-w-0 items-center gap-3">
           <BrandMark variant="compact" />
@@ -488,11 +488,12 @@ export function SupervisorPage() {
         </div>
       </header>
 
-      <section data-layout-body className="relative grid min-h-[calc(100vh-5rem)] min-w-0 overflow-x-hidden grid-cols-1 lg:grid-cols-[16rem_minmax(0,1fr)]">
+      <div data-layout-body className="flex min-w-0">
         <SupervisorSidebar activeView={activeView} profile={supervisorProfile} onChange={changeActiveView} onSignOut={exitDemo} />
 
-        <div className="mx-auto w-full min-w-0 max-w-7xl overflow-x-hidden p-4 sm:p-6 lg:p-8">
-          <div className="mb-6">
+        <main className="min-w-0 flex-1 overflow-x-hidden px-4 py-6 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-7xl">
+            <div className="mb-6">
             <p className="ui-eyebrow mb-2 text-xs font-bold uppercase tracking-[0.2em]">SM&A</p>
             <h1 className="text-2xl font-extrabold text-[var(--color-primary)] sm:text-3xl">{supervisorNavigation.find((item) => item.id === activeView)?.label}</h1>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--color-text-muted)]">
@@ -500,7 +501,7 @@ export function SupervisorPage() {
             </p>
           </div>
 
-          <div className="space-y-6">
+            <div className="space-y-6">
             {dashboard.error && (
               <div role="alert" className="rounded-2xl border border-[var(--color-danger)] bg-[var(--color-surface)] p-4 text-sm font-semibold text-[var(--color-danger)]">
                 {dashboard.error}
@@ -647,9 +648,10 @@ export function SupervisorPage() {
             {activeView === 'history' && <HistoryView entries={dashboard.entries} />}
             {activeView === 'profile' && <SupervisorProfileView profile={supervisorProfile} onSave={updateSupervisorProfile} onStartTour={() => { setActiveView('entries'); startTour() }} />}
             {activeView === 'announcements' && <AvisosPage embedded />}
+            </div>
           </div>
-        </div>
-      </section>
+        </main>
+      </div>
 
       <RejectionDialog
         entry={rejectionTarget?.item ?? null}
@@ -660,6 +662,6 @@ export function SupervisorPage() {
         onClose={() => setRejectionTarget(null)}
         onConfirm={(reason) => void rejectTarget(reason)}
       />
-    </main>
+    </div>
   )
 }
