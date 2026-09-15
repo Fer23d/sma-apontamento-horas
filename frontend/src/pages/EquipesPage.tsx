@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import { NavLink, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { BrandMark } from '../components/BrandMark'
+import { DirectorSidebar } from '../components/DirectorSidebar'
 import { ThemeToggle } from '../components/ThemeToggle'
 import { useSession } from '../features/session/useSession'
 import { organogramaDEP, type DEPColaborador, type DEPGerencia, type DEPSquad } from '../data/mockDEP'
@@ -79,51 +80,6 @@ function persistOrganograma(data: DEPGerencia[]) {
   window.localStorage.setItem(ORGANOGRAMA_STORAGE_KEY, JSON.stringify(data))
 }
 
-function DiretoriaSidebar({ onSignOut }: { onSignOut: () => void }) {
-  const linkClass = ({ isActive }: { isActive: boolean }) => `flex w-full items-center gap-3 rounded-xl border-l-4 px-3 py-3 text-left text-sm font-semibold transition ${
-    isActive
-      ? 'border-[var(--color-primary)] bg-[var(--color-navigation-active)] text-[var(--color-navigation-active-text)]'
-      : 'border-transparent text-[var(--color-sidebar-text-muted)] hover:bg-[var(--color-navigation-hover)] hover:text-[var(--color-sidebar-text)]'
-  }`
-
-  return (
-    <aside className="hidden h-[calc(100vh-5rem)] w-64 flex-col bg-[var(--color-sidebar)] text-[var(--color-sidebar-text)] lg:sticky lg:top-20 lg:flex lg:self-start">
-      <section className="border-b border-[var(--color-sidebar-border)] p-4">
-        <div className="flex items-center gap-3">
-          <span className="flex h-12 w-12 items-center justify-center rounded-full border border-[var(--color-sidebar-border)] bg-[var(--color-sidebar-surface)] text-sm font-extrabold">DI</span>
-          <div>
-            <p className="text-sm font-extrabold leading-tight">Diretoria SM&A</p>
-            <p className="mt-0.5 text-xs leading-tight text-[var(--color-sidebar-text-muted)]">Visão macro</p>
-          </div>
-        </div>
-      </section>
-      <nav className="flex-1 space-y-2 p-4" aria-label="Menu lateral da diretoria">
-        <NavLink to="/administracao" end className={linkClass}>
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--color-sidebar-surface)] text-xs">DI</span>
-          <span className="flex-1">Painel Diretor</span>
-        </NavLink>
-        <NavLink to="/administracao/equipes" className={linkClass}>
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--color-navigation-active-detail)] text-xs text-[var(--color-primary)]">EQ</span>
-          <span className="flex-1">Equipes</span>
-        </NavLink>
-        <NavLink to="/administracao/relatorios" className={linkClass}>
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--color-sidebar-surface)] text-xs">RE</span>
-          <span className="flex-1">Relatórios</span>
-        </NavLink>
-        <NavLink to="/administracao?view=avisos" className={linkClass}>
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--color-sidebar-surface)] text-xs">AV</span>
-          <span className="flex-1">Avisos</span>
-        </NavLink>
-      </nav>
-      <div className="border-t border-[var(--color-sidebar-border)] p-4">
-        <button type="button" onClick={onSignOut} className="w-full rounded-xl border border-[var(--color-sidebar-border)] px-4 py-3 text-left text-sm font-bold text-[var(--color-sidebar-text)] hover:bg-[var(--color-navigation-hover)]">
-          Sair do sistema
-        </button>
-      </div>
-    </aside>
-  )
-}
-
 function EditableCollaboratorCard({ colaborador, squadName, squadOptions, onSave }: {
   colaborador: DEPColaborador
   squadName: string
@@ -174,7 +130,7 @@ function EditableCollaboratorCard({ colaborador, squadName, squadOptions, onSave
         </div>
         <div className="mt-4 grid grid-cols-2 gap-2">
           <button type="button" onClick={cancelEdit} className="rounded-xl border border-[var(--color-border)] px-3 py-2 text-sm font-bold text-[var(--color-text-muted)] hover:bg-[var(--color-surface-subtle)]">Cancelar</button>
-          <button type="button" onClick={saveEdit} className="rounded-xl bg-[var(--color-primary)] px-3 py-2 text-sm font-bold text-[#06241f] hover:opacity-90">Salvar</button>
+          <button type="button" onClick={saveEdit} className="rounded-xl bg-[var(--color-primary)] px-3 py-2 text-sm font-bold text-white hover:opacity-90">Salvar</button>
         </div>
       </article>
     )
@@ -327,7 +283,7 @@ export function EquipesPage() {
       </header>
 
       <div className="flex min-w-0">
-        <DiretoriaSidebar onSignOut={exitDemo} />
+        <DirectorSidebar onSignOut={exitDemo} />
         <main className="min-w-0 flex-1 overflow-x-hidden px-4 py-6 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-7xl space-y-6">
             <section>
@@ -362,9 +318,9 @@ export function EquipesPage() {
                     type="button"
                     onClick={handleExportAllHours}
                     disabled={isExporting}
-                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--color-primary)] bg-[var(--color-primary)] px-4 py-3 text-sm font-bold text-[#06241f] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--color-primary)] bg-[var(--color-primary)] px-4 py-3 text-sm font-bold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/20 text-[10px] font-black text-[#06241f]">XL</span>
+                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/20 text-[10px] font-black text-white">XL</span>
                     Exportar Horas (Geral)
                   </button>
                 </div>
@@ -452,7 +408,7 @@ export function EquipesPage() {
                             </div>
                           </div>
                         </div>
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                        <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-2 xl:grid-cols-3">
                         {selectedSquad.colaboradores.map((colaborador) => (
                           <EditableCollaboratorCard
                             key={`${selectedSquad.nome}-${colaborador.nome}`}
